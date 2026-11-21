@@ -48,6 +48,8 @@ din dashboard).
 
 ## Două camere (față + corp)
 
+> Demo pe **3 laptopuri** (1 central + 2 camere)? Pagina gata de dat echipei: [3_LAPTOPURI.md](3_LAPTOPURI.md).
+
 Camera feței rulează `vigil_vision.run_face` (topic `vigil/vision/face`), camera corpului
 `vigil_vision.run_body` (`vigil/vision/body`). `vigil_vision.merge` le combină într-un singur `vigil/vision`, la
 10 mesaje/s: de la față ochii și privirea, de la corp telefonul, respirația, postura; evenimentele amândurora.

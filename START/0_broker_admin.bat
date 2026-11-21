@@ -23,6 +23,14 @@ if not exist "%DST%" (
 if not exist "%DST%.original" copy /y "%DST%" "%DST%.original" >nul
 copy /y "%SRC%" "%DST%" >nul || (echo EROARE la copiere & goto :end)
 powershell -NoProfile -Command "Restart-Service mosquitto"
+
+rem Firewall: fara aceasta regula, Windows blocheaza laptopurile cu camere (mai ales pe retele marcate "Public",
+rem cum sunt hotspot-urile). Se aplica pe toate profilurile; regula veche cu acelasi nume e inlocuita.
+netsh advfirewall firewall delete rule name="Vigil MQTT" >nul 2>&1
+netsh advfirewall firewall add rule name="Vigil MQTT" dir=in action=allow protocol=TCP localport=1883,9001 profile=any >nul && (echo Firewall: portile 1883 si 9001 deschise pentru reteaua locala) || echo ATENTIE: nu am putut adauga regula de firewall
+rem Ping: Windows nu raspunde implicit la ping pe retele "Public"; fara asta, "ping laptop1" da timeout chiar daca reteaua merge.
+netsh advfirewall firewall delete rule name="Vigil ping" >nul 2>&1
+netsh advfirewall firewall add rule name="Vigil ping" dir=in action=allow protocol=icmpv4:8,any profile=any >nul && echo Firewall: laptopul raspunde la ping (test de retea)
 timeout /t 2 >nul
 echo.
 echo Porturi deschise de broker (trebuie sa apara 1883 si 9001):
