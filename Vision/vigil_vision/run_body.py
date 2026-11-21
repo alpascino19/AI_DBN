@@ -2,12 +2,14 @@
 
     python -m vigil_vision.run_body --show
     python -m vigil_vision.run_body --show --index 1     # altă cameră decât body_camera din config.yaml
+    python -m vigil_vision.run_body --show --publish --mqtt-host 172.22.118.134   # -> vigil/vision/body
 
 Rulează pipeline-ul CV2 (Pose + Hands + YOLO): mâna pe piept, respirația, telefonul,
 postura / prăbușirea + avertizările corpului. Fără față: filtrul "mână la față" din
 chest.py folosește gura/nasul din Pose, iar "telefon + privire" devine "telefon în mână".
 Camera: secțiunea `body_camera` din config.yaml (ce lipsește se ia din `camera`).
 Fața rulează separat: python -m vigil_vision.run_face
+Cu --publish trimite pe MQTT topicul `vigil/vision/body` (combinat de vigil_vision.merge).
 """
 from __future__ import annotations
 
@@ -23,7 +25,9 @@ from .face.alerts import AlertManager, body_rules
 from .face.eyes import EyeState
 from .face.head_pose import HeadState
 from .face.monitor import MIN_SOUND_LEVEL, _NoPublish, beep, render
-from .run_face import open_camera
+from .run_face import add_mqtt_args, open_camera
+
+BODY_TOPIC = "vigil/vision/body"
 
 
 def main() -> None:
@@ -33,6 +37,7 @@ def main() -> None:
     p.add_argument("--show", action="store_true", help="fereastra cu camera, panoul și avertizările")
     p.add_argument("--mute", action="store_true", help="fără sunete")
     p.add_argument("--min-sound", default=MIN_SOUND_LEVEL, type=int, help="nivelul minim cu sunet (1-3)")
+    add_mqtt_args(p)
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s")
 
@@ -50,13 +55,21 @@ def main() -> None:
     from .pipeline import Pipeline
     am = AlertManager(body_rules())
     no_face_eyes, no_face_head = EyeState(), HeadState()   # regulile de corp nu folosesc fața
-    pipeline = Pipeline(cfg, publisher=_NoPublish(), camera=cam)
+    pub = _NoPublish()
+    if args.publish:
+        from .publisher import Publisher
+        pub = Publisher(cfg, topic=BODY_TOPIC, host=args.mqtt_host)
+    pipeline = Pipeline(cfg, publisher=pub, camera=cam)
     pipeline.face = None                          # fără față în această aplicație
+    period, next_pub = 1.0 / max(1, cfg.get("publish_hz", 10)), 0.0
     reader = cam.reader(CV2)
     try:
         for frame in reader:
             t = frame.timestamp
             ctx = pipeline.process(frame)
+            if args.publish and t >= next_pub:
+                pub.publish(pipeline.build_message(ctx, reader.fps))
+                next_pub = t + period
             dets = {n: (d.active, d.confidence) for n, d in ctx.detections.items()}
             for a in am.update(no_face_eyes, no_face_head, dets, t):
                 print(f"{time.strftime('%H:%M:%S')} [CORP nivel {a.level}] {a.message}")
@@ -74,6 +87,7 @@ def main() -> None:
         cam.stop()
         if pipeline.body is not None:
             pipeline.body.close()
+        pub.close()
         cv2.destroyAllWindows()
 
 

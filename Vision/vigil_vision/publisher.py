@@ -4,11 +4,16 @@
     pub.publish(msg)              # VisionMessage sau dict
 Fără broker (sau --no-mqtt): afișează un rezumat în consolă (max 1/s,
 plus imediat când se schimbă lista de evenimente). Landmark-urile nu se afișează.
+
+Două laptopuri (docs/vision-doua-camere.md): fiecare publică pe topicul lui
+(Publisher(cfg, topic="vigil/vision/face") / ".../body"), iar client_id-ul MQTT e
+unic per laptop + topic, ca brokerul să nu-i deconecteze reciproc.
 """
 from __future__ import annotations
 
 import json
 import logging
+import socket
 import time
 from typing import Any, Union
 
@@ -18,9 +23,12 @@ log = logging.getLogger(__name__)
 
 
 class Publisher:
-    def __init__(self, cfg: dict, enabled: bool | None = None, echo: bool = False) -> None:
+    def __init__(self, cfg: dict, enabled: bool | None = None, echo: bool = False,
+                 topic: str | None = None, host: str | None = None) -> None:
         m = cfg["mqtt"]
-        self.topic = m["topic"]
+        self.topic = topic or m["topic"]
+        # unic per laptop + topic: același nume = brokerul îl dă afară pe celălalt ("session taken over")
+        self.client_id = f"vigil-vision-{socket.gethostname()}-{self.topic.rsplit('/', 1)[-1]}"
         self.print_fallback = m.get("print_fallback", True)
         self.echo = echo
         self.connected = False
@@ -28,7 +36,7 @@ class Publisher:
         self._last_print = 0.0
         self._last_events: tuple = ()
         if m["enabled"] if enabled is None else enabled:
-            self._connect(m["host"], int(m["port"]))
+            self._connect(host or m["host"], int(m["port"]))
 
     def _connect(self, host: str, port: int) -> None:
         try:
@@ -38,16 +46,16 @@ class Publisher:
             return
         try:
             if hasattr(mqtt, "CallbackAPIVersion"):                # paho-mqtt 2.x
-                client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="vigil-vision")
+                client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=self.client_id)
             else:                                                   # paho-mqtt 1.x
-                client = mqtt.Client(client_id="vigil-vision")
+                client = mqtt.Client(client_id=self.client_id)
             client.on_connect = self._on_connect
             client.on_disconnect = self._on_disconnect
             client.reconnect_delay_set(1, 10)
             client.connect_async(host, port, keepalive=30)
             client.loop_start()
             self._client = client
-            log.info("MQTT -> %s:%d topic %s", host, port, self.topic)
+            log.info("MQTT -> %s:%d topic %s (client %s)", host, port, self.topic, self.client_id)
         except Exception as e:                                      # noqa: BLE001
             log.warning("Nu mă pot conecta la MQTT (%s) -> consolă", e)
 
