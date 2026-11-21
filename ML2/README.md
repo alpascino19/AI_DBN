@@ -257,6 +257,29 @@ Ce scrie live:
 
 Dacă brokerul nu răspunde, merge mai departe fără ESP32.
 
+### 4.4b `info_assistant.py` — Virgil, asistentul de informare
+Program separat de executor, doar pentru informare: vreme, știri, trafic, întrebări generale.
+```powershell
+$env:OMNIROUTE_API_KEY  # trebuie setată (vezi mai jos)
+..\.venv\Scripts\python info_assistant.py
+```
+- **„Hei Virgil, <întrebare>”**, sau doar „Hei Virgil”, iar el răspunde „Da, vă ascult”.
+- **După fiecare răspuns** se aude un bip și Virgil ascultă încă o întrebare, fără „Hei Virgil”. Tăcerea sau „mulțumesc”/„gata” închid conversația. Terminalul arată la fiecare pas ce să faceți (`>>> GATA...`, `>>> VORBIȚI ACUM...`, `>>> Mai aveți o întrebare?...`).
+- **Date live, alese după cuvintele din întrebare:**
+  - vreme: Open-Meteo, fără cheie;
+  - știri: RSS HotNews / Digi24;
+  - trafic: **alertele live Waze** pe o rază de 10 km (accidente, ambuteiaje, pericole, poliție), prin OpenWebNinja (`OPENWEBNINJA_API_KEY`; fiecare întrebare de trafic consumă o cerere din credit), plus căutarea Tavily „trafic Cluj-Napoca”;
+  - orice altceva (sport, evenimente, prețuri, întrebări generale): **căutare Tavily prin OmniRoute** (cheia Tavily se pune în dashboard-ul OmniRoute; ~1.000 de căutări gratuite pe lună). La întrebările cu „azi/acum/diseară/mâine” se adaugă data zilei în căutare. Dacă Tavily nu răspunde, Virgil spune că nu are informația. Variante abandonate: DuckDuckGo prin OmniRoute (nu mai întorcea rezultate) și Gemini cu Google Search (limita gratuită se umplea repede).
+- **Răspunsul îl formulează un model prin OmniRoute** (`http://localhost:20128`). Se încearcă pe rând `gemini/gemini-2.5-flash` → `auto/best-fast` → `claude-code`: planul gratuit Gemini dă 429 după câteva cereri pe minut, iar atunci se trece la următorul. Primul model se schimbă cu `$env:VIRGIL_MODEL='...'`. Combo-ul `claude-code` nu e pus primul: are strategia `lkgp` (rămâne pe ultimul furnizor care a mers, de obicei nemotron, 12–34 s) și e folosit și de Claude Code.
+- **Nu se amestecă în siguranță:** ascultă `vigil/decision`, iar la orice alertă (severitate ≥ 1) se oprește din vorbit imediat și tace 60 s.
+- **Locația e fixă: Cluj-Napoca** (`CITY`, `LAT`, `LON` în capul fișierului).
+- **Cheile se pun ca variabile de mediu,** apoi se deschide un terminal nou. Cheia OpenWebNinja e opțională: fără ea, traficul vine doar din știri.
+  ```powershell
+  [Environment]::SetEnvironmentVariable('OMNIROUTE_API_KEY', 'CHEIA', 'User')
+  [Environment]::SetEnvironmentVariable('OPENWEBNINJA_API_KEY', 'CHEIA', 'User')   # app.openwebninja.com, API Waze
+  ```
+- **Test:** `..\.venv\Scripts\python test_info_assistant.py`.
+
 ### 4.5 `esp32_test.py` — test cap-coadă al plăcii
 ```powershell
 ..\.venv\Scripts\python esp32_test.py COM13

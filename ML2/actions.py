@@ -58,7 +58,8 @@ REPLY_SCHEMA = {"type": "object", "required": ["reply", "end"],
                 "properties": {"reply": {"type": "string"}, "end": {"type": "boolean"}}}
 
 # --- reglaje recunoaștere vocală ---
-WHISPER_MODEL = "small"  # "medium": +2% acuratețe, dar de 3-4x mai lent pe CPU
+# "large-v3-turbo" înțelege mult mai bine frazele libere (ex. întrebările pentru Virgil), dar ~6 s/frază pe CPU
+WHISPER_MODEL = os.environ.get("VIGIL_WHISPER", "small")
 BEAM_SIZE = 5
 # contextul ghidează Whisper spre română corectă. Fără răspunsuri-exemplu: pe audio scurt sau nesigur Whisper
 # copiază promptul, iar un „Da, sunt bine” inventat ar putea ascunde o urgență.
@@ -66,9 +67,10 @@ BEAM_SIZE = 5
 PROMPT = "Conversație în limba română între șofer și Virgil, asistentul de bord al mașinii. Hei Virgil."
 # Silero VAD mai strict: ignoră murmurul și vorbirea scurtă din fundal
 VAD = {"threshold": 0.6, "min_speech_duration_ms": 300, "min_silence_duration_ms": 500}
-# vocea mai slabă de atât e considerată din fundal (alți oameni din sală);
-# calibrează cu voice_test.py: pune pragul ~10 dB sub "speech_dbfs" al vorbirii normale de pe scaunul șoferului
-NEAR_DBFS = -40
+# vocea mai slabă de atât e considerată din fundal (alți oameni din sală).
+# Măsurat pe microfonul laptopului: șoferul -20.7..-24 dBFS, voci/zgomote din jur -26..-39 dBFS.
+# Alt microfon sau altă distanță: recalibrează cu voice_test.py ("speech_dbfs"), ~5 dB sub vocea normală.
+NEAR_DBFS = -28
 ALARM_SR = 22050
 
 log = logging.getLogger("ml2")
@@ -182,6 +184,15 @@ def speech_dbfs(audio):
     return float(20 * np.log10(np.percentile(np.sqrt((frames ** 2).mean(axis=1)), 90) + 1e-9))
 
 
+# Fraze din subtitrări video pe care Whisper le inventează pe audio scurt sau zgomot (văzute la noi:
+# „Vă mulțumim pentru vizionare!” în loc de „Hei Virgil”). Un fals „a răspuns” ar ascunde o urgență.
+HALLUCINATIONS = re.compile(r"pentru vizionare|abona[tț]i|amara\.org|subtitr|nu uita[tț]i s[aă] da[tț]i like")
+
+
+def is_hallucination(text):
+    return bool(HALLUCINATIONS.search(text.lower()))
+
+
 def transcribe(audio):
     """audio float32 mono 16 kHz -> (text, secunde până la primul cuvânt, detalii pentru calibrare)."""
     global _whisper
@@ -196,6 +207,8 @@ def transcribe(audio):
         # Whisper inventează text pe zgomot; un fals „a răspuns” ar ascunde un șofer inconștient
         if s.no_speech_prob >= 0.5 or s.avg_logprob <= -1.0 or s.compression_ratio >= 2.4:
             rejected.append({"text": s.text.strip(), "dbfs": level, "why": "nesigur"})
+        elif is_hallucination(s.text):
+            rejected.append({"text": s.text.strip(), "dbfs": level, "why": "halucinație"})
         elif level < NEAR_DBFS:
             rejected.append({"text": s.text.strip(), "dbfs": level, "why": "departe"})
         else:

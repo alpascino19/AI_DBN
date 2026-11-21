@@ -37,6 +37,15 @@ def test_silence_and_noise_give_nothing():
         assert text == "" and latency is None, text
 
 
+def test_known_hallucinations_rejected():
+    # fraze din subtitrări video pe care Whisper le inventează pe audio scurt
+    for text in ["Vă mulțumim pentru vizionare!", "Mulțumesc pentru vizionare.", "Abonați-vă la canal!",
+                 "Subtitrare realizată de comunitatea Amara.org"]:
+        assert actions.is_hallucination(text), text
+    for text in ["Mulțumesc, sunt bine.", "Nu mă simt bine.", "Hei Virgil, ce vreme e?"]:
+        assert not actions.is_hallucination(text), text
+
+
 def silence(sec):
     return np.zeros(int(sec * actions.MIC_SR), np.float32)
 
