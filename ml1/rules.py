@@ -51,6 +51,8 @@ def _num(d: dict, key: str, default: float) -> float:
     return _f(d.get(key, default), default)
 
 
+LOW_A_PERSIST_SEC = 4.0  # ales din evaluare (ml1/evaluate.py): elimină alarmele false din pâlpâiri
+
 _DISTRESS = re.compile(r"nu mă simt|nu ma simt|rău|rau\b|durere|doare|ajutor|nu pot|ambulan", re.I)
 _OK = re.compile(r"\b(da|bine|ok|okay|sunt bine|totul e bine)\b", re.I)
 
@@ -76,13 +78,20 @@ def rule_severity(ctx: dict) -> tuple[int, str]:
     a = _num(fusion, "a", 1.0)
     ans = answer_status(ctx.get("driver_response"))
 
-    chest = _has(evs, "hand_on_chest", 0.6, 3) and (
-        evs["hand_on_chest"].get("breathing") == "heavy" or _has(evs, "heavy_breathing", 0.6)
-    )
-    collapse = vision.get("head_drop") is True and _num(vision, "perclos", 0) >= 0.6
+    # PERCLOS corectat cu valoarea personală din calibrare, dacă există (engine îl pune în ctx)
+    perclos = _num(vision, "perclos_cal", _num(vision, "perclos", 0))
+    heavy = (vision.get("breathing_state") == "heavy" or _has(evs, "heavy_breathing", 0.6)
+             or (evs.get("hand_on_chest") or {}).get("breathing") == "heavy")
+    chest = _has(evs, "hand_on_chest", 0.6, 3) and heavy
+    collapse = ((vision.get("head_drop") is True and perclos >= 0.6)
+                or _has(evs, "head_on_wheel", 0.6, 2)                       # CV2: prăbușit pe volan
+                or (vision.get("posture_state") == "slumped" and _num(vision, "still_sec", 0) >= 2))
+    eyes_closed_long = _has(evs, "eyes_closed", 0.7, 2)
 
-    if fusion.get("critical") or collapse or _has(evs, "eyes_closed", 0.7, 2):
-        return 3, "cap căzut / ochi închiși prelungit"
+    if fusion.get("critical") or collapse:
+        return 3, "cap căzut / prăbușit, ochi închiși"
+    if eyes_closed_long and ans in ("no_answer", "distress"):
+        return 3, "ochi închiși prelungit + fără răspuns"
     if chest:
         if ans == "ok":  # a răspuns repede și coerent: rămânem vigilenți, dar nu urgență
             return 2, "mână pe piept, dar șoferul răspunde coerent"
@@ -90,9 +99,12 @@ def rule_severity(ctx: dict) -> tuple[int, str]:
     if ans in ("no_answer", "distress") and a < 0.5:
         return 3, "fără răspuns coerent + atenție scăzută"
 
-    if _has(evs, "microsleep", 0.6) or _num(vision, "perclos", 0) >= 0.35 or a < 0.5:
+    # Ochi închiși ≥ 2 s fără cap căzut = micro-somn: alarmă puternică (2), nu urgență medicală (3).
+    if eyes_closed_long:
+        return 2, "ochi închiși prelungit (micro-somn)"
+    if _has(evs, "microsleep", 0.6) or perclos >= 0.35 or a < 0.5:
         return 2, "semne de somnolență (PERCLOS / micro-somn)"
-    if _has(evs, "yawn", 0.7) and _num(vision, "perclos", 0) >= 0.2:
+    if _has(evs, "yawn", 0.7) and perclos >= 0.2:
         return 2, "căscat + ochi obosiți"
 
     if _num(vision, "phone", 0) >= 0.6 or _has(evs, "phone_in_hand", 0.6, 2):
@@ -102,7 +114,11 @@ def rule_severity(ctx: dict) -> tuple[int, str]:
     if _has(evs, "hand_on_chest", 0.5) or _has(evs, "heavy_breathing", 0.5):
         # semn medical încă scurt: nu-i spunem „priviți drumul”, așteptăm pragul de 3 s
         return 0, "observăm un posibil semn medical"
-    if a < 0.75:
+    # Regula generică (fără o cauză concretă) e cea mai fragilă la shift de domeniu: cerem
+    # persistență (a < 0.75 de cel puțin LOW_A_PERSIST_SEC), nu un singur cadru. Fără câmpul
+    # low_a_sec (ex. contexte construite manual) păstrăm comportamentul vechi.
+    low_sec = _num(fusion, "low_a_sec", LOW_A_PERSIST_SEC)
+    if a < 0.75 and low_sec >= LOW_A_PERSIST_SEC:
         return 1, f"atenție redusă (a={a:.2f})"
 
     return 0, "șofer atent"

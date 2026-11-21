@@ -68,12 +68,15 @@ class PoseModel:
         perclos = _f(msg.get("perclos"), 0.0)
         phone = _f(msg.get("phone"), 0.0)
         gaze_on = msg.get("gaze_on_road") is not False
-        breathing_heavy = "heavy_breathing" in active or (active.get("hand_on_chest") or {}).get("breathing") == "heavy"
+        br = msg.get("breathing")
+        breathing_heavy = ("heavy_breathing" in active or (active.get("hand_on_chest") or {}).get("breathing") == "heavy"
+                           or (isinstance(br, dict) and br.get("state") == "heavy") or msg.get("breathing_state") == "heavy")
 
         target = {
             "chest": 1.0 if "hand_on_chest" in active else 0.0,
-            "drop": 1.0 if (msg.get("head_drop") is True or "head_drop" in active) else _clamp(perclos - 0.15) * 0.8,
-            "phone": 1.0 if (phone >= 0.5 or "phone_in_hand" in active) else 0.0,
+            "drop": 1.0 if (msg.get("head_drop") is True or "head_drop" in active or "head_on_wheel" in active)
+                    else _clamp(perclos - 0.15) * 0.8,
+            "phone": 1.0 if (phone >= 0.5 or "phone_in_hand" in active or "phone_use" in active) else 0.0,
             "heavy": 1.0 if breathing_heavy else 0.0,
             "eyes": _clamp(((ear if ear is not None else 0.30) - 0.09) / (0.27 - 0.09)),
             "gx": 0.0 if gaze_on else -0.6,

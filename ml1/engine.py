@@ -26,17 +26,32 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Callable
 
+from .actions import PHRASES
+from .calibration import DriverBaseline
+from .cv_adapter import normalize_vision
 from .fusion import AttentionFusion
 from .reports import build_trip_report
 from .rules import answer_status, fallback_decision, rule_severity, wants_112
 from .validate import LLM_TIMEOUT_SEC, decide
 
 
+class _NoBaseline:
+    """Calibrare dezactivată (pentru comparații în evaluare)."""
+    ready = False
+
+    def update(self, msg, ts):
+        return False
+
+    def to_dict(self):
+        return {"ready": False, "source": "off"}
+
+
 class DecisionEngine:
     def __init__(self, llm_fn: Callable[[dict], Any] | None = None,
                  publish: Callable[[dict], None] | None = None, sync: bool = True,
                  min_gap: float = 1.0, heartbeat: float = 15.0, ask_timeout: float = 8.0,
-                 llm_timeout: float = LLM_TIMEOUT_SEC, baseline_ear: float | None = None):
+                 llm_timeout: float = LLM_TIMEOUT_SEC, baseline_ear: float | None = None,
+                 calibrate: bool = True):
         self.fusion = AttentionFusion(baseline_ear=baseline_ear)
         self.llm_fn = llm_fn
         self.publish_fn = publish or (lambda d: None)
@@ -56,6 +71,8 @@ class DecisionEngine:
         self._lower_since: float | None = None
         self._resp: tuple[float, dict] | None = None
         self._called_112 = False
+        self._last_fast_reason: str | None = None
+        self.baseline = DriverBaseline() if calibrate else _NoBaseline()
         self._timeline: dict[str, dict] = {}
         self._a_hist: deque = deque()
         self._last_frame_ts: float | None = None
@@ -77,26 +94,41 @@ class DecisionEngine:
         """Procesează un cadru. Întoarce deciziile publicate acum (în modul sync include și LLM-ul)."""
         with self._lock:
             out: list[dict] = []
+            msg = normalize_vision(msg)  # forma reală CV (phone_use, head_on_wheel, ...) -> forma ML1
             r = self.fusion.update(msg)
             self.last_result = r  # pentru dashboard / debugging
             ts = r.ts
             dt = 0.0 if self._last_frame_ts is None else max(0.0, ts - self._last_frame_ts)
             self._last_frame_ts = ts
             self.stats["frames"] += 1
-            self._track(msg if isinstance(msg, dict) else {}, ts, dt, r.a)
+            self._track(msg, ts, dt, r.a)
+            if self.baseline.update(msg, ts):  # calibrarea tocmai s-a încheiat
+                self.fusion.baseline_ear = self.baseline.ear
+                self.fusion.baseline_blink = self.baseline.blink
+                self.fusion.perclos_offset = self.baseline.perclos_offset
 
-            ctx = self._context(r.to_dict(), msg if isinstance(msg, dict) else {}, ts)
-            rule_sev, _ = rule_severity(ctx)
+            ctx = self._context(r.to_dict(), msg, ts)
+            rule_sev, rule_reason = rule_severity(ctx)
             self._latest_rule_sev = rule_sev
             if rule_sev < self._last_pub["severity"]:
                 self._lower_since = self._lower_since if self._lower_since is not None else ts
             else:
                 self._lower_since = None
 
-            # 1. cale rapidă: severitate 3 / 112 nu așteaptă LLM-ul
-            if rule_sev == 3 and (self._last_pub["severity"] < 3 or (wants_112(ctx) and not self._called_112)):
-                self.stats["fast_path"] += 1
-                out += self._publish(fallback_decision(ctx, "cale rapidă (reguli, severitate 3)"), ts)
+            # 1. cale rapidă: severitate 3 / 112 nu așteaptă LLM-ul. Se declanșează și când:
+            #    * apare un semn grav NOU în același episod (ex. oboseală -> prăbușire),
+            #    * episodul e la severitate 3 dar „Sunteți bine?” nu a fost pus încă (ex. întrebarea
+            #      a fost blocată cât se aștepta răspunsul la „Doriți o pauză?”). Fără asta,
+            #      un șofer prăbușit după o alertă de oboseală nu ajungea niciodată la 112.
+            if rule_sev == 3:
+                new_sign = rule_reason != self._last_fast_reason
+                need_check = (not self._called_112 and not self._waiting_answer(ts)
+                              and self._asked_q != PHRASES["ask_ok"])
+                if (self._last_pub["severity"] < 3 or new_sign or need_check
+                        or (wants_112(ctx) and not self._called_112)):
+                    self.stats["fast_path"] += 1
+                    self._last_fast_reason = rule_reason
+                    out += self._publish(fallback_decision(ctx, "cale rapidă (reguli, severitate 3)"), ts, dedupe=True)
 
             # 2. revenire la normal (histerezis: 5 s de calm continuu, fără pâlpâire)
             calm = rule_sev == 0 and r.a >= 0.85
@@ -154,9 +186,12 @@ class DecisionEngine:
                 resp = {**self._resp[1], "question": self._asked_q}
             elif ts - self._asked_ts >= self.ask_timeout:
                 resp = {"answered": False, "latency_sec": None, "text": None, "timeout": True, "question": self._asked_q}
+        vis = {k: v for k, v in vision.items() if k not in ("landmarks", "body_landmarks")}
+        if self.baseline.ready and vis.get("perclos") is not None:
+            vis["perclos_cal"] = self.baseline.calibrated_perclos(vis["perclos"])
         return {
             "fusion": fusion,
-            "vision": {k: v for k, v in vision.items() if k != "landmarks"},
+            "vision": vis,
             "driver_response": resp,
             "timeline": {k: dict(v) for k, v in self._timeline.items()},
             "a_trend": self._a_hist[0][1] if self._a_hist and ts - self._a_hist[0][0] >= 5 else None,
@@ -212,6 +247,7 @@ class DecisionEngine:
         self._asked_ts = self._asked_q = None
         self._resp = None
         self._called_112 = False
+        self._last_fast_reason = None
 
     def trip_log(self) -> dict:
         return {"a_samples": list(self.a_samples), "decisions": list(self.decisions), "events": dict(self.event_totals)}

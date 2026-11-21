@@ -1,5 +1,7 @@
 # ML 1 — Motorul de decizie
 
+> Documentația completă: [docs/README.md](../docs/README.md) (arhitectură, metode ML, evaluare, alegerea modelului, comenzi).
+
 ```
 vigil/vision ─┐
               ├─► fusion (a, încredere) ─► rules (podea de siguranță) ─┬─► vigil/decision

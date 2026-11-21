@@ -35,7 +35,8 @@ def hint_llm(ctx):
 class TestPrompt(unittest.TestCase):
     def test_prompt_fits_small_context(self):
         for ctx in CONTEXTS.values():
-            self.assertLess(approx_tokens(build_messages(ctx)), 900, "num_ctx=1024")
+            # loc pentru răspuns (num_predict=48) în num_ctx=2048, cu marjă pentru context mai lung
+            self.assertLess(approx_tokens(build_messages(ctx)), 2048 - 48 - 400)
 
     def test_prefix_is_static(self):
         """Prefix identic între apeluri = KV-cache refolosit."""
@@ -111,9 +112,16 @@ class TestRealModelRegressions(unittest.TestCase):
         self.assertEqual(d["actions"], [])
         self.assertTrue(d["safety_notes"])
 
-    def test_cannot_jump_two_levels_up(self):
-        d = self.run_llm(CONTEXTS["phone"], {"severity": 3, "actions": ["alarm", "esp32", "ask_ok"], "reason": "x"})
-        self.assertEqual(d["severity"], 2)
+    def test_cannot_raise_above_rules(self):
+        """LLM_MAX_RAISE = 0 (ales pe validare): telefonul rămâne severitate 1 chiar dacă LLM-ul cere 2 sau 3."""
+        for asked in (2, 3):
+            d = self.run_llm(CONTEXTS["phone"], {"severity": asked, "actions": ["alarm", "esp32", "ask_ok"], "reason": "x"})
+            self.assertEqual(d["severity"], 1)
+            self.assertNotIn("play_alarm", [a["tool"] for a in d["actions"]])
+
+    def test_ask_tired_becomes_ask_ok_at_severity_3(self):
+        d = self.run_llm(CONTEXTS["chest"], {"severity": 3, "actions": ["alarm", "esp32", "ask_tired"], "reason": "x"})
+        self.assertEqual([a["args"]["question"] for a in d["actions"] if a["tool"] == "ask_driver"], [PHRASES["ask_ok"]])
 
     def test_phone_reminder_needs_phone_signal(self):
         ctx = {**CONTEXTS["drowsy"], "fusion": {"a": 0.7, "critical": False}, "vision": {"perclos": 0.1, "gaze_on_road": True,

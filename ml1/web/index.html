@@ -145,7 +145,7 @@ td, th { padding: 2px 10px; text-align: right; border-bottom: 1px solid var(--gr
     <div class="card">
       <h2>Contribuția semnalelor <span class="small" id="cTime"></span></h2>
       <div class="contrib" id="contrib"><div class="empty">Pornește un scenariu.</div></div>
-      <div class="note">Bara = cât de „atent” arată semnalul (1 = normal). Plafon = un semnal grav limitează scorul total.</div>
+      <div class="note">Bara = riscul semnalului (0 = normal, 1 = problemă gravă); „w” = greutatea lui în scor. Plafon = un semnal grav limitează scorul total.</div>
     </div>
   </section>
 
@@ -362,10 +362,11 @@ function drawContrib() {
     const c = f.contrib[k], row = el("div", "crow"), tr = el("div", "track"), fill = el("div", "fill");
     row.append(el("span", null, SIG[k] || k));
     if (c) {
-      fill.style.width = (c.score * 100).toFixed(0) + "%";
-      fill.style.background = css(c.score >= 0.7 ? "--s1" : c.score >= 0.4 ? "--warning" : "--critical");
+      const risk = 1 - c.score;  // bară plină = problemă (nu „totul e bine”)
+      fill.style.width = (risk * 100).toFixed(0) + "%";
+      fill.style.background = css(risk <= 0.3 ? "--s1" : risk <= 0.6 ? "--warning" : "--critical");
       tr.append(fill); row.append(tr);
-      const n = el("span", "num", `${c.score.toFixed(2)} · w ${(c.weight * 100).toFixed(0)}%`);
+      const n = el("span", "num", `${risk.toFixed(2)} · w ${(c.weight * 100).toFixed(0)}%`);
       row.append(n);
     } else { tr.style.opacity = 0.5; row.append(tr, el("span", "num", "indisponibil")); }
     box.append(row);

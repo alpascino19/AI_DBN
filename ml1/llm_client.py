@@ -24,7 +24,7 @@ OPTIONS = {
     "temperature": 0,     # determinist
     "seed": 42,
     "num_predict": 48,    # răspunsul compact are ~25 tokeni
-    "num_ctx": 1024,      # promptul are ~700; KV-cache mic = memorie puțină
+    "num_ctx": 2048,      # promptul are ~1000 tokeni MĂSURAȚI (prompt_eval_count); 1024 ar tăia începutul (regulile)
     "top_k": 1,
 }
 

@@ -21,7 +21,19 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from .engine import DecisionEngine
-from .fake_vision import SCENARIOS, generate
+from .cv_adapter import cv_available, cv_demo_messages
+from .fake_vision import SCENARIOS as ML1_SCENARIOS, generate as ml1_generate
+
+# Scenariile ML1 + demo-ul echipei CV (forma reală a mesajelor), dacă pachetul Vision e prezent.
+SCENARIOS = dict(ML1_SCENARIOS)
+if cv_available():
+    def cv_demo(rng=None):
+        """Demo-ul echipei CV (Vision/vigil_vision/fake): mesaje exact ca de la cameră, fără răspunsuri vocale."""
+    SCENARIOS["cv_demo"] = cv_demo
+
+
+def generate(name: str) -> list[dict]:
+    return cv_demo_messages() if name == "cv_demo" else ml1_generate(name)
 from .fusion import WEIGHTS
 from .mock_pose import PoseModel
 from .reports import build_trip_report

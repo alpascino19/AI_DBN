@@ -43,8 +43,12 @@ SOURCE_CONFIDENCE = {"camera": 0.6, "voice": 0.2, "driving": 0.2}
 
 # Cât de grav e fiecare eveniment (multiplicat cu confidence-ul evenimentului).
 EVENT_SEVERITY = {
-    "eyes_closed": 1.0,
+    # eyes_closed singur = micro-somn (oboseală), nu inconștiență: 0.8 ca să nu fie „critic”
+    # fără cap căzut; datele CV trimit eyes_closed ~2.5 s și în scenariul de somnolență.
+    "eyes_closed": 0.8,
     "head_drop": 1.0,
+    "head_on_wheel": 1.0,   # CV2: prăbușit pe volan
+    "phone_use": 0.4,       # numele CV2 (normalizat oricum la phone_in_hand)
     "microsleep": 0.8,
     "hand_on_chest": 0.6,
     "heavy_breathing": 0.4,
@@ -57,7 +61,10 @@ EVENT_SEVERITY = {
 # a_raw <= floor + (1 - floor) * s_i   (ex. ochi închiși -> a_raw <= 0.35)
 CAPS = {"eyes": 0.35, "events": 0.40}
 
-TAU_DOWN = 0.7   # s — cât de repede scade a
+FACE_MISSING_SEC = 1.0  # fața lipsă cel puțin atât = „nu privește drumul”
+LOW_A = 0.75            # pragul regulii generice „atenție redusă”
+
+TAU_DOWN = 0.7  # s — cât de repede scade a
 TAU_UP = 4.0      # s — cât de repede revine a
 VOICE_TTL = 30.0  # s — cât timp e valabil un răspuns vocal
 DRIVING_TTL = 5.0 # s — cât timp e valabil scorul de condus
@@ -100,14 +107,18 @@ def score_eyes(perclos: float | None, ear: float | None, baseline_ear: float | N
     return sum(w * s for w, s in parts) / sum(w for w, _ in parts)
 
 
-def score_blink(rate: float | None) -> float | None:
-    """Clipiri/min: normal 8–25. Prea rar (somnolență) sau prea des (anormal) scade."""
+def score_blink(rate: float | None, baseline: float | None = None) -> float | None:
+    """Clipiri/min: normal 8–25 (sau în jurul valorii personale din calibrare).
+    Prea rar (somnolență) sau prea des (anormal) scade."""
     if rate is None or rate < 0:
         return None
-    if rate < 8:
-        return _clamp((rate - 2) / (8 - 2))
-    if rate > 25:
-        return _ramp_down(rate, good=25, bad=45)
+    low, high = 8.0, 25.0
+    if baseline:
+        low, high = min(low, 0.5 * baseline), max(high, 1.8 * baseline)
+    if rate < low:
+        return _clamp((rate - 2) / (low - 2))
+    if rate > high:
+        return _ramp_down(rate, good=high, bad=high + 20)
     return 1.0
 
 
@@ -154,6 +165,7 @@ class FusionResult:
     critical: bool
     contributions: dict[str, dict[str, float]] = field(default_factory=dict)
     capped_by: str | None = None  # semnalul care a plafonat a_raw (pentru dashboard)
+    low_a_sec: float = 0.0        # de cât timp a < LOW_A (persistența, pentru regula generică)
 
     def to_dict(self) -> dict:
         return {
@@ -165,12 +177,18 @@ class FusionResult:
             "critical": self.critical,
             "contributions": self.contributions,
             "capped_by": self.capped_by,
+            "low_a_sec": round(self.low_a_sec, 2),
         }
 
 
 class AttentionFusion:
     def __init__(self, baseline_ear: float | None = None, initial_a: float = 1.0):
         self.baseline_ear = baseline_ear
+        self.baseline_blink: float | None = None
+        self.perclos_offset = 0.0   # din calibrare: PERCLOS „din construcție” al șoferului
+        self._face_missing_since: float | None = None
+        self._low_since: float | None = None
+        self.low_a_sec = 0.0        # de cât timp a < LOW_A (pentru regula generică de severitate 1)
         self.a = initial_a
         self._last_ts: float | None = None
         self._voice: tuple[float, dict] | None = None
@@ -199,12 +217,27 @@ class AttentionFusion:
         scores: dict[str, float] = {}
 
         if camera_on:
+            perclos = _num(msg.get("perclos"))
+            if perclos is not None:
+                perclos = max(0.0, perclos - self.perclos_offset)
+            gaze = None if not isinstance(msg.get("gaze_on_road"), bool) else float(msg["gaze_on_road"])
+            if msg.get("face_detected") is False:
+                if self._face_missing_since is None:
+                    self._face_missing_since = ts
+                # Fața nu se vede, deși camera merge: lipsa e informație (MNAR, Curs 2) — șoferul
+                # nu privește spre drum. DAR doar dacă lipsește ≥ FACE_MISSING_SEC: un cadru pierdut
+                # de detector (pâlpâire) nu e neatenție (evaluarea pe domeniul „shift” a arătat
+                # ~45 alarme false/oră din cauza asta).
+                if gaze is None and ts - self._face_missing_since >= FACE_MISSING_SEC:
+                    gaze = 0.0
+            else:
+                self._face_missing_since = None
             cand = {
-                "eyes": score_eyes(_num(msg.get("perclos")), _num(msg.get("ear")), self.baseline_ear),
-                "gaze": None if not isinstance(msg.get("gaze_on_road"), bool) else float(msg["gaze_on_road"]),
+                "eyes": score_eyes(perclos, _num(msg.get("ear")), self.baseline_ear),
+                "gaze": gaze,
                 "head": None if not isinstance(msg.get("head_drop"), bool) else (0.0 if msg["head_drop"] else 1.0),
                 "phone": None if _num(msg.get("phone")) is None else 1.0 - _clamp(_num(msg["phone"])),
-                "blink": score_blink(_num(msg.get("blink_rate"))),
+                "blink": score_blink(_num(msg.get("blink_rate")), self.baseline_blink),
                 "events": score_events(msg.get("events")),
             }
             scores.update({k: v for k, v in cand.items() if v is not None})
@@ -256,6 +289,11 @@ class AttentionFusion:
                 self.a += alpha * (a_raw - self.a)
             self.a = _clamp(self.a)
         # fără niciun semnal: păstrăm ultimul a, dar încrederea e 0
+        if self.a < LOW_A:
+            self._low_since = ts if self._low_since is None else self._low_since
+            self.low_a_sec = ts - self._low_since
+        else:
+            self._low_since, self.low_a_sec = None, 0.0
 
         # încredere -----------------------------------------------------------
         confidence = 0.0
@@ -268,7 +306,7 @@ class AttentionFusion:
             confidence += SOURCE_CONFIDENCE["driving"]
 
         return FusionResult(ts, self.a, a_raw, _clamp(confidence), camera_on, bool(critical),
-                            contributions, capped_by)
+                            contributions, capped_by, self.low_a_sec)
 
     @staticmethod
     def _camera_on(msg: dict) -> bool:

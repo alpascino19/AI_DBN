@@ -24,6 +24,9 @@ from .rules import (ACTIONS_BY_SEVERITY, _events, _num, fallback_decision, rule_
 from .tools import SEVERITIES, TOOLS
 
 LLM_TIMEOUT_SEC = 2.5
+# Cu câte trepte poate LLM-ul URCA peste reguli. Ales pe setul de VALIDARE din ml1/evaluate.py
+# (Curs 5: hiperparametrii se aleg pe validare, nu pe test): vezi docs/EVALUATION_RESULTS.md.
+LLM_MAX_RAISE = 0  # pe validare: 0 și 1 egale (macro-F1 0.978); la egalitate, varianta mai sigură
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="llm")
 
 
@@ -257,7 +260,7 @@ def apply_safety(d: dict, ctx: dict) -> tuple[dict, list[str]]:
 
     # 1b. Plafon: modelele mici inventează alerte. LLM-ul poate ridica cu cel mult o treaptă
     #     peste reguli, iar dacă regulile spun 0 (nimic de raportat) nu poate ridica deloc.
-    ceiling = rule_sev + 1 if rule_sev >= 1 else 0
+    ceiling = min(3, rule_sev + LLM_MAX_RAISE) if rule_sev >= 1 else 0
     if d["severity"] > ceiling:
         notes.append(f"severitate coborâtă {d['severity']}→{ceiling} (reguli: {rule_reason})")
         d["severity"] = ceiling
@@ -296,6 +299,10 @@ def apply_safety(d: dict, ctx: dict) -> tuple[dict, list[str]]:
         notes.append("ask_driver adăugat: severitatea ≥ 2 cere verificare vocală")
     if sev == 3:
         acts[:] = [a for a in acts if a["tool"] != "suggest_break"]
+        for a in acts:  # la urgență întrebarea e „Sunteți bine?”, nu „Doriți o pauză?”
+            if a["tool"] == "ask_driver" and a["args"]["question"] != PHRASES["ask_ok"]:
+                a["args"]["question"] = PHRASES["ask_ok"]
+                notes.append("întrebare înlocuită cu „Sunteți bine?” la severitate 3")
 
     # 2. Gardul 112: fals-pozitivul e scump, cerem dovezi din reguli.
     if any(a["tool"] == "call_112" for a in acts) and not (sev == 3 and wants_112(ctx)):
