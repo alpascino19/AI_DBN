@@ -1,14 +1,16 @@
 @echo off
 rem Vigil - pe LAPTOPUL CU CAMERA CORPULUI. Trimite vigil/vision/body catre brokerul de pe PC-ul central.
-rem   START\7_laptop_corp.bat 172.22.118.134            (IP-ul PC-ului central)
-rem   START\7_laptop_corp.bat 172.22.118.134 --index 1  (alta camera; implicit 0 = camera laptopului)
-rem Fara IP, il cere. Prima data instaleaza singur pachetele Vision in .venv.
+rem   START\7_laptop_corp.bat 172.22.118.20            (IP-ul PC-ului central)
+rem   START\7_laptop_corp.bat 172.22.118.20 --index 1  (alta camera; implicit 0 = camera laptopului)
+rem Fara IP foloseste DEFAULT_IP de mai jos. Prima data instaleaza singur pachetele Vision in .venv.
 setlocal
 chcp 65001 >nul
 cd /d "%~dp0.."
-set "IP=%~"
-if "%IP%"=="" set /p "IP=172.22.118.20"
-if "%IP%"=="" (echo Lipseste IP-ul. & goto :end)
+rem IP-ul laptopului 1 (brokerul). Se schimba aici daca hotspotul ii da alt IP; un IP dat ca argument are prioritate.
+set "DEFAULT_IP=172.22.118.20"
+set "IP=%~1"
+if "%IP%"=="" set "IP=%DEFAULT_IP%"
+echo Trimit catre brokerul de pe laptopul 1: %IP%:1883
 call :venv || goto :end
 cd Vision
 "%PY%" -m vigil_vision.run_body --show --mute --publish --mqtt-host %IP% --index 0 %2 %3 %4 %5 %6
