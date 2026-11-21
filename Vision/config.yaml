@@ -48,14 +48,25 @@ yolo:
 
 chest:
   # cât se întinde zona dincolo de umeri, în unități de corp, după unghiul camerei
-  view_forward: {front: 0.15, three_quarter: 0.35, side: 0.6}   # spre partea din față a corpului
-  view_back: {front: 0.15, three_quarter: 0.10, side: 0.15}     # spre spate
-  zone_top: -0.10             # începutul zonei sub linia umerilor (× unitatea corpului)
-  zone_bottom: 0.90           # sfârșitul zonei (× unitatea corpului) dacă șoldurile nu se văd
+  view_forward: {front: 0.25, three_quarter: 0.45, side: 0.7}   # spre partea din față a corpului (mărit +0.10)
+  view_back: {front: 0.25, three_quarter: 0.20, side: 0.25}     # spre spate (mărit +0.10)
+  zone_top: 0.10              # începutul zonei SUB linia umerilor (× unitatea corpului); era 0.15 (inițial -0.10 prindea bărbia)
+  zone_bottom: 1.00           # sfârșitul zonei (× unitatea corpului) dacă șoldurile nu se văd; era 0.90
   min_visibility: 0.5
   width_tau: 1.0              # s; cât de lent se schimbă mărimea zonei
   pos_tau: 0.25               # s; cât de repede urmărește zona persoana
   corner_tau: 0.2             # s; netezirea finală a colțurilor
+  # filtre împotriva alarmelor false (vezi body/chest.py)
+  face_radius: 0.45           # mâna la mai puțin de atât (× unit) de bărbie/gură = mână la față
+  chin_margin: 0.10           # degete mai sus de bărbie + atât = mână la față
+  min_inside: 0.6             # cel puțin 60% din punctele mâinii în zonă
+  tips_above_shoulder: 0.05   # degete peste linia umerilor (× unit) = nu e pe piept
+  move_window_sec: 0.5        # mâna trebuie să stea: deplasare în ultimele 0.5 s...
+  move_thr: 0.25              # ...sub atât (× unit)
+  depth_max: 0.0              # 0 = OPRIT (z-ul din Pose e zgomotos). Pornește-l (ex. 1.5) doar după ce vezi pe monitor "adancime" in aer vs. pe piept
+  max_hand_scale: 0.35        # mâna aproape de cameră pare mare: palma / unitatea corpului peste atât = respinsă
+                              # (vezi pe monitor "marime"; pe piept ~0.25-0.35, în fața camerei mult mai mare)
+  pose_scale_factor: 1.8      # din Pose (fără Hands) măsurăm încheietură->arătător, mai lung decât palma
 
 breathing:
   source: auto                # auto (flow, iar fără textură landmarks) | flow | landmarks
