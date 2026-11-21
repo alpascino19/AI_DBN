@@ -41,7 +41,7 @@ LOGS = ROOT / "logs"
 DASHBOARD = ROOT / "dashboard"
 ML1_MODEL = os.environ.get("VIGIL_MODEL", "qwen2.5:1.5b")
 DASH_URL = "http://localhost:5173"
-COLORS = {"ML2": "\033[35m", "ML1": "\033[36m", "CV": "\033[33m", "FACE": "\033[93m", "BODY": "\033[95m", "MERGE": "\033[90m", "WEB": "\033[34m", "VIGIL": "\033[32m"}
+COLORS = {"ML2": "\033[35m", "ML1": "\033[36m", "CV": "\033[33m", "FACE": "\033[93m", "BODY": "\033[95m", "MERGE": "\033[90m", "NET": "\033[96m", "WEB": "\033[34m", "VIGIL": "\033[32m"}
 RESET = "\033[0m"
 
 
@@ -257,6 +257,61 @@ class Proc:
         self.log.close()
 
 
+def broker_clients() -> dict[str, int]:
+    """IP-urile din rețea conectate acum la brokerul de pe acest calculator (portul 1883): {ip: conexiuni}.
+    Citit din tabela de conexiuni a sistemului, deci nu cere nicio configurare a brokerului."""
+    try:
+        out = subprocess.run(["netstat", "-ano", "-p", "TCP"] if os.name == "nt" else ["ss", "-tn"],
+                             capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return {}
+    own = {"127.0.0.1", "::1"}
+    try:
+        own |= set(socket.gethostbyname_ex(socket.gethostname())[2])
+    except OSError:
+        pass
+    found: dict[str, int] = {}
+    for line in out.splitlines():
+        cols = line.split()
+        if os.name == "nt":                      # TCP  local:port  remote:port  STARE  pid
+            if len(cols) < 4 or cols[0] != "TCP" or "LISTEN" in cols[3].upper():
+                continue
+            local, remote = cols[1], cols[2]
+        else:                                    # ss: STARE recv send local remote
+            if len(cols) < 5 or cols[0] != "ESTAB":
+                continue
+            local, remote = cols[3], cols[4]
+        if not local.endswith(":1883"):
+            continue
+        ip = remote.rsplit(":", 1)[0].strip("[]")
+        if ip not in own and ip not in ("0.0.0.0", "*"):
+            found[ip] = found.get(ip, 0) + 1
+    return found
+
+
+def monitor_clients(stop: threading.Event, every: float = 2.0) -> None:
+    """Scrie în consolă când un calculator se conectează sau se deconectează de la broker (laptopurile cu camere)."""
+    names: dict[str, str] = {}
+    known: dict[str, int] = {}
+
+    def label(ip: str) -> str:
+        if ip not in names:
+            try:
+                names[ip] = socket.gethostbyaddr(ip)[0].split(".")[0]
+            except OSError:
+                names[ip] = ""
+        return f"{ip} ({names[ip]})" if names[ip] else ip
+
+    say("NET", "urmăresc cine se conectează la broker (port 1883)...")
+    while not stop.wait(every):
+        now = broker_clients()
+        for ip in sorted(set(now) - set(known)):
+            say("NET", f"+ conectat: {label(ip)}   [în rețea acum: {', '.join(sorted(now))}]")
+        for ip in sorted(set(known) - set(now)):
+            say("NET", f"- deconectat: {label(ip)}   [rămase: {', '.join(sorted(now)) or 'niciunul'}]")
+        known = now
+
+
 def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")   # --help și mesajele cu ă/ș/ț în consola cp1252
@@ -286,11 +341,18 @@ def main() -> None:
                     help="modelul conversației ML2 (implicit ca ML2: qwen2.5:1.5b, același cu ML1). "
                          "Mai bun în română: gemma3:4b sau qwen2.5:3b")
     ap.add_argument("--check", action="store_true", help="doar verificările")
+    ap.add_argument("--clients", action="store_true", help="arată ce calculatoare sunt conectate acum la broker și iese")
     ap.add_argument("--duration", type=float, help="oprește automat după atâtea secunde (teste)")
     args = ap.parse_args()
 
     if os.name == "nt":
         os.system("")   # activează culorile ANSI în consola Windows
+    if args.clients:
+        now = broker_clients()
+        say("NET", f"conectate acum la brokerul de pe acest PC: {len(now)}")
+        for ip, n in sorted(now.items()):
+            say("NET", f"  {ip}  ({n} conexiune/i)")
+        return
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
     if not preflight(args):
@@ -300,12 +362,23 @@ def main() -> None:
         say("VIGIL", "totul e pregătit")
         return
 
+    # Un singur run_vigil pe calculator: două ar porni de două ori ML1, ML2 (voce dublă) și combinarea,
+    # iar cele două vigil_vision.merge (același client MQTT) s-ar deconecta reciproc la nesfârșit.
+    guard = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        guard.bind(("127.0.0.1", 18830))
+        guard.listen(1)
+    except OSError:
+        say("VIGIL", "EROARE: Vigil rulează deja pe acest calculator (altă fereastră). Închide-o întâi, apoi pornește din nou.")
+        sys.exit(1)
+
     path = fresh_path()
     env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "PYTHONUNBUFFERED": "1",
            "VIGIL_BROKER": args.broker, "PATH": path}
     env_ml2 = {**env, "VIGIL_MODEL": voice_model(args)}   # doar ML2; ML1 rămâne pe ML1_MODEL
     py = sys.executable
     procs: list[Proc] = []
+    stop_net = threading.Event()
     try:
         if not args.no_ml2:
             procs.append(Proc("ML2", [py, "executor.py"], ROOT / "ML2", env_ml2))
@@ -341,6 +414,8 @@ def main() -> None:
             procs.append(Proc("WEB", [npm, "run", "dev", "--", "--strictPort"], DASHBOARD, env))
             if not args.no_browser:
                 threading.Timer(4.0, webbrowser.open, args=(dashboard_url(args.broker),)).start()
+        if args.broker in ("localhost", "127.0.0.1", "::1"):     # brokerul e aici: vedem cine i se conectează
+            threading.Thread(target=monitor_clients, args=(stop_net,), daemon=True).start()
         say("VIGIL", "sistemul rulează — Ctrl+C pentru oprire; loguri în logs/"
                      + ("" if args.no_dashboard else f"; dashboard: {dashboard_url(args.broker)}"))
         t_end = time.time() + args.duration if args.duration else None
@@ -352,6 +427,7 @@ def main() -> None:
     except KeyboardInterrupt:
         say("VIGIL", "oprire...")
     finally:
+        stop_net.set()
         for p in reversed(procs):
             p.stop()
         say("VIGIL", "oprit")

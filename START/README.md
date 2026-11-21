@@ -33,6 +33,7 @@ Fără placă video merge și pe procesor, doar mai încet.
 | **`4b_pornire_2camere.bat`** | tot sistemul cu **două camere pe acest PC**: față (index 0) + corp (index 1) | webcam + cameră USB / telefon ca webcam |
 | **`4c_pornire_PC_central.bat`** | PC-ul central când **camerele sunt pe alte două laptopuri**: broker, combinarea, ML1, ML2, dashboard | demo-ul cu 4 calculatoare |
 | **`7_laptop_fata.bat IP`** / **`7_laptop_corp.bat IP`** | pe laptopurile cu camere: trimit fața / corpul la PC-ul central | împreună cu `4c` |
+| **`8_cine_e_conectat.bat`** | pe laptopul cu brokerul: ce calculatoare sunt conectate acum (IP + nume) și IP-ul de dat celorlalte | verificare înainte de demo |
 | **`5_pornire_spring.bat`** | ML1 primește cadrele prin **HTTP** de la serverul Spring Boot (port 8090), restul la fel | integrarea cu serverul |
 | **`6_teste.bat`** | toate testele automate: ML1, Vision, ML2, dashboard | după orice modificare |
 
@@ -79,11 +80,51 @@ dashboard). Toate sunt pe același hotspot. `4c` îți afișează IP-ul calculat
 * Pe laptopurile care doar trimit trebuie doar repo-ul și Python. Prima pornire instalează singură pachetele Vision.
 * Fiecare laptop are un nume de client MQTT unic (numele calculatorului + `face` / `body`), deci nu se
   deconectează reciproc.
-* În fereastra lui `4c` apare `prima cameră face a răspuns` / `body` când sosesc datele, iar
-  `camera body: nu mai trimite` dacă un laptop se oprește.
+* În fereastra lui `4c` vezi cine e conectat și ce trimite:
+  ```
+  [  NET] + conectat: 172.22.118.31 (LAPTOP-CORP)   [în rețea acum: 172.22.118.31]
+  [MERGE] prima cameră body a răspuns
+  [  NET] - deconectat: 172.22.118.31 (LAPTOP-CORP)   [rămase: niciunul]
+  [MERGE] camera body: nu mai trimite (câmpurile ei lipsesc)
+  ```
+  `[NET]` = un calculator s-a conectat / deconectat la broker (IP + numele lui, dacă rețeaua îl știe);
+  `[MERGE]` = a început / s-a oprit fluxul unei camere. Oricând, separat: `8_cine_e_conectat.bat` (lista de acum +
+  IP-ul laptopului 1, de dat celorlalte laptopuri).
 * Combinarea (`vigil_vision.merge`) trebuie să ruleze **o singură dată** în tot sistemul. Pornește-o doar prin
   `4c`, nu și manual pe alt calculator.
 * Cu brokerul pe alt PC, dashboard-ul se deschide singur cu `?broker=ws://IP:9001`.
+
+### Laptopurile 2 și 3 (doar camere): ce deschizi
+
+**O singură dată pe fiecare laptop**
+1. Copiați folderul proiectului (`CodeLap`) pe laptop: stick USB sau `git pull`. E nevoie de `START\` și `Vision\`.
+2. Instalați Python 3.11+ (`winget install -e --id Python.Python.3.14`) și aveți internet la prima pornire:
+   scriptul instalează singur pachetele Vision (câteva minute), iar modelele MediaPipe / YOLO se descarcă singure.
+3. Conectați laptopul la **același hotspot** ca laptopul 1.
+
+**La fiecare pornire.** Laptopul 1 pornește primul (`4c`), apoi:
+
+| Laptop | Dublu-clic pe | Când cere IP-ul |
+|---|---|---|
+| **2** (camera feței, în fața șoferului) | `START\7_laptop_fata.bat` | IP-ul laptopului 1 (îl arată `8_cine_e_conectat.bat` pe laptopul 1) |
+| **3** (camera corpului, piept + mâini + volan) | `START\7_laptop_corp.bat` | același IP |
+
+Din terminal, fără întrebare: `START\7_laptop_fata.bat 172.22.118.20` (altă cameră: `... 172.22.118.20 --index 1`).
+
+**Ce trebuie să vedeți**
+* o fereastră cu imaginea camerei (`vigil - FATA` / `vigil - CORP`) și panoul cu semnale;
+* în consolă: `MQTT -> 172.22.118.20:1883 topic vigil/vision/face`, apoi **`MQTT conectat`**;
+* pe laptopul 1: `[NET] + conectat: <IP-ul laptopului>` și `[MERGE] prima cameră face/body a răspuns`.
+
+Laptopul 2: șoferul privește drept 5 s la pornire (calibrarea ochilor). Laptopul 3: camera prinde umerii, pieptul
+și mâinile, la ~45° (`view` în `Vision\config.yaml`). Oprire: `q` în fereastră sau Ctrl+C.
+
+| Problemă pe laptopul 2/3 | Ce faceți |
+|---|---|
+| curg linii `[vigil/vision/face] {...}` și nu apare `MQTT conectat` | nu ajunge la broker: același hotspot? IP-ul corect? pe laptopul 1 rulat `0_broker_admin.bat` și permis portul 1883 în firewall |
+| `Nu pot deschide camera 0` | închideți Teams / Zoom / Camera; altă cameră: `--index 1` |
+| `lipseste Python` | instalați Python (pasul 2), apoi din nou dublu-clic |
+| pe laptopul 1 apar ambele IP-uri, dar doar o cameră răspunde | ați pornit același script pe ambele laptopuri: unul trebuie să fie `fata`, celălalt `corp` |
 
 ## Opțiuni (se adaugă după numele fișierului, în terminal)
 
