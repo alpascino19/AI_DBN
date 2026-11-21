@@ -1,1 +1,102 @@
 # Praguri, fps, cameră, broker MQTT
+# Toate valorile au implicit în vigil_vision/config.py; aici le suprascrii.
+
+camera:
+  index: 0
+  width: 640
+  height: 480
+  fps: 30
+  mirror: true
+
+mqtt:
+  enabled: true
+  host: localhost
+  port: 1883
+  topic: vigil/vision
+  print_fallback: true        # fără broker -> afișează JSON-ul în consolă
+
+publish_hz: 10                # câte mesaje pe secundă pe vigil/vision
+
+models:
+  dir: models
+  pose: pose_landmarker_lite.task
+  hand: hand_landmarker.task
+  yolo: yolov8n.pt            # ultralytics îl descarcă singur prima dată
+
+# ---------------- CV2 ----------------
+view:                         # unde e camera față de șofer
+  mode: three_quarter         # front (în față) | three_quarter (~45°) | side (90°)
+  camera_side: right          # partea șoferului pe care e camera: right | left
+  head_ratio: 1.4             # unitate ≈ distanța nas–umeri × atât (se reînvață în calibrare)
+  calib_sec: 30
+  unit_tau: 1.0               # s; netezirea mărimii corpului
+
+smoothing:                    # filtrul One Euro pe punctele Pose
+  min_cutoff: 1.5             # mai mic = mai neted, dar cu mai multă întârziere
+  beta: 0.5                   # mai mare = reacționează mai repede la mișcări rapide
+
+perception:
+  pose_min_conf: 0.5
+  hand_min_conf: 0.5
+  num_hands: 2
+
+yolo:
+  every_n_frames: 5           # YOLO e lent: rulează doar la fiecare N cadre
+  imgsz: 320
+  conf: 0.35
+  max_age_sec: 1.0            # cât timp ținem minte ultima cutie
+
+chest:
+  # cât se întinde zona dincolo de umeri, în unități de corp, după unghiul camerei
+  view_forward: {front: 0.15, three_quarter: 0.35, side: 0.6}   # spre partea din față a corpului
+  view_back: {front: 0.15, three_quarter: 0.10, side: 0.15}     # spre spate
+  zone_top: -0.10             # începutul zonei sub linia umerilor (× unitatea corpului)
+  zone_bottom: 0.90           # sfârșitul zonei (× unitatea corpului) dacă șoldurile nu se văd
+  min_visibility: 0.5
+  width_tau: 1.0              # s; cât de lent se schimbă mărimea zonei
+  pos_tau: 0.25               # s; cât de repede urmărește zona persoana
+  corner_tau: 0.2             # s; netezirea finală a colțurilor
+
+breathing:
+  source: auto                # auto (flow, iar fără textură landmarks) | flow | landmarks
+  window_sec: 10              # fereastra de analiză
+  min_window_sec: 5
+  calib_sec: 30               # primele 30 s: învață respirația normală
+  baseline_floor: 0.003       # normalul nu poate fi mai mic (altfel raportul explodează)
+  # scorul 0..1 (amplitudine 50%, ritm 20%, periodicitate 15%, gura deschisă 15%)
+  amp_ratio_low: 1.3          # amplitudine × normal: de aici începe să conteze...
+  amp_ratio_high: 3.0         # ...și de aici contează la maxim
+  rate_low_bpm: 16
+  rate_high_bpm: 30
+  score_enter: 0.55           # intră în "heavy"
+  score_exit: 0.40            # iese din "heavy"
+  enter_evals: 4              # evaluări la rând (×0.2 s)
+  exit_evals: 6
+  jaw_open_thr: 0.35          # vine de la CV1 (blendshape jawOpen)
+  # optical flow
+  flow_width: 320             # imaginea se micșorează la atâția px pentru flow
+  min_texture_frac: 0.08      # sub atât, tricoul n-are textură -> landmarks
+
+slump:                        # capul pe volan / prăbușit în față
+  calib_sec: 30               # învață poziția dreaptă a șoferului
+  default_gap: 0.55           # umeri -> cap (× unitatea corpului), până la calibrare
+  drop_low: 0.4               # cât a coborât capul (0 = drept, 1 = la nivelul umerilor)
+  drop_high: 0.8
+  score_enter: 0.55
+  score_exit: 0.40
+  still_thr: 0.015            # mișcare sub atât (× lățimea umerilor, pe 1 s) = nemișcat
+  still_min_sec: 2.0          # trebuie să stea nemișcat atât, altfel nu raportăm
+  hold_sec: 15                # Pose pierde persoana după prăbușire -> păstrăm starea
+
+phone:
+  hand_pad: 0.25              # lărgim cutia telefonului pentru a căuta mâna
+  min_score: 0.4
+
+events:
+  gap_sec: 1.0                # o pauză mai scurtă nu întrerupe evenimentul
+  min_duration_sec:           # de la cât timp apare evenimentul în mesaj
+    hand_on_chest: 2.0
+    heavy_breathing: 3.0
+    phone_use: 1.0
+    head_on_wheel: 2.0
+    default: 1.0
