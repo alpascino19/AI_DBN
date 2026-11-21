@@ -18,7 +18,7 @@ Filtre împotriva alarmelor false (o mână e "pe piept" doar dacă trece de toa
        Mâna la bărbie are palma la nivelul gâtului -> fără filtru intra în zonă.
     2. zona începe SUB linia umerilor (zone_top > 0), nu deasupra.
     3. TOATĂ mâna e în zonă (min_inside din cele 21 de puncte), iar degetele nu
-       trec deasupra liniei umerilor; din Pose: încheietura ȘI arătătorul în zonă.
+       trec deasupra marginii de sus a zonei; din Pose: încheietura ȘI arătătorul în zonă.
     4. mâna STĂ (nu trece prin zonă): deplasarea în ultimele move_window_sec sub
        move_thr × unit. Fără istoric (primul cadru) nu respingem: durata o cere tracker-ul.
     5. mâna e LIPITĂ de corp: z-ul încheieturii (Pose) nu e cu mult în fața umerilor
@@ -249,7 +249,9 @@ class ChestAnalyzer:
             if frac < (self.min_inside if src == "hands" else 1.0):                  # 3
                 reject = "partial"
                 continue
-            if src == "hands" and min(py for _, py in face_pts) < sh_y - self.tips_above * unit:
+            # degetele nu au voie să iasă PESTE marginea de sus a zonei (nu peste umeri: zona
+            # poate începe deasupra umerilor, ca partea de sus a pieptului să fie inclusă)
+            if src == "hands" and min(py for _, py in face_pts) < y1 - self.tips_above * unit:
                 reject = "fingers_up"
                 continue
             scale = self._hand_size(src, hand_pts) / unit                            # 6
