@@ -36,6 +36,13 @@ def test_bad_payloads_ignored():
     assert ex.q.empty()
 
 
+def test_severity0_back_to_normal_turns_esp32_off():
+    # ML 1 trimite {"severity":0,"actions":[]} la revenirea la normal
+    ex, calls, alerts = make()
+    ex.handle(json.dumps({"severity": 0, "actions": [], "reason": "revenire la normal"}))
+    assert alerts == [0] and ex.q.empty() and calls == []
+
+
 def test_priority_and_esp32_direct():
     ex, calls, alerts = make()
     ex.handle(decision(1, ("speak", {"text": "privirea la drum"})))
