@@ -46,6 +46,7 @@ class SlumpAnalyzer:
         self.still_thr = c["still_thr"]
         self.still_min = c["still_min_sec"]
         self.hold_sec = c["hold_sec"]
+        self.lean_cfg = c["lean"]
         self.min_vis = cfg["chest"]["min_visibility"]
         self.cfg = cfg
 
@@ -131,12 +132,13 @@ class SlumpAnalyzer:
         drop = 1.0 if head_missing else 1.0 - gap / base_gap
         lean = 0.0
         if self.base_sy is not None:
-            parts = [_ramp((sy - self.base_sy) / self.base_unit, 0.1, 0.5),   # umerii coboară
-                     _ramp(unit / self.base_unit, 1.1, 1.4)]                  # se apropie de cameră
+            L = self.lean_cfg                                                  # config.yaml: slump.lean
+            parts = [_ramp((sy - self.base_sy) / self.base_unit, *L["shoulder_drop"]),  # umerii coboară
+                     _ramp(unit / self.base_unit, *L["closer"])]                        # se apropie de cameră
             if fwd is not None and g.facing:
-                parts.append(_ramp(fwd - self.base_fwd, 0.2, 0.6))            # capul iese în față
+                parts.append(_ramp(fwd - self.base_fwd, *L["head_forward"]))            # capul iese în față
             if torso is not None and self.base_torso is not None:
-                parts.append(_ramp(torso - self.base_torso, 10, 35))          # trunchiul se înclină
+                parts.append(_ramp(torso - self.base_torso, *L["torso_deg"]))           # trunchiul se înclină
             lean = max(parts)
         face_detected = ctx.face.detected if ctx.face is not None else None
         s_face = 1.0 if head_missing or face_detected is False else (0.0 if face_detected else 0.5)

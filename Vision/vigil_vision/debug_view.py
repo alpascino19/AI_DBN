@@ -6,26 +6,12 @@ import numpy as np
 
 from .context import FrameContext, P
 
-ARM = [(P.SHOULDER_L, P.SHOULDER_R), (P.SHOULDER_L, P.ELBOW_L), (P.ELBOW_L, P.WRIST_L),
-       (P.SHOULDER_R, P.ELBOW_R), (P.ELBOW_R, P.WRIST_R), (P.SHOULDER_L, P.HIP_L),
-       (P.SHOULDER_R, P.HIP_R)]
-
-
 def draw(ctx: FrameContext, fps: float = 0.0) -> np.ndarray:
     img = ctx.frame.image.copy()
     h, w = img.shape[:2]
     px = lambda x, y: (int(x * w), int(y * h))
 
     if ctx.pose:
-        for a, b in ARM:
-            la, lb = ctx.pose[a], ctx.pose[b]
-            if min(la.visibility, lb.visibility) > 0.5:
-                cv2.line(img, px(la.x, la.y), px(lb.x, lb.y), (255, 200, 0), 2)
-        nose, ls, rs = ctx.pose[P.NOSE], ctx.pose[P.SHOULDER_L], ctx.pose[P.SHOULDER_R]
-        slumped = (ctx.signals.get("slump") or {}).get("state") == "slumped"
-        if nose.visibility > 0.5:                       # linia cap -> umeri (căderea capului)
-            mid = ((ls.x + rs.x) / 2, (ls.y + rs.y) / 2)
-            cv2.line(img, px(nose.x, nose.y), px(*mid), (0, 0, 255) if slumped else (200, 200, 200), 2)
         g = ctx.geom
         if g is not None:                               # umărul apropiat de cameră + direcția corpului
             near = ctx.pose[g.near]

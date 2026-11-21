@@ -87,6 +87,11 @@ slump:                        # capul pe volan / prăbușit în față
   still_thr: 0.015            # mișcare sub atât (× lățimea umerilor, pe 1 s) = nemișcat
   still_min_sec: 2.0          # trebuie să stea nemișcat atât, altfel nu raportăm
   hold_sec: 15                # Pose pierde persoana după prăbușire -> păstrăm starea
+  lean:                       # aplecarea în față: [de unde începe să conteze, unde contează maxim]
+    torso_deg: [10, 35]       # GRADE de înclinare a trunchiului față de poziția normală
+    head_forward: [0.2, 0.6]  # cât iese capul în fața umerilor (× unitatea corpului)
+    shoulder_drop: [0.1, 0.5] # cât coboară umerii (× unitatea corpului)
+    closer: [1.1, 1.4]        # cât de mare pare corpul față de normal (se apropie de cameră)
 
 phone:
   hand_pad: 0.25              # lărgim cutia telefonului pentru a căuta mâna
