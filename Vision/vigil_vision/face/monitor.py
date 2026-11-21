@@ -214,6 +214,15 @@ def _draw_panel(panel, snap, calib, ctx, level, t) -> int:
     p.row("Ultimele 10 s", "-" if head.off_road_ratio is None else f"{head.off_road_ratio * 100:.0f}%",
           frac=head.off_road_ratio, frac_col=grade(head.off_road_ratio, 0.3, 0.5))
 
+    # ----- conștiență (face/unconscious.py) -----
+    us = snap.unconscious
+    p.section("CONSTIENTA")
+    label = {"ok": "normal", "suspect": "SUSPECT", "unconscious": f"INCONSTIENT {us.since_sec:.0f}s"}[us.state]
+    p.row("Stare", label, {"ok": TEXT, "suspect": ORANGE, "unconscious": RED}[us.state],
+          frac=us.score, frac_col=grade(us.score, 0.45, 0.65))
+    p.row("Cap cazut / nemiscat", f"{'DA' if us.dropped else 'nu'} / {us.still_sec:.1f}s",
+          ORANGE if us.dropped else TEXT)
+
     # ----- gură -----
     p.section("GURA")
     p.row("Cascat", f"DA {yawn.open_sec:.1f}s" if yawn.yawning else "nu", ORANGE if yawn.yawning else TEXT)

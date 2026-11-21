@@ -88,6 +88,15 @@ def default_rules() -> list[Rule]:
              lambda s: (s.head.off_road_ratio or 0) >= 0.5, min_sec=2.0, repeat_sec=15.0, cooldown_sec=10.0),
         Rule("no_face", 1, "Nu vă pot vedea fața. Vă rugăm să priviți spre drum.",
              lambda s: not s.head.face_visible, min_sec=3.0, repeat_sec=10.0),
+        # --- pierderea cunoștinței (face/unconscious.py) ---
+        Rule("unconscious", 3, "URGENȚĂ: posibilă pierdere a cunoștinței! Răspundeți!",
+             # telefonul în mână explică privirea în jos: nu e leșin
+             lambda s: s.det("unconscious") and not s.det("phone_use"), repeat_sec=3.0,
+             hides=("eyes_closed_critical", "eyes_closed", "head_drop", "look_down", "no_face",
+                    "distracted", "fatigue")),
+        Rule("head_drop", 2, "Capul a căzut și ochii sunt închiși. Sunteți bine?",
+             lambda s: s.det("head_drop") and not s.det("phone_use"), repeat_sec=5.0,
+             hides=("look_down", "eyes_closed")),
         # --- corp (detecții CV2 din pipeline: body/chest, breathing, phone, slump) ---
         Rule("chest_and_breathing", 3, "URGENȚĂ: mâna pe piept și respirație grea! Sunteți bine?",
              lambda s: s.det("hand_on_chest") and s.det("heavy_breathing"),
