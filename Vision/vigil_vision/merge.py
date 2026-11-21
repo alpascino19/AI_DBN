@@ -27,8 +27,8 @@ import time
 
 STALE_SEC = 1.0
 PUBLISH_HZ = 10
-FACE_KEYS = ("ear", "perclos", "blink_rate", "gaze_on_road", "landmarks", "face_detected")
-BODY_KEYS = ("phone", "breathing", "posture", "body_landmarks", "body_detected")
+FACE_KEYS = ("ear", "perclos", "blink_rate", "gaze_on_road", "landmarks", "face_detected", "face_panel")
+BODY_KEYS = ("phone", "breathing", "posture", "body_landmarks", "body_detected", "body_panel")
 TOPIC_IN = "vigil/vision/+"        # nu prinde vigil/vision (fără sufix): nu există buclă
 TOPIC_OUT = "vigil/vision"
 

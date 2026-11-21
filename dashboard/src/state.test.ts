@@ -55,6 +55,18 @@ describe('reduce', () => {
     expect(reduce(initialState, 'vigil/alert', '1.5', T)).toBe(initialState)
   })
 
+  it('vigil/assistant/reply: întrebarea auzită rămâne până la răspuns', () => {
+    const msg = (o: object) => JSON.stringify({ request: 'listen', ...o })
+    let s = reduce(initialState, 'vigil/assistant/reply', msg({ status: 'listening' }), T)
+    expect(s.assistant?.status).toBe('listening')
+    s = reduce(s, 'vigil/assistant/reply', msg({ status: 'working', heard: 'Cum e vremea?' }), T)
+    s = reduce(s, 'vigil/assistant/reply', msg({ status: 'done', text: 'Afară sunt 10 grade.', source: 'Open-Meteo' }), T)
+    expect(s.assistant).toMatchObject({ status: 'done', heard: 'Cum e vremea?', text: 'Afară sunt 10 grade.', source: 'Open-Meteo' })
+    s = reduce(s, 'vigil/assistant/reply', msg({ status: 'listening' }), T)
+    expect(s.assistant?.heard).toBeUndefined()           // întrebare nouă: textul vechi dispare
+    expect(reduce(initialState, 'vigil/assistant/reply', '{"status":"done"}', T)).toBe(initialState)
+  })
+
   it('vigil/ecu valid; incomplet ignorat', () => {
     const ok = '{"mode":"MRM","speed_factor":0,"speed_ref_kmh":62.5,"lka_authority":1,"headway_s":3.5,"hazards":true}'
     expect(reduce(initialState, 'vigil/ecu', ok, T).ecu?.mode).toBe('MRM')

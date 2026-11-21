@@ -21,6 +21,9 @@ TOOLS = {
     "suggest_break": {},
 }
 LEVELS = {"play_alarm": range(1, 4), "set_esp32": range(0, 4)}
+# cererile asistentului vin de pe vigil/assistant (butoanele din dashboard), nu de la ML 1
+ASSISTANT_REQUESTS = ("listen", "time", "weather", "traffic")
+ASSISTANT_DEBOUNCE_SEC = 2   # dublu-clic pe buton = o singură cerere
 
 log = logging.getLogger("ml2")
 
@@ -52,7 +55,8 @@ class Executor:
         self.seq = itertools.count()        # FIFO în aceeași severitate
         self.lock = threading.Lock()
         self.interrupt = threading.Event()
-        self.current = 0                    # severitatea acțiunii în curs, 0 = liber
+        self.current = 0                    # severitatea acțiunii în curs (0 = asistentul sau nimic)
+        self.running = False                # rulează ceva acum (inclusiv asistentul, care are severitatea 0)
         self.last_run = {}                  # (tool, severity) -> momentul ultimei programări
 
     def handle(self, payload):
@@ -89,8 +93,30 @@ class Executor:
                     continue
                 self.last_run[key] = now
                 self.q.put((-sev, next(self.seq), tool, args))
-            if sev == 3 and 0 < self.current < 3:
+            # urgența întrerupe orice acțiune mai slabă; orice alertă ML 1 întrerupe asistentul (siguranța
+            # are prioritate față de o întrebare despre vreme)
+            if self.running and ((sev == 3 and self.current < 3) or (sev >= 1 and self.current == 0)):
                 self.interrupt.set()
+
+    def handle_assistant(self, payload):
+        """Primește un mesaj vigil/assistant {"request": "listen" | "time" | "weather" | "traffic"}.
+        Merge în aceeași coadă (un singur difuzor și microfon), cu prioritatea cea mai mică."""
+        try:
+            msg = json.loads(payload)
+        except (ValueError, TypeError):
+            msg = None
+        request = msg.get("request") if isinstance(msg, dict) else None
+        if request not in ASSISTANT_REQUESTS:
+            log.warning("cerere asistent respinsă: %r", payload)
+            return
+        now = time.monotonic()
+        with self.lock:
+            key = ("assistant", request)
+            if now - self.last_run.get(key, float("-inf")) < ASSISTANT_DEBOUNCE_SEC:
+                return
+            self.last_run[key] = now
+            log.info("asistent: %s", request)
+            self.q.put((0, next(self.seq), "assistant", {"request": request}))
 
     def _drop_below(self, sev):
         """Scoate din coadă acțiunile mai slabe: după o urgență, „Vă simțiți obosit?” nu mai are sens."""
@@ -112,6 +138,7 @@ class Executor:
                 log.info("sărit %s: urgență în coadă", tool)
                 return
             self.current = sev
+            self.running = True
         log.info("rulez %s %s (sev %d)", tool, args, sev)
         try:
             self.run_tool(tool, args, self.interrupt)
@@ -120,6 +147,7 @@ class Executor:
         finally:
             with self.lock:
                 self.current = 0
+                self.running = False
         if self.interrupt.is_set():
             log.info("%s întrerupt de urgență", tool)
 
@@ -144,10 +172,16 @@ def main():
 
     def on_connect(client, userdata, flags, reason_code, properties):
         log.info("conectat la %s (%s)", BROKER, reason_code)
-        client.subscribe("vigil/decision", qos=1)
+        client.subscribe([("vigil/decision", 1), ("vigil/assistant", 1)])
+
+    def on_message(c, u, msg):
+        if msg.topic == "vigil/assistant":
+            ex.handle_assistant(msg.payload)
+        else:
+            ex.handle(msg.payload)
 
     client.on_connect = on_connect
-    client.on_message = lambda c, u, msg: ex.handle(msg.payload)
+    client.on_message = on_message
     client.connect(BROKER, 1883)
     client.loop_start()  # reconectarea o face paho singur
     publish_alert(0)  # o singură dată, la pornire: altfel ESP32 rămâne pe ultima stare reținută (ex. buzzer)

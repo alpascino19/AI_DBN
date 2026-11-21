@@ -35,11 +35,11 @@ Implicit, pagina caută brokerul pe calculatorul care o servește (`ws://<host>:
 |---|---|
 | Bara de sus: conexiune, calibrare, nivel ESP32, buton **Reset alerte** | `vigil/ml1/status`, `vigil/alert` |
 | Atenție: scorul `a` și încrederea | `vigil/ml1/status` (1/s); dacă lipsește, `a` din ultima decizie |
-| Camera față / Camera corp: scheletul | `vigil/vision` → `landmarks` (puncte de față), `body_landmarks` (25 de puncte MediaPipe Pose, unite cu linii) |
-| Semnale cameră: EAR, PERCLOS, clipit, privire, cap căzut, telefon, respirație, postură, FPS | `vigil/vision`. Valorile lipsă apar „—”, valorile îngrijorătoare cu portocaliu |
+| Ferestrele **VIGIL - FAȚA** și **VIGIL - CORP**, ca pe laptopurile cu camere: punctele feței / scheletul + zona pieptului + linia posturii (fără imagine), rama și insigna pe nivel (OK / NIVEL n / CALIBRARE), secțiunile OCHI, PRIVIRE, CONȘTIENȚĂ, GURĂ și CORP cu bare verde / portocaliu / roșu, banda AVERTIZĂRI și fps-ul fiecărei camere | `vigil/vision` → `face_panel` / `body_panel` (trimise de `Vision/vigil_vision/panel.py`, trecute de `merge.py`), `landmarks`, `body_landmarks`. Fără panou (Vision mai vechi, date false) se afișează ce se poate deriva din câmpurile de bază |
 | Evenimente active: tip, durată, încredere | `vigil/vision` → `events` |
 | Decizie LLM: severitate, motiv, unelte, sursă, latență + istoric (ultimele 50) | `vigil/decision` |
 | ECU (control fuzzy): mod, viteza de referință și ținta, asistența de bandă, distanța, frânarea, avariile + P(atent / distras / obosit / urgență) | `vigil/ecu` (5/s, de la ML1) |
+| **Asistent Virgil**: butonul „Întreabă-l pe Virgil” (ascultă o întrebare la microfon) și butoanele „Ora”, „Vremea”, „Traficul”; arată ce a auzit Virgil, răspunsul și sursa | publică pe `vigil/assistant`, citește `vigil/assistant/reply` (ML2, vezi [ML2/README.md](../ML2/README.md) 4.4c) |
 | Răspunsul șoferului: textul și latența, sau „fără răspuns” | `vigil/driver_response` |
 | **Fereastră roșie de urgență** cu raportul 112 | o decizie care conține `call_112` |
 

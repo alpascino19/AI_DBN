@@ -374,8 +374,102 @@ def suggest_break(interrupt):
     ]), interrupt)
 
 
+ASSISTANT_TOPIC_REPLY = "vigil/assistant/reply"
+# întrebările libere fără OmniRoute: o replică de la LLM-ul local, doar cu datele reale din info.facts()
+ASSISTANT_FACTS = ("Răspunzi la o întrebare pusă de șofer din butonul de pe ecran. Folosește DOAR datele de mai jos; "
+                   "dacă nu ai informația, spune scurt că nu o ai. end este true.\n")
+# butoanele rapide, ca întrebări pentru asistentul de informare (info_assistant.py)
+ASSISTANT_QUESTIONS = {"weather": "Cum e vremea acum?", "traffic": "Cum e traficul acum în zonă?"}
+LOOKUP_TIMEOUT_SEC = 20   # OmniRoute + Tavily + Waze pot dura; peste atât răspundem din sursele offline
+
+
+def interruptible(fn, interrupt, timeout):
+    """Rulează fn() pe un fir separat și așteaptă rezultatul, dar renunță imediat la o alertă ML 1 (interrupt)
+    sau după timeout -> None. Workerul executorului nu rămâne blocat într-o cerere HTTP cât sună o urgență."""
+    box = {}
+
+    def work():
+        try:
+            box["value"] = fn()
+        except Exception as e:                  # noqa: BLE001
+            log.warning("căutarea asistentului a eșuat: %r", e)
+
+    t = threading.Thread(target=work, daemon=True)
+    t.start()
+    deadline = time.monotonic() + timeout
+    while t.is_alive() and time.monotonic() < deadline:
+        if interrupt.wait(0.05):
+            return None
+    return box.get("value")
+
+
+def assistant_lookup(kind, question):
+    """Răspunsul la o întrebare: kind = "time" | "weather" | "traffic" | None (întrebare liberă).
+    Cu OmniRoute (OMNIROUTE_API_KEY): asistentul de informare al echipei (info_assistant.py: Waze, Tavily,
+    știri, model mai bun), aceleași răspunsuri ca la „Hei Virgil”. Fără el sau dacă nu răspunde: info.py
+    (ceas, Open-Meteo, estimare de trafic) și LLM-ul local pentru restul."""
+    import info
+    if kind == "time":
+        return info.answer("time")
+    if os.environ.get("OMNIROUTE_API_KEY"):
+        import info_assistant
+        reply = info_assistant.answer(question)
+        if reply:
+            return {"text": reply, "source": "asistentul de informare (OmniRoute)"}
+    if kind in info.REQUESTS:
+        return info.answer(kind)
+    reply = chat([{"role": "system", "content": PERSONA},
+                  {"role": "system", "content": ASSISTANT_FACTS + info.facts()},
+                  {"role": "user", "content": question}])
+    return {"text": reply[0], "source": "LLM local"} if reply else None
+
+
+def assistant_request(request, interrupt, publish):
+    """Cerere din dashboard (vigil/assistant): „listen” = Virgil ascultă o întrebare; „time” / „weather” /
+    „traffic” = răspunde direct. Nu publică pe vigil/driver_response: ML 1 nu trebuie să ia o întrebare
+    despre vreme drept răspunsul la „Sunteți bine?”. Tăcerea aici nu pornește nicio alarmă."""
+    import info
+
+    def status(state, **extra):
+        publish(ASSISTANT_TOPIC_REPLY, json.dumps({"request": request, "status": state, "ts": time.time(), **extra},
+                                                  ensure_ascii=False))
+
+    heard = None
+    if request == "listen":
+        status("listening")
+        if not speak("Vă ascult.", interrupt):
+            return status("interrupted")
+        result = listen(interrupt)
+        if result is None:                   # întrerupt de o alertă ML 1
+            return status("interrupted")
+        heard = result[0]["text"]
+        if not heard:
+            text = "Nu v-am auzit. Apăsați din nou când doriți."
+            status("speaking", text=text, source="")
+            speak(text, interrupt)
+            return status("done", text=text, source="")
+        log.info("[ÎNTREBARE] %s", heard)
+        kind, question = info.intent(heard), heard
+    else:
+        kind, question = request, ASSISTANT_QUESTIONS.get(request, "")
+
+    status("working", heard=heard)
+    out = interruptible(lambda: assistant_lookup(kind, question), interrupt, LOOKUP_TIMEOUT_SEC)
+    if interrupt.is_set():
+        return status("interrupted", heard=heard)
+    if out is None and kind in info.REQUESTS:  # sursele online lente / căzute: răspunsul offline e instant
+        out = info.answer(kind)
+    text, source = (out["text"], out["source"]) if out else ("Nu am putut afla informația acum.", "indisponibil")
+    status("speaking", heard=heard, text=text, source=source)
+    if not speak(text, interrupt):
+        return status("interrupted", heard=heard, text=text, source=source)
+    status("done", heard=heard, text=text, source=source)
+
+
 def run(tool, args, interrupt, publish):
-    if tool == "speak":
+    if tool == "assistant":
+        assistant_request(args["request"], interrupt, publish)
+    elif tool == "speak":
         speak(args["text"], interrupt)
     elif tool == "play_alarm":
         play_alarm(args["level"], interrupt)

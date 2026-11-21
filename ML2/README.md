@@ -280,6 +280,26 @@ $env:OMNIROUTE_API_KEY  # trebuie setată (vezi mai jos)
   ```
 - **Test:** `..\.venv\Scripts\python test_info_assistant.py`.
 
+### 4.4c Butoanele asistentului din dashboard (`executor.py` + `info.py`)
+Cardul **Asistent Virgil** din dashboard publică pe `vigil/assistant`; răspunde executorul, deci nu trebuie
+pornit nimic în plus.
+- **„Întreabă-l pe Virgil”**: Virgil spune „Vă ascult” și ascultă o întrebare (4 s ca să începeți). Tăcerea
+  nu pornește alarma: Virgil spune doar că nu a auzit.
+- **„Ora”, „Vremea”, „Traficul”**: răspuns direct, fără microfon (sigur și într-o sală zgomotoasă).
+- **De unde vin răspunsurile** (`actions.assistant_lookup`):
+  - ora: ceasul laptopului, mereu;
+  - cu `OMNIROUTE_API_KEY` setată: asistentul de informare de la 4.4b (`info_assistant.answer`: Waze, Tavily,
+    știri, model prin OmniRoute), deci aceleași răspunsuri ca la „Hei Virgil”;
+  - fără cheie sau dacă OmniRoute nu răspunde în 20 s: `info.py`, adică Open-Meteo pentru vreme (fără cheie),
+    TomTom pentru trafic dacă există `TOMTOM_KEY`, altfel o **estimare după oră spusă ca estimare**
+    („Nu am date de trafic în timp real; ...”), iar întrebările libere merg la LLM-ul local, doar cu datele reale.
+- **Siguranța are prioritate:** cererile asistentului au prioritatea cea mai mică în coadă, orice decizie ML 1
+  de severitate ≥ 1 le întrerupe, iar severitatea 3 le anulează. Căutările rulează pe un fir separat:
+  o urgență nu așteaptă după o cerere HTTP lentă.
+- **Locația:** Cluj-Napoca, ca la 4.4b (`VIGIL_LAT`, `VIGIL_LON`, `VIGIL_PLACE` pentru alta). Spre Open-Meteo
+  și TomTom pleacă doar coordonatele acestei locații.
+- **Test:** `..\.venv\Scripts\python test_info.py` și `test_executor.py` (fără internet, microfon sau difuzoare).
+
 ### 4.5 `esp32_test.py` — test cap-coadă al plăcii
 ```powershell
 ..\.venv\Scripts\python esp32_test.py COM13
@@ -331,6 +351,11 @@ Contractele nu se schimbă fără acordul echipei (vezi `CLAUDE.md`).
 | `vigil/decision` | ML 1 → ML 2 | `{"a":0.2,"severity":3,"actions":[{"tool":"play_alarm","args":{"level":3}}],"reason":"..."}` |
 | `vigil/driver_response` | ML 2 → ML 1 | `{"answered":false,"latency_sec":null,"text":null}` |
 | `vigil/alert` | ML 2 → ESP32 | `0`–`3`, trimis cu *retain* |
+| `vigil/assistant` *(nou)* | dashboard → ML 2 | `{"request": "listen" \| "time" \| "weather" \| "traffic"}`: butoanele asistentului |
+| `vigil/assistant/reply` *(nou)* | ML 2 → dashboard | `{"request", "status": "listening" \| "working" \| "speaking" \| "done" \| "interrupted", "heard", "text", "source"}` |
+
+Topicurile asistentului sunt noi și nu ating contractele existente: ML 1 nu le folosește, iar o cerere
+din dashboard nu publică niciodată pe `vigil/driver_response`.
 
 Uneltele acceptate și argumentele lor:
 

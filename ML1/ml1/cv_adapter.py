@@ -6,7 +6,8 @@
        `head_on_wheel` (CV2: prăbușit pe volan) rămâne și e tratat ca semn grav;
      * `breathing` / `posture` de nivel superior -> `breathing_state`, `posture_state`, `still_sec`;
      * curățare (Curs 2): valori ne-finite -> None, decupare la intervale fizice (EAR, PERCLOS...);
-     * `landmarks` / `body_landmarks` eliminate (nu ajung la LLM, nu ocupă memorie);
+     * `landmarks` / `body_landmarks` și panourile ferestrelor (`face_panel` / `body_panel`, doar pentru
+       dashboard) eliminate: nu ajung la LLM, nu ocupă memorie;
      * fața lipsă (`face_detected: false`) e păstrată explicit: lipsa e informație (MNAR, Curs 2).
 2. `cv_demo_messages()`: rulează generatorul fals al echipei CV (`vigil_vision.fake`) determinist,
    ca ML1 să fie testat pe exact forma mesajelor reale.
@@ -97,7 +98,8 @@ def normalize_vision(msg: Any) -> dict:
     msg = _snake_keys(unwrap(msg))
     if not isinstance(msg, dict):
         return {}
-    out = {k: v for k, v in msg.items() if k not in ("landmarks", "body_landmarks", "events", "breathing", "posture")}
+    out = {k: v for k, v in msg.items()
+           if k not in ("landmarks", "body_landmarks", "face_panel", "body_panel", "events", "breathing", "posture")}
     if "ts" in msg:
         ts = normalize_ts(msg.get("ts"))
         if ts is None:

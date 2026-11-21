@@ -184,6 +184,118 @@ def test_assistant_idle_wake_alert_and_back_to_idle():
     assert alerts == [1] and replies == []
 
 
+def test_assistant_lowest_priority_debounce_and_dropped_by_emergency():
+    ex, calls, _ = make()
+    ex.handle_assistant(b'{"request": "weather"}')
+    ex.handle_assistant(b'{"request": "weather"}')          # dublu-clic
+    ex.handle_assistant(b'{"request": "rm -rf"}')           # cerere necunoscută
+    ex.handle_assistant(b"{not json")
+    ex.handle(decision(1, ("speak", {"text": "privirea la drum"})))
+    assert ex.q.qsize() == 2
+    ex.step()
+    ex.step()
+    assert calls == ["speak", "assistant"]                  # alerta ML 1 trece înaintea asistentului
+    ex.handle_assistant(b'{"request": "time"}')
+    ex.handle(decision(3, ("call_112", {"report": "r"})))
+    assert [item[2] for item in ex.q.queue] == ["call_112"]  # urgența anulează cererea asistentului
+
+
+def test_ml1_alert_interrupts_assistant():
+    interrupted = threading.Event()
+
+    def slow(tool, args, interrupt):
+        if tool == "assistant" and interrupt.wait(5):
+            interrupted.set()
+
+    ex = Executor(slow, lambda level: None)
+    ex.handle_assistant(b'{"request": "listen"}')
+    threading.Thread(target=ex.step, daemon=True).start()
+    while not ex.running:
+        time.sleep(0.01)
+    ex.handle(json.dumps({"severity": 0, "actions": []}))   # revenire la normal: nu întrerupe
+    assert not ex.interrupt.is_set()
+    ex.handle(decision(1, ("speak", {"text": "privirea la drum"})))
+    assert interrupted.wait(1)
+
+
+def assistant_run(request, answers=(), reply=None, omniroute=None, interrupt=None):
+    """assistant_request cu voce, microfon, LLM și internet false -> (ce a spus Virgil, ce s-a publicat).
+    omniroute: răspunsul fals al lui info_assistant.answer (cu cheia OMNIROUTE setată); None = fără cheie."""
+    import os
+
+    import actions
+    import info
+    import info_assistant
+    said, published, answers = [], [], list(answers)
+    actions.speak = lambda text, interrupt: said.append(text) or True
+    actions.listen = lambda interrupt: ({"answered": bool(a := answers.pop(0)), "latency_sec": 1.0, "text": a}, None, {})
+    actions.chat = lambda history: published.append(("chat", history)) or reply
+    info.weather_text = lambda fetch=None: ("Afară sunt 7 grade, cer înnorat.", "Open-Meteo")
+    info_assistant.answer = omniroute if callable(omniroute) else (lambda q: published.append(("omni", q)) or omniroute)
+    saved = os.environ.pop("OMNIROUTE_API_KEY", None)      # testele nu depind de cheia de pe calculator
+    if omniroute is not None:
+        os.environ["OMNIROUTE_API_KEY"] = "test"
+    try:
+        actions.assistant_request(request, interrupt or threading.Event(),
+                                  lambda t, p: published.append((t, json.loads(p))))
+    finally:
+        os.environ.pop("OMNIROUTE_API_KEY", None)
+        if saved is not None:
+            os.environ["OMNIROUTE_API_KEY"] = saved
+    return said, published
+
+
+def test_assistant_quick_buttons_and_no_driver_response():
+    said, pub = assistant_run("weather")
+    assert said == ["Afară sunt 7 grade, cer înnorat."]
+    topics = {t for t, _ in pub}
+    assert topics == {"vigil/assistant/reply"}               # nimic pe vigil/driver_response (ML 1)
+    assert pub[-1][1]["status"] == "done" and pub[-1][1]["source"] == "Open-Meteo"
+    said, _ = assistant_run("time")
+    assert said[0].startswith("Este ora ")
+
+
+def test_assistant_listens_answers_and_silence_is_not_an_alarm():
+    said, pub = assistant_run("listen", ["Hei, cum e vremea afară?"])
+    assert said == ["Vă ascult.", "Afară sunt 7 grade, cer înnorat."]
+    assert pub[-1][1]["heard"] == "Hei, cum e vremea afară?"
+    said, pub = assistant_run("listen", [None])
+    assert said == ["Vă ascult.", "Nu v-am auzit. Apăsați din nou când doriți."]
+    assert all(t == "vigil/assistant/reply" for t, _ in pub)
+
+
+def test_assistant_free_question_goes_to_llm_with_real_facts_only():
+    said, pub = assistant_run("listen", ["Cine a câștigat meciul aseară?"], reply=("Nu am această informație.", True))
+    assert said == ["Vă ascult.", "Nu am această informație."]
+    history = next(p for t, p in pub if t == "chat")
+    assert "Date reale acum: Este ora" in history[1]["content"]
+    assert pub[-1][1]["source"] == "LLM local"
+
+
+def test_assistant_uses_team_info_assistant_with_omniroute_and_falls_back():
+    said, pub = assistant_run("traffic", omniroute="Waze: un accident pe Calea Florești, ocoliți prin centură.")
+    assert said == ["Waze: un accident pe Calea Florești, ocoliți prin centură."]
+    assert ("omni", "Cum e traficul acum în zonă?") in pub
+    said, pub = assistant_run("weather", omniroute="")             # OmniRoute nu răspunde -> Open-Meteo direct
+    assert said == ["Afară sunt 7 grade, cer înnorat."] and pub[-1][1]["source"] == "Open-Meteo"
+    said, pub = assistant_run("time", omniroute="nu trebuie folosit")  # ora vine mereu de la ceas, instant
+    assert said[0].startswith("Este ora ") and not any(t == "omni" for t, _ in pub)
+
+
+def test_alert_abandons_slow_lookup_immediately():
+    interrupt = threading.Event()
+
+    def slow(question):
+        time.sleep(3)
+        return "prea târziu"
+
+    threading.Timer(0.2, interrupt.set).start()
+    start = time.monotonic()
+    said, pub = assistant_run("weather", omniroute=slow, interrupt=interrupt)
+    assert time.monotonic() - start < 1                              # workerul e liber pentru urgență
+    assert said == [] and pub[-1][1]["status"] == "interrupted"
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

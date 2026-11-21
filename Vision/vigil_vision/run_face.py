@@ -26,6 +26,7 @@ from .events.tracker import EventTracker
 from .face.alerts import AlertManager, face_rules
 from .face.monitor import MIN_SOUND_LEVEL, beep, render
 from .face.stack import FaceStack
+from .panel import face_panel
 from .schemas import VisionMessage
 
 FACE_TOPIC = "vigil/vision/face"
@@ -102,7 +103,8 @@ def main() -> None:
             snap = stack.last
             events = tracker.update(out.detections, t)
             if pub is not None and t >= next_pub:
-                pub.publish(face_message(out, events, reader.fps))
+                pub.publish({**face_message(out, events, reader.fps).to_dict(),
+                             "face_panel": face_panel(snap, stack.calib, am, t, reader.fps)})  # pentru dashboard
                 next_pub = t + period
             if stack.calib.done:
                 for a in am.update(snap.eyes, snap.head, stack.detections(), t):

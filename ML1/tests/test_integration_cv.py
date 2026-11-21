@@ -23,10 +23,10 @@ CV_MSG = {  # forma exactă a schemas.VisionMessage.to_dict() de la CV
 
 class TestNormalize(unittest.TestCase):
     def test_cv_event_names_and_fields(self):
-        m = normalize_vision(CV_MSG)
+        m = normalize_vision({**CV_MSG, "face_panel": {"level": 0}, "body_panel": {"level": 1}})
         self.assertEqual(m["events"][0]["event"], "phone_in_hand")
-        self.assertNotIn("landmarks", m)
-        self.assertNotIn("body_landmarks", m)
+        for k in ("landmarks", "body_landmarks", "face_panel", "body_panel"):   # doar pentru dashboard
+            self.assertNotIn(k, m)
         self.assertEqual(m["breathing_state"], "normal")
         self.assertEqual(m["posture_state"], "upright")
 

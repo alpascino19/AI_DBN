@@ -33,10 +33,21 @@ export type Ecu = {
   state?: { p_state?: number[]; p_risk?: number; expected_severity?: number }
   inputs?: { a?: number; risk?: number; confidence?: number; severity?: number }
 }
+export type AssistantRequest = 'listen' | 'time' | 'weather' | 'traffic'
+/** Starea asistentului Virgil (vigil/assistant/reply, de la ML2). */
+export type Assistant = {
+  request: string
+  status: 'listening' | 'working' | 'speaking' | 'done' | 'interrupted' | string
+  heard?: string
+  text?: string
+  source?: string
+  receivedAt: number
+}
 export type State = {
   vision: Vision | null
   status: Status | null
   ecu: Ecu | null
+  assistant: Assistant | null
   decision: Decision | null
   decisions: Decision[]
   responses: DriverResponse[]
@@ -51,6 +62,7 @@ export const initialState: State = {
   vision: null,
   status: null,
   ecu: null,
+  assistant: null,
   decision: null,
   decisions: [],
   responses: [],
@@ -85,6 +97,23 @@ export function reduce(state: State, topic: string, payload: string, now: number
       return { ...seen, vision: msg as Vision }
     case 'vigil/ml1/status':
       return isNum(msg.a) && isNum(msg.confidence) ? { ...seen, status: msg as Status } : state
+    case 'vigil/assistant/reply': {
+      if (typeof msg.request !== 'string' || typeof msg.status !== 'string') return state
+      const s = (k: string) => (typeof msg[k] === 'string' ? (msg[k] as string) : undefined)
+      // „working” / „speaking” fără text păstrează întrebarea auzită din pasul anterior
+      const prev = state.assistant?.request === msg.request ? state.assistant : null
+      return {
+        ...seen,
+        assistant: {
+          request: msg.request,
+          status: msg.status,
+          heard: s('heard') ?? (msg.status === 'listening' ? undefined : prev?.heard),
+          text: s('text'),
+          source: s('source'),
+          receivedAt: now,
+        },
+      }
+    }
     case 'vigil/ecu':
       return typeof msg.mode === 'string' && isNum(msg.speed_factor) && isNum(msg.speed_ref_kmh) &&
         isNum(msg.lka_authority) && isNum(msg.headway_s)

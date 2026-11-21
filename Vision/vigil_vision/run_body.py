@@ -25,6 +25,7 @@ from .face.alerts import AlertManager, body_rules
 from .face.eyes import EyeState
 from .face.head_pose import HeadState
 from .face.monitor import MIN_SOUND_LEVEL, _NoPublish, beep, render
+from .panel import body_panel
 from .run_face import add_mqtt_args, open_camera
 
 BODY_TOPIC = "vigil/vision/body"
@@ -67,11 +68,13 @@ def main() -> None:
         for frame in reader:
             t = frame.timestamp
             ctx = pipeline.process(frame)
-            if args.publish and t >= next_pub:
-                pub.publish(pipeline.build_message(ctx, reader.fps))
-                next_pub = t + period
             dets = {n: (d.active, d.confidence) for n, d in ctx.detections.items()}
-            for a in am.update(no_face_eyes, no_face_head, dets, t):
+            new_alerts = am.update(no_face_eyes, no_face_head, dets, t)
+            if args.publish and t >= next_pub:
+                pub.publish({**pipeline.build_message(ctx, reader.fps).to_dict(),
+                             "body_panel": body_panel(ctx, am, reader.fps)})     # panoul, pentru dashboard
+                next_pub = t + period
+            for a in new_alerts:
                 print(f"{time.strftime('%H:%M:%S')} [CORP nivel {a.level}] {a.message}")
                 if not args.mute and a.level >= args.min_sound:
                     beep(a.level)
