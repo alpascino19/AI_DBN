@@ -17,6 +17,9 @@ from typing import Any, Callable
 PHRASES = {
     "remind_road": "Vă rugăm să păstrați privirea la drum.",
     "remind_phone": "Vă rugăm să lăsați telefonul și să priviți drumul.",
+    # Vision (body/slump.py): aplecat / cocoșat de peste 10 s, respectiv corpul nu se mai vede pe scaun
+    "remind_posture": "Vă rugăm să vă îndreptați spatele și să stați drept pe scaun.",
+    "remind_position": "Vă rugăm să reveniți în poziția de condus.",
     "ask_tired": "Păreți obosit. Doriți să faceți o pauză?",
     "ask_ok": "Sunteți bine?",
 }
@@ -31,6 +34,8 @@ def _report(ctx: dict) -> str:
 ACTION_MENU: dict[str, tuple[str, Callable[[int, dict], dict]]] = {
     "remind_road": ("speak", lambda s, c: {"text": PHRASES["remind_road"]}),
     "remind_phone": ("speak", lambda s, c: {"text": PHRASES["remind_phone"]}),
+    "remind_posture": ("speak", lambda s, c: {"text": PHRASES["remind_posture"]}),
+    "remind_position": ("speak", lambda s, c: {"text": PHRASES["remind_position"]}),
     "alarm": ("play_alarm", lambda s, c: {"level": max(1, min(3, s))}),
     "esp32": ("set_esp32", lambda s, c: {"level": max(0, min(3, s))}),
     "suggest_break": ("suggest_break", lambda s, c: {}),

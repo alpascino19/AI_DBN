@@ -187,7 +187,10 @@ class TestEvaluationQuick(unittest.TestCase):
         res = main(["--quick", "--no-write", "--seed", "1"])
         for split in ("test", "shift"):
             r = res[split]["rules+calibrare"]
-            self.assertGreaterEqual(r["scores"]["recall"][3], 0.9, "nu ratăm urgențe")
+            # Vision are respirația oprită implicit: la mâna pe piept regulile așteaptă CHEST_ALONE_SEC (6 s) în loc
+            # de 3 s, deci ~2 s din fiecare astfel de urgență sunt ratate prin construcție; matricea le prinde mai devreme
+            self.assertGreaterEqual(r["scores"]["recall"][3], 0.85, "nu ratăm urgențe")
+            self.assertGreaterEqual(res[split]["HMM (cost așteptat minim)"]["scores"]["recall"][3], 0.95)
             self.assertEqual(r["calls_112"]["fp"], 0, "niciun 112 fals")
             self.assertEqual(r["calls_112"]["fn"], 0, "niciun 112 ratat")
             self.assertGreater(r["scores"]["macro_f1"], res[split]["clasa majoritară (0)"]["scores"]["macro_f1"])

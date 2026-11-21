@@ -184,23 +184,44 @@ def test_assistant_idle_wake_alert_and_back_to_idle():
     assert alerts == [1] and replies == []
 
 
-def test_assistant_lowest_priority_debounce_and_dropped_by_emergency():
+def test_virgil_goes_before_level_1_2_debounce_and_dropped_by_emergency():
     ex, calls, _ = make()
+    ex.handle(decision(1, ("speak", {"text": "privirea la drum"})))
+    ex.handle(decision(2, ("suggest_break", {})))
     ex.handle_assistant(b'{"request": "weather"}')
     ex.handle_assistant(b'{"request": "weather"}')          # dublu-clic
     ex.handle_assistant(b'{"request": "rm -rf"}')           # cerere necunoscută
     ex.handle_assistant(b"{not json")
-    ex.handle(decision(1, ("speak", {"text": "privirea la drum"})))
-    assert ex.q.qsize() == 2
-    ex.step()
-    ex.step()
-    assert calls == ["speak", "assistant"]                  # alerta ML 1 trece înaintea asistentului
+    assert ex.q.qsize() == 3
+    for _ in range(3):
+        ex.step()
+    assert calls == ["assistant", "suggest_break", "speak"]  # Virgil, chiar dacă a fost chemat ultimul
     ex.handle_assistant(b'{"request": "time"}')
     ex.handle(decision(3, ("call_112", {"report": "r"})))
     assert [item[2] for item in ex.q.queue] == ["call_112"]  # urgența anulează cererea asistentului
 
 
-def test_ml1_alert_interrupts_assistant():
+def test_emergency_still_goes_before_virgil():
+    ex, calls, _ = make()
+    ex.handle_assistant(b'{"request": "time"}')
+    ex.handle(decision(3, ("play_alarm", {"level": 3})))
+    ex.step()
+    assert calls == ["play_alarm"]
+
+
+def test_only_one_virgil_request_waits():
+    ex, calls, _ = make()
+    ex.handle_assistant(b'{"request": "time"}')
+    ex.handle_assistant(b'{"request": "traffic"}')          # răzgândit: contează ultima apăsare
+    assert [(item[2], item[3]) for item in ex.q.queue] == [("assistant", {"request": "traffic"})]
+
+
+def running(ex, tool):
+    while ex.current_tool != tool:
+        time.sleep(0.01)
+
+
+def test_virgil_not_interrupted_by_level_1_2_only_by_emergency():
     interrupted = threading.Event()
 
     def slow(tool, args, interrupt):
@@ -210,12 +231,41 @@ def test_ml1_alert_interrupts_assistant():
     ex = Executor(slow, lambda level: None)
     ex.handle_assistant(b'{"request": "listen"}')
     threading.Thread(target=ex.step, daemon=True).start()
-    while not ex.running:
-        time.sleep(0.01)
+    running(ex, "assistant")
     ex.handle(json.dumps({"severity": 0, "actions": []}))   # revenire la normal: nu întrerupe
-    assert not ex.interrupt.is_set()
     ex.handle(decision(1, ("speak", {"text": "privirea la drum"})))
-    assert interrupted.wait(1)
+    ex.handle(decision(2, ("play_alarm", {"level": 2}), ("ask_driver", {"question": "Obosit?"})))
+    assert not ex.interrupt.is_set()                         # așteaptă în coadă, după Virgil
+    assert ex.q.qsize() == 3
+    ex.handle(decision(3, ("play_alarm", {"level": 3})))
+    assert interrupted.wait(1)                               # urgența taie și vorba lui Virgil
+
+
+def test_virgil_cuts_a_running_reminder_but_not_an_ml1_question():
+    cut = []
+
+    def slow(tool, args, interrupt):
+        if interrupt.wait(5):
+            cut.append(tool)
+
+    for tool, action, expect_cut in (("speak", ("speak", {"text": "privirea la drum"}), True),
+                                     ("play_alarm", ("play_alarm", {"level": 2}), True),
+                                     ("ask_driver", ("ask_driver", {"question": "Obosit?"}), False)):
+        cut.clear()
+        ex = Executor(slow, lambda level: None)
+        ex.handle(decision(2, action))
+        worker = threading.Thread(target=ex.step, daemon=True)
+        worker.start()
+        running(ex, tool)
+        ex.handle_assistant(b'{"request": "time"}')
+        assert ex.interrupt.is_set() is expect_cut, tool
+        if expect_cut:
+            worker.join(1)
+            assert cut == [tool]
+            assert [item[2] for item in ex.q.queue] == ["assistant"]   # Virgil urmează imediat
+        else:
+            ex.interrupt.set()                               # oprim testul: întrebarea ML 1 nu e tăiată de Virgil
+            worker.join(1)
 
 
 def assistant_run(request, answers=(), reply=None, omniroute=None, interrupt=None):

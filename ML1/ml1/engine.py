@@ -34,12 +34,16 @@ from .fusion import AttentionFusion, eye_artifact
 from .probability import StateFilter
 from .profile import P
 from .reports import build_trip_report
-from .rules import answer_status, fallback_decision, rule_severity, wants_112
+from .rules import MEDICAL_SIGN, answer_status, fallback_decision, rule_severity, wants_112
 from .validate import LLM_TIMEOUT_SEC, decide
 
 
 NO_ANSWER_TTL = 60.0   # după atât, o întrebare fără răspuns nu mai contează
 RULE_CALM_SEC = 8.0   # revenire la normal când regulile spun 0 atât timp (ales din evaluare)
+# Asistentul Virgil (ML2, vigil/assistant/reply) are prioritate în coada ML2 față de severitățile 1-2: cât
+# vorbește el, întrebarea ML1 așteaptă în coadă și nu e încă rostită. Tăcerea nu se numără în acest timp.
+ASSISTANT_BUSY = ("listening", "working", "speaking")
+ASSISTANT_MAX_SEC = 60.0   # un „done” pierdut nu blochează pentru totdeauna escaladarea pe tăcere
 
 
 class _NoBaseline:
@@ -75,6 +79,7 @@ class DecisionEngine:
         self._last_call_ts = -math.inf
         self._last_pub: dict = {"severity": 0, "ts": -math.inf, "tools": frozenset()}
         self._latest_rule_sev = 0
+        self._latest_medical = False
         self._asked_ts: float | None = None
         self._asked_q: str | None = None
         self._calm_since: float | None = None
@@ -87,6 +92,7 @@ class DecisionEngine:
         self.state = StateFilter()      # P(stare reală | observațiile de până acum), matricea de probabilitate
         self.ecu = EcuController()      # comanda fuzzy pentru ECU (calculată la cerere: ecu_step)
         self.car: dict | None = None    # ce raportează ECU-ul real (vigil/car/state + vigil/car/event)
+        self._assistant_since: float | None = None   # Virgil vorbește cu șoferul de atunci (ceasul cadrelor)
         self._timeline: dict[str, dict] = {}
         self._a_hist: deque = deque()
         self._closure: deque = deque()   # (ts, ochi închiși) pe ultimele 60 s
@@ -117,6 +123,31 @@ class DecisionEngine:
                 car["last_event"], car["last_id"] = msg["event"], msg.get("id")
             self.car = car
 
+    def on_assistant(self, msg: dict, ts: float | None = None) -> None:
+        """Starea lui Virgil (vigil/assistant/reply): listening / working / speaking = ocupat; done /
+        interrupted = liber. Cât e ocupat, ceasul întrebării ML1 în așteptare stă pe loc (vezi _hold_question)."""
+        with self._lock:
+            t = ts if ts is not None else (self._last_frame_ts or 0.0)
+            busy = isinstance(msg, dict) and msg.get("status") in ASSISTANT_BUSY
+            if busy:
+                if self._assistant_since is None:
+                    self._assistant_since = t
+            elif self._assistant_since is not None:
+                self._hold_question(t)      # ML2 rostește întrebarea abia acum: tăcerea se numără de acum
+                self._assistant_since = None
+
+    def _assistant_busy(self, ts: float) -> bool:
+        if self._assistant_since is not None and ts - self._assistant_since > ASSISTANT_MAX_SEC:
+            self._assistant_since = None
+        return self._assistant_since is not None
+
+    def _hold_question(self, ts: float) -> None:
+        """Întrebarea ML1 încă fără răspuns, a cărei fereastră s-a suprapus cu Virgil, „pornește” la ts."""
+        if self._asked_ts is None or (self._resp and self._resp[0] >= self._asked_ts):
+            return
+        if self._asked_ts + self.ask_timeout > (self._assistant_since or ts):
+            self._asked_ts = max(self._asked_ts, ts)
+
     def on_vision(self, msg: dict) -> list[dict]:
         """Procesează un cadru. Întoarce deciziile publicate acum (în modul sync include și LLM-ul)."""
         with self._lock:
@@ -125,7 +156,8 @@ class DecisionEngine:
             ts0 = msg.get("ts") if isinstance(msg.get("ts"), (int, float)) else None
             if ts0 is not None:
                 self._track_closure(msg, ts0)
-                if P["perclos_recent"] and msg.get("perclos_recent") is None:
+                # laptopul feței nu trimite (merge.py): nu raportăm ochii din ultimele 15 s ca și cum ar fi de acum
+                if P["perclos_recent"] and msg.get("perclos_recent") is None and msg.get("face_camera") is not False:
                     pr = self._perclos_recent(ts0, msg.get("perclos"))
                     if pr is not None:
                         msg = {**msg, "perclos_recent": pr, "perclos_recent_source": "ml1"}
@@ -145,10 +177,15 @@ class DecisionEngine:
                 self.fusion.baseline_blink = self.baseline.blink
                 self.fusion.perclos_offset = self.baseline.perclos_offset
 
+            if self._assistant_busy(ts):
+                self._hold_question(ts)
             ctx = self._context(r.to_dict(), msg, ts)
             rule_sev, rule_reason = rule_severity(ctx)
             self._latest_rule_sev = rule_sev
-            self.state.update(rule_sev, r.a, r.confidence, ts)
+            self._latest_medical = rule_sev == 0 and rule_reason == MEDICAL_SIGN
+            # evidența pe secundă (merge.py: 10 Hz) și cântărită cu ce camere au trimis (un laptop căzut);
+            # semnul medical sub prag e un simbol aparte, nu „șofer atent”
+            self.state.update(rule_sev, r.a, r.confidence, ts, r.camera_cov, self._latest_medical)
             if rule_sev < self._last_pub["severity"]:
                 self._lower_since = self._lower_since if self._lower_since is not None else ts
             else:
@@ -244,7 +281,7 @@ class DecisionEngine:
         vis = {k: v for k, v in vision.items() if k not in ("landmarks", "body_landmarks")}
         if self.baseline.ready and vis.get("perclos") is not None:
             vis["perclos_cal"] = self.baseline.calibrated_perclos(vis["perclos"])
-        if P["perclos_recent"] and vis.get("perclos_recent") is None:
+        if P["perclos_recent"] and vis.get("perclos_recent") is None and vis.get("face_camera") is not False:
             pr = self._perclos_recent(ts, vis.get("perclos"))
             if pr is not None:
                 vis["perclos_recent"] = pr

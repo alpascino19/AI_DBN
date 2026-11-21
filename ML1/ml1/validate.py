@@ -19,7 +19,7 @@ from concurrent.futures import TimeoutError as FutureTimeout
 from typing import Any, Callable
 
 from .actions import PHRASES, expand_actions
-from .rules import (ACTIONS_BY_SEVERITY, _events, _num, fallback_decision, rule_severity,
+from .rules import (ACTIONS_BY_SEVERITY, _events, _num, fallback_decision, reminder_for, rule_severity,
                     simple_112_report, wants_112)
 from .tools import SEVERITIES, TOOLS
 
@@ -272,23 +272,23 @@ def apply_safety(d: dict, ctx: dict) -> tuple[dict, list[str]]:
     sev = d["severity"]
     acts = d["actions"]
 
-    # 1c. Reminderul de telefon / drum trebuie să aibă un semn real în date.
+    # 1c. Reminderul (telefon / drum / postură / poziție) trebuie să aibă un semn real în date.
     vis = ctx.get("vision") or {}
     names = set(_events(vis))
     phone_ok = _num(vis, "phone", 0) >= 0.5 or "phone_in_hand" in names
     road_ok = vis.get("gaze_on_road") is False or "gaze_off_road" in names
+    sign_ok = {"remind_phone": phone_ok, "remind_road": road_ok,
+               "remind_posture": "bad_posture" in names, "remind_position": "out_of_position" in names}
+    by_text = {PHRASES[k]: ok for k, ok in sign_ok.items()}
     for a in list(acts):
-        if a["tool"] == "speak":
-            txt = a["args"]["text"]
-            if (txt == PHRASES["remind_phone"] and not phone_ok) or (txt == PHRASES["remind_road"] and not road_ok):
-                acts.remove(a)
-                notes.append("reminder eliminat: nu există semnul în date")
+        if a["tool"] == "speak" and by_text.get(a["args"]["text"]) is False:
+            acts.remove(a)
+            notes.append("reminder eliminat: nu există semnul în date")
     if sev == 1 and not acts:
-        acts.extend(dict(a, args=dict(a["args"])) for a in ACTIONS_BY_SEVERITY[1])
-        if phone_ok:
-            acts[:] = [{"tool": "speak", "args": {"text": PHRASES["remind_phone"]}}]
-        elif not road_ok:
-            acts.clear()
+        key = "remind_phone" if phone_ok else reminder_for(vis)
+        if sign_ok[key]:
+            acts.append({"tool": "speak", "args": {"text": PHRASES[key]}})
+        else:
             d["severity"], sev = 0, 0
             notes.append("severitate 1 fără semn concret: coborâtă la 0")
 

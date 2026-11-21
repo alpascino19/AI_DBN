@@ -26,6 +26,13 @@ LEVELS = {"play_alarm": range(1, 4), "set_esp32": range(0, 4)}
 # cererile asistentului vin de pe vigil/assistant (butoanele din dashboard), nu de la ML 1
 ASSISTANT_REQUESTS = ("listen", "time", "weather", "traffic")
 ASSISTANT_DEBOUNCE_SEC = 2   # dublu-clic pe buton = o singură cerere
+# Rangul în coadă (mai mare = mai urgent): urgența 3 > VIRGIL > oboseala 2 > distragerea 1 > 0.
+# Șoferul care îl cheamă pe Virgil e treaz și atent la el: răspunsul nu așteaptă după memento-uri și alarme
+# de nivel 1-2 și nu e tăiat de ele. Severitatea 3 (urgență medicală, 112) rămâne singura peste el.
+VIRGIL_RANK = 2.5
+# ce poate tăia Virgil când îl cheamă șoferul: anunțurile de nivel 1-2 (ESP32 rămâne aprins, e publicat direct).
+# Nu și ask_driver: ML 1 așteaptă răspunsul la întrebare; Virgil vine imediat după ea.
+VIRGIL_CUTS = ("speak", "play_alarm", "suggest_break")
 
 log = logging.getLogger("ml2")
 
@@ -57,8 +64,9 @@ class Executor:
         self.seq = itertools.count()        # FIFO în aceeași severitate
         self.lock = threading.Lock()
         self.interrupt = threading.Event()
-        self.current = 0                    # severitatea acțiunii în curs (0 = asistentul sau nimic)
-        self.running = False                # rulează ceva acum (inclusiv asistentul, care are severitatea 0)
+        self.current = 0                    # rangul acțiunii în curs: severitatea ML 1, VIRGIL_RANK, 0 = nimic
+        self.current_tool = None            # unealta în curs ("assistant" = Virgil)
+        self.running = False                # rulează ceva acum
         self.last_run = {}                  # (tool, severity) -> momentul ultimei programări
 
     def handle(self, payload):
@@ -95,14 +103,16 @@ class Executor:
                     continue
                 self.last_run[key] = now
                 self.q.put((-sev, next(self.seq), tool, args))
-            # urgența întrerupe orice acțiune mai slabă; orice alertă ML 1 întrerupe asistentul (siguranța
-            # are prioritate față de o întrebare despre vreme)
+            # urgența întrerupe orice acțiune mai slabă, inclusiv pe Virgil; alertele 1-2 îl lasă pe Virgil să
+            # termine (stau în coadă, după el) și întrerup doar o acțiune de severitate 0
             if self.running and ((sev == 3 and self.current < 3) or (sev >= 1 and self.current == 0)):
                 self.interrupt.set()
 
     def handle_assistant(self, payload):
         """Primește un mesaj vigil/assistant {"request": "listen" | "time" | "weather" | "traffic"}.
-        Merge în aceeași coadă (un singur difuzor și microfon), cu prioritatea cea mai mică."""
+        Aceeași coadă (un singur difuzor și microfon), dar cu prioritatea cea mai mare după urgență: trece
+        înaintea alertelor 1-2 din coadă și taie un memento / o alarmă 1-2 în curs. O singură cerere Virgil
+        așteaptă: una nouă o înlocuiește pe cea veche."""
         try:
             msg = json.loads(payload)
         except (ValueError, TypeError):
@@ -117,8 +127,14 @@ class Executor:
             if now - self.last_run.get(key, float("-inf")) < ASSISTANT_DEBOUNCE_SEC:
                 return
             self.last_run[key] = now
-            log.info("asistent: %s", request)
-            self.q.put((0, next(self.seq), "assistant", {"request": request}))
+            log.info("asistent: %s (prioritate Virgil)", request)
+            with self.q.mutex:   # o singură cerere Virgil în așteptare: ultima apăsare contează
+                self.q.queue[:] = [item for item in self.q.queue if item[2] != "assistant"]
+                heapq.heapify(self.q.queue)
+            self.q.put((-VIRGIL_RANK, next(self.seq), "assistant", {"request": request}))
+            if self.running and self.current_tool in VIRGIL_CUTS and 1 <= self.current < VIRGIL_RANK:
+                log.info("Virgil întrerupe %s (sev %s)", self.current_tool, self.current)
+                self.interrupt.set()
 
     def _drop_below(self, sev):
         """Scoate din coadă acțiunile mai slabe: după o urgență, „Vă simțiți obosit?” nu mai are sens."""
@@ -132,26 +148,30 @@ class Executor:
     def step(self):
         """Rulează următoarea acțiune din coadă; blochează până apare una."""
         prio, _, tool, args = self.q.get()
-        sev = -prio
+        rank = -prio                        # severitatea ML 1 sau VIRGIL_RANK
         with self.lock:
             self.interrupt.clear()
             # o urgență a sosit între get() și lock: nu mai pornim acțiunea mai slabă
-            if sev < 3 and self.q.queue and self.q.queue[0][0] == -3:
+            if rank < 3 and self.q.queue and self.q.queue[0][0] == -3:
                 log.info("sărit %s: urgență în coadă", tool)
                 return
-            self.current = sev
+            # Virgil a fost chemat între get() și lock: anunțul de nivel 1-2 așteaptă după el
+            if tool in VIRGIL_CUTS and 1 <= rank < VIRGIL_RANK and self.q.queue and self.q.queue[0][2] == "assistant":
+                self.q.put((prio, next(self.seq), tool, args))
+                return
+            self.current, self.current_tool = rank, tool
             self.running = True
-        log.info("rulez %s %s (sev %d)", tool, args, sev)
+        log.info("rulez %s %s (rang %s)", tool, args, rank)
         try:
             self.run_tool(tool, args, self.interrupt)
         except Exception:
             log.exception("unealta %s a eșuat", tool)
         finally:
             with self.lock:
-                self.current = 0
+                self.current, self.current_tool = 0, None
                 self.running = False
         if self.interrupt.is_set():
-            log.info("%s întrerupt de urgență", tool)
+            log.info("%s întrerupt", tool)
 
 
 MRM_DECEL = 2.5       # m/s², ca ML1 (ecu_fuzzy.DECEL_MRM): oprire controlată pe banda de urgență

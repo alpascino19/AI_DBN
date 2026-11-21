@@ -50,7 +50,10 @@ EVENT_SEVERITY = {
     "eyes_closed": 0.8,
     "head_drop": 1.0,
     "head_on_wheel": 1.0,   # CV2: prăbușit pe volan
-    "phone_use": 0.4,       # numele CV2 (normalizat oricum la phone_in_hand)
+    "slumped_side": 1.0,    # CV2: căzut într-o parte și nemișcat
+    "out_of_position": 0.3, # CV2: corpul nu se vede / s-a îndepărtat mult de scaun
+    "bad_posture": 0.2,     # CV2: aplecat / cocoșat de peste 10 s
+    "phone_use": 0.4,      # numele CV2 (normalizat oricum la phone_in_hand)
     "low_blink_rate": 0.3,  # CV1: clipit rar (privit în gol / somnolență)
     "hyper_blinking": 0.3,  # CV1: clipit foarte des
     "frequent_yawning": 0.5,  # CV1: căscat des = oboseală
@@ -197,6 +200,9 @@ class FusionResult:
     eyes_closed_sec: float = 0.0  # de cât timp EAR arată ochii închiși CONTINUU
     ear_available: bool = False   # EAR valid în acest cadru (față vizibilă, fără artefact)
     eyes_closed_artifact: bool = False  # episodul curent de ochi închiși a început la căscat / privit în jos
+    # cât din semnalele de cameră au sosit (ponderat, 0..1): ~1 cu ambele laptopuri, ~0.7 doar fața,
+    # ~0.45 doar corpul, 0 cu camera oprită. Matricea de probabilitate cântărește cadrul după el.
+    camera_cov: float = 0.0
 
     def to_dict(self) -> dict:
         return {
@@ -213,6 +219,7 @@ class FusionResult:
             "eyes_closed_sec": round(self.eyes_closed_sec, 2),
             "ear_available": self.ear_available,
             "eyes_closed_artifact": self.eyes_closed_artifact,
+            "camera_cov": round(self.camera_cov, 3),
         }
 
 
@@ -380,6 +387,7 @@ class AttentionFusion:
 
         # încredere -----------------------------------------------------------
         confidence = 0.0
+        cam_cov = 0.0
         if any(k in scores for k in CAMERA_SIGNALS):
             cam_cov = sum(WEIGHTS[k] for k in CAMERA_SIGNALS if k in scores) / sum(WEIGHTS[k] for k in CAMERA_SIGNALS)
             confidence += SOURCE_CONFIDENCE["camera"] * cam_cov
@@ -391,7 +399,7 @@ class AttentionFusion:
         return FusionResult(ts, self.a, a_raw, _clamp(confidence), camera_on, bool(critical),
                             contributions, capped_by, self.low_a_sec, self.eyes_open_now if camera_on else False,
                             self.eyes_closed_sec if camera_on else 0.0, self.ear_available if camera_on else False,
-                            self.eyes_closed_artifact if camera_on else False)
+                            self.eyes_closed_artifact if camera_on else False, cam_cov)
 
     @staticmethod
     def _camera_on(msg: dict) -> bool:

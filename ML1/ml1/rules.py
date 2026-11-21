@@ -54,6 +54,13 @@ def _num(d: dict, key: str, default: float) -> float:
 
 
 LOW_A_PERSIST_SEC = 4.0  # ales din evaluare (ml1/evaluate.py): elimină alarmele false din pâlpâiri
+# Vision are analiza respirației OPRITĂ implicit (Vision/config.yaml breathing.enabled: false, prea multe alarme
+# false). Fără ea, „mână pe piept + respirație grea” nu se mai poate confirma: o mână ținută pe piept atâtea
+# secunde (în loc de 3) ajunge pentru alarma de urgență + „Sunteți bine?”. Un „sunt bine” coboară la 2.
+CHEST_ALONE_SEC = 6.0
+BREATHING_MEASURED = ("normal", "heavy")
+# severitatea 0 cu acest motiv = semn medical încă sub prag; matricea de probabilitate îl vede ca simbol aparte („0+”)
+MEDICAL_SIGN = "observăm un posibil semn medical"
 
 _DISTRESS = re.compile(r"nu mă simt|nu ma simt|rău|rau\b|durere|doare|ajutor|nu pot|ambulan", re.I)
 _OK = re.compile(r"\b(da|bine|ok|okay|sunt bine|totul e bine)\b", re.I)
@@ -88,6 +95,8 @@ def rule_severity(ctx: dict) -> tuple[int, str]:
     heavy = (vision.get("breathing_state") == "heavy" or _has(evs, "heavy_breathing", 0.6)
              or (evs.get("hand_on_chest") or {}).get("breathing") == "heavy")
     chest = _has(evs, "hand_on_chest", 0.6, 3) and heavy
+    breathing_measured = heavy or vision.get("breathing_state") in BREATHING_MEASURED
+    chest_alone = not chest and not breathing_measured and _has(evs, "hand_on_chest", 0.6, CHEST_ALONE_SEC)
 
     # Pleoape coborâte la căscat / privire în jos / telefon NU înseamnă micro-somn (regulă preluată
     # din alerts.py al echipei CV). Profilul `legacy` nu face excluderea (doar pentru comparație).
@@ -119,6 +128,7 @@ def rule_severity(ctx: dict) -> tuple[int, str]:
         head_and_eyes = vision.get("head_drop") is True and perclos >= 0.6
     collapse = (head_and_eyes
                 or _has(evs, "head_on_wheel", 0.6, 2)                       # CV2: prăbușit pe volan
+                or _has(evs, "slumped_side", 0.6, 2)                        # CV2: căzut într-o parte, nemișcat
                 or (vision.get("posture_state") == "slumped" and _num(vision, "still_sec", 0) >= 2))
 
     # Revenire rapidă: PERCLOS pe 60 s rămâne mare până la un minut după ce șoferul și-a revenit.
@@ -139,10 +149,10 @@ def rule_severity(ctx: dict) -> tuple[int, str]:
         return 3, "ochi închiși de peste 3 s (adormit la volan)"
     if eyes_closed_long and ans in ("no_answer", "distress"):
         return 3, "ochi închiși prelungit + fără răspuns"
-    if chest:
+    if chest or chest_alone:
         if ans == "ok":  # a răspuns repede și coerent: rămânem vigilenți, dar nu urgență
             return 2, "mână pe piept, dar șoferul răspunde coerent"
-        return 3, "mână pe piept + respirație grea"
+        return 3, "mână pe piept + respirație grea" if chest else "mână pe piept prelungit (respirația nu e măsurată)"
     microsleep = _has(evs, "microsleep", 0.6) and not artifact
     fatigue_signs = eyes_closed_long or microsleep or perclos_drowsy
     # Fără răspuns la verificarea vocală, cu semnele încă prezente (nu doar „a mic”): urgență.
@@ -167,7 +177,12 @@ def rule_severity(ctx: dict) -> tuple[int, str]:
         return 1, "privire des în afara drumului"
     if _has(evs, "hand_on_chest", 0.5) or _has(evs, "heavy_breathing", 0.5):
         # semn medical încă scurt: nu-i spunem „priviți drumul”, așteptăm pragul de 3 s
-        return 0, "observăm un posibil semn medical"
+        return 0, MEDICAL_SIGN
+    # postura (Vision body/slump.py): CV emite evenimentul abia după 3 s (ieșit din poziție), respectiv 10 s (aplecat)
+    if _has(evs, "out_of_position", 0.6):
+        return 1, "șoferul nu e în poziția de condus"
+    if _has(evs, "bad_posture", 0.5):
+        return 1, "postură aplecată de mult timp"
     # Regula generică (fără o cauză concretă) e cea mai fragilă la shift de domeniu: cerem
     # persistență (a < 0.75 de cel puțin LOW_A_PERSIST_SEC), nu un singur cadru. Fără câmpul
     # low_a_sec (ex. contexte construite manual) păstrăm comportamentul vechi.
@@ -214,11 +229,23 @@ ACTIONS_BY_SEVERITY: dict[int, list[dict[str, Any]]] = {
 }
 
 
+def reminder_for(vision: dict) -> str:
+    """Fraza potrivită pentru severitatea 1, după semnul din date (cheie din PHRASES)."""
+    evs = _events(vision)
+    if _num(vision, "phone", 0) >= 0.6 or _has(evs, "phone_in_hand", 0.6, 2):
+        return "remind_phone"
+    if _has(evs, "out_of_position", 0.6):
+        return "remind_position"
+    if _has(evs, "bad_posture", 0.5) and not (vision.get("gaze_on_road") is False or _has(evs, "gaze_off_road", 0.6, 2)):
+        return "remind_posture"
+    return "remind_road"
+
+
 def fallback_decision(ctx: dict, why: str = "fallback") -> dict:
     sev, reason = rule_severity(ctx)
     actions = [dict(a, args=dict(a["args"])) for a in ACTIONS_BY_SEVERITY[sev]]
-    if sev == 1 and _num(ctx.get("vision") or {}, "phone", 0) >= 0.6:
-        actions = [{"tool": "speak", "args": {"text": PHRASES["remind_phone"]}}]
+    if sev == 1:
+        actions = [{"tool": "speak", "args": {"text": PHRASES[reminder_for(ctx.get("vision") or {})]}}]
     if sev == 3 and wants_112(ctx):
         actions = [a for a in actions if a["tool"] != "ask_driver"]
         actions.append({"tool": "call_112", "args": {"report": simple_112_report(ctx)}})

@@ -46,7 +46,16 @@ HZ = 5
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 FIG = DOCS / "figures"
-CV_MIN_DUR = {"hand_on_chest": 2.0, "heavy_breathing": 3.0, "phone_use": 1.0, "head_on_wheel": 2.0, "default": 1.0}
+CV_MIN_DUR = {"hand_on_chest": 2.0, "heavy_breathing": 3.0, "phone_use": 1.0, "head_on_wheel": 2.0,
+              "slumped_side": 2.0, "bad_posture": 10.0, "out_of_position": 3.0, "default": 1.0}   # Vision/config.yaml
+# evenimentele camerei CORPULUI (laptopul 3): dispar când laptopul corpului nu mai trimite
+BODY_EVENTS = ("phone_use", "hand_on_chest", "heavy_breathing", "head_on_wheel", "slumped_side", "bad_posture",
+               "out_of_position")
+# segmentele adăugate pentru Vision-ul cu două laptopuri (merge.py) și postura (body/slump.py)
+NEW_KINDS = ("posture", "out", "face_lost", "body_lost")
+# fără ochi: camera oprită (privacy) sau laptopul feței căzut. ECU-ul încetinește intenționat (încredere mică)
+BLIND_KINDS = ("privacy", "face_lost")
+EVIDENCE_HZ_CANDIDATES = (0.5, 1.0, 2.0, 3.0, 5.0)   # observații independente / s (5 = fiecare cadru)
 CV_GAP_SEC = 1.0   # Vision/config.yaml events.gap_sec
 K = 4
 SEV_NAMES = ["0 OK", "1 Redusă", "2 Medie", "3 Ridicată"]
@@ -85,7 +94,7 @@ def make_drivers(n: int, rng: np.random.Generator, prefix: str, shift: bool = Fa
 
 def make_trip(rng: np.random.Generator) -> list[tuple[str, float, dict]]:
     segs: list[tuple[str, float, dict]] = [("normal", 35.0, {})]
-    middle = ["glance", "glance", "yawn", "touch", "phone", "fatigue", "privacy"]
+    middle = ["glance", "glance", "yawn", "touch", "touch", "phone", "fatigue", "privacy", *NEW_KINDS]
     rng.shuffle(middle)
     for kind in middle:
         segs.append(("normal", float(rng.uniform(20, 35)), {}))
@@ -94,7 +103,10 @@ def make_trip(rng: np.random.Generator) -> list[tuple[str, float, dict]]:
         elif kind == "yawn":
             segs.append(("yawn", 4.0, {}))
         elif kind == "touch":
-            segs.append(("touch", 3.0, {}))
+            # mâna pe piept fără nicio urgență (centura, o scărpinătură): scurt (CV nu emite nimic sub 2 s) sau
+            # 2-5 s (CV emite hand_on_chest). Fără ele, matricea credea că orice mână pe piept e o urgență.
+            hold = float(rng.uniform(0.8, 1.5) if rng.random() < 0.5 else rng.uniform(2.5, 5.0))
+            segs.append(("touch", max(3.0, hold + 1.0), {"hold": hold}))
         elif kind == "phone":
             segs.append(("phone", float(rng.uniform(5, 12)), {}))
         elif kind == "fatigue":
@@ -102,6 +114,12 @@ def make_trip(rng: np.random.Generator) -> list[tuple[str, float, dict]]:
             segs.append(("fatigue", rise + 30.0, {"rise": rise, "hold": 15.0, "rec": 15.0}))
         elif kind == "privacy":
             segs.append(("privacy", 15.0, {}))
+        elif kind == "posture":        # aplecat / cocoșat: CV emite bad_posture după 10 s
+            segs.append(("posture", float(rng.uniform(14, 20)), {}))
+        elif kind == "out":            # se întinde spre bancheta din spate: corpul și fața ies din cadru
+            segs.append(("out", 6.0, {}))
+        elif kind in ("face_lost", "body_lost"):   # laptopul feței / corpului pierde Wi-Fi-ul (reconectare la hotspot)
+            segs.append((kind, float(rng.uniform(8, 40)), {}))
     segs.append(("normal", float(rng.uniform(25, 35)), {}))
     end = rng.choice(["chest", "collapse", "none"])
     if end == "chest":
@@ -109,10 +127,27 @@ def make_trip(rng: np.random.Generator) -> list[tuple[str, float, dict]]:
         if segs[-1][2]["progress"]:
             segs.append(("collapse", 15.0, {}))
     elif end == "collapse":
-        segs.append(("collapse", 20.0, {}))
+        # side: căzut într-o parte (slumped_side, fără cap căzut); face_offline: laptopul feței cade chiar atunci,
+        # urgența o vede doar camera corpului
+        segs.append(("collapse", 20.0, {"side": bool(rng.random() < 0.5), "face_offline": bool(rng.random() < 0.3)}))
     else:
         segs.append(("normal", 20.0, {}))
     return segs
+
+
+EMERGENCY_VARIANTS = {
+    "chest": ("chest", {"progress": False}),
+    "collapse": ("collapse", {"side": False, "face_offline": False}),
+    "collapse_side": ("collapse", {"side": True, "face_offline": False}),
+    "collapse_body_only": ("collapse", {"side": False, "face_offline": True}),
+    "collapse_side_body_only": ("collapse", {"side": True, "face_offline": True}),
+}
+
+
+def emergency_trip(variant: str) -> list[tuple[str, float, dict]]:
+    """40 s de condus normal (calibrare inclusă), apoi o urgență de 20 s din EMERGENCY_VARIANTS."""
+    kind, p = EMERGENCY_VARIANTS[variant]
+    return [("normal", 40.0, {}), (kind, 20.0, dict(p))]
 
 
 def _fatigue_level(tau: float, p: dict) -> float:
@@ -139,6 +174,9 @@ class TripSim:
         # din fluxul aleator comun: două variante comparate primesc exact aceleași răspunsuri
         # (comparație pereche, Curs 5: modele comparate în aceleași condiții).
         self.behavior_seed = int(rng.integers(1 << 30))
+        # Vision are analiza respirației oprită implicit (config.yaml breathing.enabled: false); o jumătate din
+        # călătorii o au pornită, ca matricele să fie bune în ambele configurații
+        self.breathing_on = bool(np.random.default_rng([self.behavior_seed, 99]).random() < 0.5)
         self._build()
         self._responsiveness()
 
@@ -169,7 +207,10 @@ class TripSim:
         * PERCLOS = fracția cadrelor „închise” pe ultimele 60 s, None în primele 10 s;
         * artefacte: pleoapele PAR închise la privit în jos (telefon) și la căscat — CV le măsoară ca închise;
         * evenimente CV1: eyes_closed, microsleep (închis >= 0.5 s), gaze_off_road (cu direcție),
-          low_blink_rate, yawn, head_drop; CV2: phone_use, hand_on_chest, heavy_breathing, head_on_wheel."""
+          low_blink_rate, yawn, head_drop; CV2: phone_use, hand_on_chest, heavy_breathing, head_on_wheel,
+          slumped_side, bad_posture, out_of_position;
+        * forma mesajului combinat de merge.py (laptopul 2 = fața, laptopul 3 = corpul): `cameras`, câmpurile
+          unei camere care nu trimite lipsesc, head_drop e mereu bool, evenimentele ei dispar."""
         d, rng, t0 = self.d, self.rng, 0.0
         prev_label = 0
         window: deque = deque()          # (t, închis măsurat) pentru PERCLOS pe 60 s
@@ -184,6 +225,7 @@ class TripSim:
                 tau, t = i / HZ, round(t0 + i / HZ, 2)
                 D, phone, gaze_off, chest, collapse, yawn, eyes_burst, cam = 0.0, False, False, False, False, False, False, True
                 gaze_dir, artifact_closed = None, False
+                lean, out_pos, side, face_cam, body_cam = False, False, False, True, True
                 label = 0
                 if kind == "glance":
                     gaze_off, gaze_dir = tau < p["g"], glance_dir
@@ -191,7 +233,7 @@ class TripSim:
                     yawn = tau < 2.5
                     artifact_closed = 0.8 <= tau < 2.0             # ochi strânși în timpul căscatului
                 elif kind == "touch":
-                    chest = tau < 1.5          # sub pragul CV de 2 s -> fără eveniment
+                    chest = tau < p.get("hold", 1.5)   # < 2 s: sub pragul CV, fără eveniment; altfel un semn benign
                 elif kind == "phone":
                     phone, label = True, 1
                     gaze_off, gaze_dir = rng.random() < 0.7, "down"
@@ -209,6 +251,15 @@ class TripSim:
                     chest, label = True, 3
                 elif kind == "collapse":
                     collapse, label = True, 3
+                    side, face_cam = bool(p.get("side")), not p.get("face_offline")
+                elif kind == "posture":
+                    lean, label = True, (1 if tau >= CV_MIN_DUR["bad_posture"] else 0)
+                elif kind == "out":
+                    out_pos, label = True, (1 if tau >= CV_MIN_DUR["out_of_position"] else 0)
+                elif kind == "face_lost":
+                    face_cam = False
+                elif kind == "body_lost":
+                    body_cam = False
                 if label == 3 and self.emergency_onset is None:
                     self.emergency_onset = t
                 if label > prev_label and label >= 1:
@@ -219,10 +270,11 @@ class TripSim:
                 if not cam:
                     window.clear()
                     closed_since = None
-                    msg = {"ts": t, "camera_on": False, "events": [], "phone": 0.0}
+                    msg = {"ts": t, "camera_on": False, "cameras": {"face": False, "body": False}, "events": [], "phone": 0.0}
                 else:
                     n = d.noise
-                    face = not (collapse and tau >= 2 and rng.random() < 0.7) and rng.random() >= d.face_drop
+                    face = (face_cam and not out_pos and not (collapse and tau >= 2 and rng.random() < 0.7)
+                            and rng.random() >= d.face_drop)
                     # reprize de închidere: clipiri lungi tot mai dese și mai lungi odată cu oboseala
                     if run_left <= 0 and rng.random() < (0.15 + 0.30 * D) / HZ:
                         run_left = max(1, int(round((0.15 + 0.9 * D ** 1.3) * HZ)))
@@ -258,30 +310,54 @@ class TripSim:
                         active["phone_use"] = {"in_hand": True, "usage": "looking"}
                     if chest:
                         active["hand_on_chest"] = {"side": "left"}
-                        if kind == "chest":
+                        if kind == "chest" and self.breathing_on:
                             active["hand_on_chest"]["breathing"] = "heavy"
                             active["heavy_breathing"] = {"rate_bpm": 32.0}
-                    if collapse:
+                    if collapse and not side:
                         active["head_drop"] = {}
                         if tau >= 3:
                             active["head_on_wheel"] = {"face_visible": False}
+                    if collapse and side and tau >= 2:      # înclinat lateral + nemișcat >= 2 s (slump.py)
+                        active["slumped_side"] = {"side_deg": 35.0, "still_sec": round(tau - 2, 1)}
+                    if lean:
+                        active["bad_posture"] = {"lean": 0.55}
+                    if out_pos:
+                        active["out_of_position"] = {"reason": "lost"}
                     if not face:   # fără față CV1 nu produce evenimente de față
                         for k in ("eyes_closed", "microsleep", "gaze_off_road", "yawn", "low_blink_rate"):
                             active.pop(k, None)
+                    if not face_cam:   # laptopul feței nu trimite: nici head_drop de la CV1
+                        active.pop("head_drop", None)
+                    if not body_cam:   # laptopul corpului nu trimite: evenimentele lui lipsesc
+                        for k in BODY_EVENTS:
+                            active.pop(k, None)
+                    if collapse:
+                        posture = {"state": "slumped" if tau >= (2 if side else 3) else "upright",
+                                   "direction": "side" if side else "forward", "still_sec": round(tau, 1)}
+                    elif out_pos:
+                        posture = {"state": "unknown", "pose_lost": True, "out": "lost", "still_sec": 0.0}
+                    else:
+                        posture = {"state": "leaning" if lean else "upright", "still_sec": 0.0}
                     msg = {
-                        "ts": t, "camera_on": True, "face_detected": face, "body_detected": True,
-                        "ear": round(float(np.clip(ear, 0.03, 0.45)), 3) if face else None,
-                        "perclos": round(perclos, 3) if (face and perclos is not None) else None,
-                        "blink_rate": round(float(blink), 1) if (face and t >= 10.0) else None,
-                        "gaze_on_road": (not gaze_off and not collapse) if face else None,
-                        # CV: head_drop de la față SAU de la corpul prăbușit (pipeline._head_drop)
-                        "head_drop": True if collapse else (False if face else None),
-                        "phone": round(float(np.clip(rng.normal(0.82, 0.06), 0, 1)) if phone else abs(rng.normal(0.02, 0.02)), 2),
-                        "breathing": {"state": "heavy" if kind == "chest" else "normal"},
-                        "posture": {"state": "slumped" if collapse and tau >= 3 else "upright",
-                                    "still_sec": round(tau, 1) if collapse else 0.0},
+                        "ts": t, "camera_on": True, "cameras": {"face": face_cam, "body": body_cam},
+                        "face_detected": face, "body_detected": body_cam and not out_pos,
+                        # merge.py: head_drop e mereu bool, de la oricare cameră (corpul prăbușit în față îl dă și el)
+                        "head_drop": bool(collapse and not side),
                         "events": self._events(t, active),
                     }
+                    if face_cam:   # câmpurile camerei feței; lipsesc de tot când laptopul ei nu trimite (merge.py)
+                        msg.update({
+                            "ear": round(float(np.clip(ear, 0.03, 0.45)), 3) if face else None,
+                            "perclos": round(perclos, 3) if (face and perclos is not None) else None,
+                            "blink_rate": round(float(blink), 1) if (face and t >= 10.0) else None,
+                            "gaze_on_road": (not gaze_off and not collapse) if face else None,
+                        })
+                    if body_cam:
+                        msg.update({
+                            "phone": round(float(np.clip(rng.normal(0.82, 0.06), 0, 1)) if phone else abs(rng.normal(0.02, 0.02)), 2),
+                            "breathing": {"state": "heavy" if kind == "chest" else "normal"} if self.breathing_on else None,
+                            "posture": posture,
+                        })
                 self.frames.append(msg)
                 self.truth.append(label)
                 self.kind.append(kind)
@@ -354,7 +430,7 @@ def run_system(sim: TripSim, llm=None, calibrate: bool = True) -> dict:
     eng = DecisionEngine(llm_fn=llm, calibrate=calibrate)
     pending: list[tuple[float, dict]] = []
     pred, a_vals, feats, decisions = [], [], [], []
-    ts, rule, conf, c112 = [], [], [], []
+    ts, rule, med, conf, cov, c112 = [], [], [], [], [], []
     cur = 0
     for msg in sim.frames:
         t = msg["ts"]
@@ -375,28 +451,114 @@ def run_system(sim: TripSim, llm=None, calibrate: bool = True) -> dict:
         feats.append(features(msg, r, eng))
         ts.append(t)
         rule.append(eng._latest_rule_sev)
+        med.append(eng._latest_medical)
         conf.append(r.confidence)
+        cov.append(r.camera_cov)
         c112.append(eng._called_112)
     t112 = next((d["ts"] for d in decisions if any(a["tool"] == "call_112" for a in d["actions"])), None)
     return {"pred": np.array(pred), "a": np.array(a_vals), "X": np.array(feats, dtype=float),
             "decisions": decisions, "t112": t112, "llm_calls": eng.stats["llm_calls"],
-            "ts": ts, "rule": rule, "conf": conf, "c112": c112}
+            "ts": ts, "rule": rule, "med": med, "conf": conf, "cov": cov, "c112": c112}
 
 
 # ------------------------------------------- matricea de probabilitate + ECU ----
 
 def hmm_sequences(sims, runs) -> list[dict]:
     """Secvențele pentru probability.fit_model: adevărul brut (nu etichetele cu ferestre „nu contează”)."""
-    return [{"truth": s.truth, "rule": r["rule"], "a": r["a"].tolist(), "conf": r["conf"]} for s, r in zip(sims, runs)]
+    return [{"truth": s.truth, "rule": r["rule"], "a": r["a"].tolist(), "conf": r["conf"], "cov": r["cov"],
+             "med": r["med"]} for s, r in zip(sims, runs)]
 
 
-def hmm_run(model: prob.ProbModel, run: dict) -> np.ndarray:
-    f = prob.StateFilter(model)
-    return np.array([f.update(rs, a, c, t) for t, rs, a, c in zip(run["ts"], run["rule"], run["a"], run["conf"])])
+def hmm_run(model: prob.ProbModel, run: dict, weighted: bool = True, hz: float | None = None) -> np.ndarray:
+    """Credința filtrului pe fiecare cadru. weighted=False: filtrul vechi (prag pe încredere, evidență pe
+    cadru, fără simbolul „0+”), pentru comparație. hz: re-eșantionare la altă rată (fiecare cadru repetat),
+    ca la merge.py (10 Hz)."""
+    f = prob.StateFilter(model, per_second=weighted)
+    out = []
+    rep = 1 if not hz else max(1, int(round(hz / HZ)))
+    for t, rs, a, c, cv, md in zip(run["ts"], run["rule"], run["a"], run["conf"], run["cov"], run["med"]):
+        for k in range(rep):
+            b = f.update(rs, a, c, t + k / (HZ * rep), cv if weighted else None, md and weighted)
+        out.append(b)
+    return np.array(out)
 
 
 def bayes_predict(B: np.ndarray) -> np.ndarray:
     return (B @ COST).argmin(1)          # riscul așteptat al fiecărei severități, pe cadru
+
+
+def _scenario_tag(sim: "TripSim", si: int) -> str | None:
+    kind, _, p = sim.segs[si]
+    if kind == "face_lost":
+        return "laptopul feței nu trimite (8–40 s)"
+    if kind == "body_lost":
+        return "laptopul corpului nu trimite (8–40 s)"
+    if kind == "posture":
+        return "aplecat / cocoșat (bad_posture)"
+    if kind == "out":
+        return "ieșit din poziție (out_of_position)"
+    if kind == "chest":
+        return "mână pe piept, respirație " + ("măsurată" if sim.breathing_on else "nemăsurată (implicit în Vision)")
+    if kind == "collapse" and "side" in p:          # nu și prăbușirea care urmează după mâna pe piept
+        name = "căzut într-o parte (slumped_side)" if p["side"] else "prăbușit în față (head_on_wheel)"
+        return name + (", doar camera corpului" if p["face_offline"] else "")
+    return None
+
+
+def without_cameras(sim: "TripSim") -> "TripSim":
+    """Aceeași călătorie fără câmpul `cameras` (ML1 / merge.py de dinainte): laptopul feței căzut arăta ca
+    „fața lipsește”. Pentru comparație."""
+    import copy
+    s2 = copy.copy(sim)
+    s2.frames = [{k: v for k, v in f.items() if k != "cameras"} for f in sim.frames]
+    return s2
+
+
+def scenario_metrics(sims, runs, beliefs, beliefs_old, runs_nocam=None) -> dict:
+    """Situațiile noi din Vision (postura, două laptopuri, respirația oprită), pe segment:
+    * cele cu țintă (1 sau 3): s-a ajuns la severitatea țintă în segment și în cât timp de la debut;
+      pentru urgențe și dacă P(urgență) ≥ 0.5 (confirmarea MRM a ECU) cu filtrul nou / vechi;
+    * laptop căzut (țintă 0): în câte segmente ML1 a publicat o alarmă falsă (și fără câmpul `cameras`)."""
+    acc: dict[str, dict] = {}
+    runs_nocam = runs_nocam or [None] * len(sims)
+    for s, r, B, Bo, rn in zip(sims, runs, beliefs, beliefs_old, runs_nocam):
+        pred = r["pred"]
+        start = 0
+        for si, (kind, dur, p) in enumerate(s.segs):
+            i0 = start
+            i1 = start + int(round(dur * HZ))
+            start = i1
+            tag = _scenario_tag(s, si)
+            if tag is None:
+                continue
+            d = acc.setdefault(tag, {"n": 0, "hit": 0, "lat": [], "false": 0, "false_nocam": None, "p3": 0, "p3_old": 0,
+                                     "p3_lat": [], "p3_lat_old": [],
+                                     "target": 0 if kind.endswith("_lost") else (1 if kind in ("posture", "out") else 3)})
+            d["n"] += 1
+            if d["target"] == 0:
+                alarm = lambda run: any(dec["severity"] >= 1 and i0 / HZ <= dec["ts"] < i1 / HZ for dec in run["decisions"])
+                d["false"] += alarm(r)
+                if rn is not None:
+                    d["false_nocam"] = (d["false_nocam"] or 0) + alarm(rn)
+                continue
+            onset = i0 + {"posture": int(CV_MIN_DUR["bad_posture"] * HZ), "out": int(CV_MIN_DUR["out_of_position"] * HZ)}.get(kind, 0)
+            end = min(len(pred), i1 + 3 * HZ)
+            hit = next((j for j in range(onset, end) if pred[j] >= d["target"]), None)
+            if hit is not None:
+                d["hit"] += 1
+                d["lat"].append((hit - onset) / HZ)
+            if d["target"] == 3:
+                for Bx, key in ((B, "p3"), (Bo, "p3_old")):
+                    j3 = next((j for j in range(i0, end) if Bx[j][3] >= 0.5), None)
+                    d[key] += j3 is not None
+                    if j3 is not None:
+                        d[key.replace("p3", "p3_lat")].append((j3 - i0) / HZ)
+    med = lambda xs: float(np.median(xs)) if xs else None
+    return {tag: {"target": d["target"], "n": d["n"], "detected": d["hit"], "latency_median_s": med(d["lat"]),
+                  "false_alarm_segments": d["false"], "false_alarm_segments_without_cameras": d["false_nocam"],
+                  "p_emerg_reached": d["p3"], "p_emerg_reached_old": d["p3_old"],
+                  "p_emerg_latency_median_s": med(d["p3_lat"]), "p_emerg_latency_median_s_old": med(d["p3_lat_old"])}
+            for tag, d in sorted(acc.items())}
 
 
 def ecu_metrics(sims, runs, beliefs) -> dict:
@@ -421,13 +583,13 @@ def ecu_metrics(sims, runs, beliefs) -> dict:
             truth = s.truth[i]
             if truth != 0:
                 last_episode = t
-            elif s.kind[i] != "privacy" and t - last_episode >= 15.0:   # condus normal, departe de un episod
+            elif s.kind[i] not in BLIND_KINDS and t - last_episode >= 15.0:   # condus normal, departe de un episod
                 steady_n += 1
                 steady_slow += cmd["speed_ref_kmh"] < 0.9 * ecu.v_set
             if truth >= 0:
                 by_state[truth].append(cmd["speed_factor"])
                 ref_by_state[truth].append(cmd["speed_ref_kmh"])
-            if truth == 0 and s.kind[i] == "privacy":     # camera oprită: prudența e intenționată
+            if truth == 0 and s.kind[i] in BLIND_KINDS:   # camera oprită / laptopul feței căzut: prudența e intenționată
                 cam_off_n += 1
                 cam_off_slow += cmd["speed_ref_kmh"] < 0.9 * ecu.v_set
             elif truth == 0:
@@ -876,18 +1038,48 @@ def main(argv=None) -> dict:
 
     # matricea de probabilitate (emisie + tranziție Markov): învățată DOAR pe train
     t_fit = time.perf_counter()
-    pmodel = prob.fit_model(hmm_sequences(sims["train"], runs["train"]), HZ)
+    seqs_train = hmm_sequences(sims["train"], runs["train"])
+    pmodel = prob.fit_model(seqs_train, HZ)
+    # varianta de dinainte (prag pe încredere, evidență pe cadru), doar pentru comparație
+    pmodel_old = prob.fit_model([{k: v for k, v in sq.items() if k not in ("cov", "med")} for sq in seqs_train], HZ)
     results["prob_model"] = {"fit_s": round(time.perf_counter() - t_fit, 3), "meta": pmodel.meta,
                              "dwell_s": [round(x, 1) for x in pmodel.mean_dwell_sec()],
                              "transition_1s": [[round(x, 4) for x in row] for row in pmodel.transition(1.0)],
                              "emission": [[round(x, 3) for x in row] for row in pmodel.emission]}
-    results["prob_stats"], results["ecu"] = {}, {}
+    # Câte observații independente pe secundă (evidence_hz): alese pe VALIDARE după log-loss-ul stării reale,
+    # adică după calibrarea credinței (Curs 5), nu după cât de repede alarmează. Cadrele vecine ale aceluiași
+    # gest nu sunt independente: la 5 observații/s filtrul era sigur pe o urgență după o secundă de mână pe piept.
+    def val_logloss(m: prob.ProbModel) -> float:
+        tot, n_ok = 0.0, 0
+        for s, r in zip(sims["val"], runs["val"]):
+            B = hmm_run(m, r)
+            y = np.array(s.truth)
+            ok = y >= 0
+            p = B[np.arange(len(y)), np.clip(y, 0, K - 1)]
+            tot += float(-np.log(np.maximum(p[ok], 1e-6)).sum())
+            n_ok += int(ok.sum())
+        return tot / max(1, n_ok)
+
+    ll = {}
+    for h in EVIDENCE_HZ_CANDIDATES:
+        pmodel.meta["evidence_hz"] = h
+        ll[h] = round(val_logloss(pmodel), 4)
+    pmodel.meta["evidence_hz"] = min(ll, key=ll.get)
+    results["prob_model"]["evidence_hz"] = {"chosen": pmodel.meta["evidence_hz"], "val_logloss": ll}
+    results["prob_stats"], results["ecu"], results["ecu_old_filter"], results["scenarios"] = {}, {}, {}, {}
 
     for split in ("test", "shift"):
         S, R = sims[split], runs[split]
         t_hmm = time.perf_counter()
         beliefs = [hmm_run(pmodel, r) for r in R]
         hmm_us = 1e6 * (time.perf_counter() - t_hmm) / max(1, sum(len(r["ts"]) for r in R))
+        beliefs_old = [hmm_run(pmodel_old, r, weighted=False) for r in R]
+        # aceleași date la 10 Hz (ca merge.py cu două laptopuri): filtrul nou trebuie să dea aceeași credință
+        dev = {}
+        for name, mdl, w, B5 in (("nou", pmodel, True, beliefs), ("vechi", pmodel_old, False, beliefs_old)):
+            B10 = [hmm_run(mdl, r, weighted=w, hz=10) for r in R]
+            dev[name] = {"max_abs_dp": float(max(np.abs(a - b).max() for a, b in zip(B10, B5))),
+                         "cost_per_frame_10hz": frame_summary("10hz", S, [bayes_predict(B) for B in B10], rng)["scores"]["cost_per_frame"]}
         res = {}
         res["clasa majoritară (0)"] = frame_summary("majoritar", S, [np.zeros(len(s.frames), int) for s in S], rng)
         res["prag pe a"] = frame_summary("prag pe a", S, [a_threshold_predict(r["a"], cuts) for r in R], rng)
@@ -896,6 +1088,7 @@ def main(argv=None) -> dict:
         res["reguli, praguri vechi (legacy)"] = summarize("legacy", S, runs_legacy[split], rng)
         res["rules fără calibrare"] = summarize("rules fără calibrare", S, runs_nocal[split], rng)
         res["HMM (cea mai probabilă stare)"] = frame_summary("HMM MAP", S, [B.argmax(1) for B in beliefs], rng)
+        res["HMM vechi (pe cadru, prag pe încredere, fără 0+)"] = frame_summary("HMM vechi", S, [bayes_predict(B) for B in beliefs_old], rng)
         res["HMM (cost așteptat minim)"] = frame_summary("HMM Bayes", S, [bayes_predict(B) for B in beliefs], rng)
         res["rules ∨ HMM Bayes"] = frame_summary("max", S, [np.maximum(r["pred"], bayes_predict(B))
                                                             for r, B in zip(R, beliefs)], rng)
@@ -905,8 +1098,12 @@ def main(argv=None) -> dict:
             "rules+calibrare": prob.matrix_stats(res["rules+calibrare"]["cm"]),
             "HMM (cost așteptat minim)": prob.matrix_stats(res["HMM (cost așteptat minim)"]["cm"]),
             "hmm_us_per_frame": hmm_us,
+            "rate_10hz": dev,
         }
         results["ecu"][split] = ecu_metrics(S, R, beliefs)
+        results["ecu_old_filter"][split] = ecu_metrics(S, R, beliefs_old)
+        runs_nocam = [run_system(without_cameras(s)) for s in S]
+        results["scenarios"][split] = scenario_metrics(S, R, beliefs, beliefs_old, runs_nocam)
         if args.llm and split == "test":
             from .llm_client import OllamaClient
             llm = OllamaClient()
@@ -916,6 +1113,17 @@ def main(argv=None) -> dict:
                 res["LLM+reguli+calibrare"] = summarize("LLM", S, rl, rng)
                 res["LLM+reguli+calibrare"]["llm_calls"] = sum(r["llm_calls"] for r in rl)
         results[split] = res
+
+    # Urgențele dedicate: fiecare variantă pe fiecare șofer de test (în călătoriile aleatoare unele variante,
+    # ex. prăbușirea văzută doar de camera corpului, pot lipsi). Generator separat: restul rezultatelor nu se schimbă.
+    rng_e = np.random.default_rng(args.seed + 1)
+    Se = [TripSim(d, emergency_trip(v), rng_e) for d in drivers["test"] for v in EMERGENCY_VARIANTS]
+    Re = [run_system(s) for s in Se]
+    Be, Bo = [hmm_run(pmodel, r) for r in Re], [hmm_run(pmodel_old, r, weighted=False) for r in Re]
+    split_e = "urgențe dedicate"
+    results["scenarios"][split_e] = scenario_metrics(Se, Re, Be, Bo)
+    results["ecu"][split_e] = ecu_metrics(Se, Re, Be)
+    results["ecu_old_filter"][split_e] = ecu_metrics(Se, Re, Bo)
 
     # ROC/PR pentru 1-a și calibrarea softmax, pe test
     y = np.concatenate([np.array(s.labels) for s in sims["test"]])
@@ -983,6 +1191,10 @@ def _prob_section(res: dict) -> list[str]:
          "Durata medie în stare: " + ", ".join(f"{n} {d:.0f} s" for n, d in zip(st, pm["dwell_s"])) + ".", "",
          "Tranziția pe 1 s, P(S(t+1) = coloană | S(t) = rând):", ""]
     L += _md_matrix(pm["transition_1s"], st, st, 4) + [""]
+    eh = pm.get("evidence_hz")
+    if eh:
+        L += [f"Observații independente pe secundă (`evidence_hz`), alese pe validare după log-loss: **{eh['chosen']}**. "
+              "Log-loss pe validare: " + ", ".join(f"{h} → {v:.4f}" for h, v in eh["val_logloss"].items()) + ".", ""]
     for split, title in (("test", "test"), ("shift", "shift")):
         s = ps.get(split)
         if not s:
@@ -1000,7 +1212,41 @@ def _prob_section(res: dict) -> list[str]:
             L.append(f"| {name} | {x['accuracy']:.3f} | {x['balanced_accuracy']:.3f} | {x['kappa']:.3f} | "
                      f"{x['mcc']:.3f} | {x['cost_per_frame']:.3f} |")
         L += ["", f"Costul filtrului: {s['hmm_us_per_frame']:.1f} µs / cadru (Python pur).", ""]
+        rate = s.get("rate_10hz")
+        if rate:
+            L += ["Aceleași date la 10 Hz (ca `merge.py` cu două laptopuri) față de 5 Hz: abaterea maximă a lui "
+                  "P(stare) și costul pe cadru la 10 Hz.", "",
+                  "| Filtru | max abatere P(stare) ↓ | cost / cadru la 10 Hz ↓ |", "|---|---|---|"]
+            for name, v in rate.items():
+                label = "nou (evidență pe secundă + acoperire)" if name == "nou" else "vechi (evidență pe cadru)"
+                L.append(f"| {label} | {v['max_abs_dp']:.3f} | {v['cost_per_frame_10hz']:.3f} |")
+            L.append("")
     return L
+
+
+def _scenario_section(res: dict) -> list[str]:
+    sc = res.get("scenarios")
+    if not sc:
+        return []
+    L = ["## Situațiile noi din Vision (postură, două laptopuri, respirația oprită)", "",
+         "Pe segment: severitatea țintă atinsă și latența de la debut; pentru urgențe și dacă P(urgență) ≥ 0.5 "
+         "(confirmarea MRM a ECU-ului) cu filtrul nou / vechi; pentru un laptop căzut (șofer atent), în câte "
+         "segmente ML1 a dat o alarmă falsă, cu și fără câmpul `cameras` din merge.py (fără el, laptopul feței "
+         "căzut arăta ca „șoferul nu privește drumul”).", "",
+         "| Split | Situație | țintă | n | detectat | latență (s) | P(urgență) ≥ 0.5 nou · vechi (latență s) "
+         "| alarme false ↓ (fără `cameras`) |",
+         "|---|---|---|---|---|---|---|---|"]
+    for split, rows in sc.items():
+        for tag, v in rows.items():
+            det = "–" if v["target"] == 0 else f"{v['detected']}/{v['n']}"
+            p3 = (f"{v['p_emerg_reached']}/{v['n']} · {v['p_emerg_reached_old']}/{v['n']} "
+                  f"({_fmt(v['p_emerg_latency_median_s'], 1)} · {_fmt(v['p_emerg_latency_median_s_old'], 1)})"
+                  if v["target"] == 3 else "–")
+            nocam = v.get("false_alarm_segments_without_cameras")
+            fa = (f"{v['false_alarm_segments']}/{v['n']}" + (f" ({nocam}/{v['n']})" if nocam is not None else "")
+                  if v["target"] == 0 else "–")
+            L.append(f"| {split} | {tag} | {v['target']} | {v['n']} | {det} | {_fmt(v['latency_median_s'], 1)} | {p3} | {fa} |")
+    return L + [""]
 
 
 def _ecu_section(res: dict) -> list[str]:
@@ -1011,10 +1257,12 @@ def _ecu_section(res: dict) -> list[str]:
          "Intrări: a, riscul 0.5·P(obosit) + P(urgență) din matricea de probabilitate, încrederea; supervizor "
          "determinist deasupra (plafoane pe severitate, MRM, rată limitată). Viteza setată: 100 km/h.", "",
          "| Split | viteză medie: atent · distras · obosit · urgență | timp normal încetinit < 90% ↓ "
-         "(din care ≥ 15 s după un episod) | cameră oprită încetinit | MRM atins | întârziere MRM (s, mediană) "
+         "(din care ≥ 15 s după un episod) | fără ochi încetinit (cameră oprită, laptopul feței căzut) | MRM atins | întârziere MRM (s, mediană) "
          "| călătorii cu MRM fals ↓ | viteză la 30 s după urgență | µs / pas |",
          "|---|---|---|---|---|---|---|---|---|"]
-    for split, e in ecu.items():
+    rows = [(split, e) for split, e in ecu.items()]
+    rows += [(f"{split}, filtrul vechi", e) for split, e in (res.get("ecu_old_filter") or {}).items()]
+    for split, e in rows:
         sp = " · ".join("–" if v is None else f"{v:.0%}" for v in e["speed_factor_by_state"])
         L.append(f"| {split} | {sp} | {_fmt(e['normal_time_slowed_pct'], 1)}% ({_fmt(e['steady_normal_slowed_pct'], 1)}%) "
                  f"| {_fmt(e['camera_off_slowed_pct'], 0)}% | {e['mrm_reached']} | "
@@ -1060,7 +1308,7 @@ def write_report(res: dict) -> None:
           f"Scorul 1 − a ca detector pentru severitate ≥ 2 (test): ROC-AUC {res['roc_attention']['auc']:.3f}, "
           f"AP {res['roc_attention']['ap']:.3f}. Calibrarea softmax: Brier {res['softmax_calibration']['brier']:.3f}.", "",
           "## Arborele de decizie învățat (reguli citibile)", "", "```", *res["tree_rules"], "```", ""]
-    L += _prob_section(res) + _ecu_section(res)
+    L += _prob_section(res) + _scenario_section(res) + _ecu_section(res)
     for f in res.get("figures", []):
         L += [f"![{f}](figures/{f})", ""]
     (DOCS / "EVALUATION_RESULTS.md").write_text("\n".join(L), encoding="utf-8")
@@ -1079,10 +1327,25 @@ def print_summary(res: dict) -> None:
     print("\nprofil (val):", {k: (round(v['macro_f1'], 3), round(v['cost'], 3)) for k, v in res['profile_val'].items()},
           "ales:", res['profile_chosen'])
     print(f"\npraguri a (val): {res['a_cuts_from_val']}   AUC(1-a)={res['roc_attention']['auc']:.3f}   {res['elapsed_s']} s")
+    eh = res.get("prob_model", {}).get("evidence_hz")
+    if eh:
+        print(f"evidence_hz (val, log-loss): {eh['chosen']}  {eh['val_logloss']}")
     for split, s in res.get("prob_stats", {}).items():
         r, h = s["rules+calibrare"], s["HMM (cost așteptat minim)"]
         print(f"matrice {split}: kappa reguli {r['kappa']:.3f} / HMM {h['kappa']:.3f}  MCC {r['mcc']:.3f} / {h['mcc']:.3f}  "
               f"filtru {s['hmm_us_per_frame']:.1f} µs/cadru")
+        for name, v in (s.get("rate_10hz") or {}).items():
+            print(f"  10 Hz, filtru {name}: max abatere P {v['max_abs_dp']:.3f}  cost {v['cost_per_frame_10hz']:.3f}")
+    for split, rows in res.get("scenarios", {}).items():
+        for tag, v in rows.items():
+            extra = (f"alarme false {v['false_alarm_segments']}/{v['n']} (fără cameras: "
+                     f"{v.get('false_alarm_segments_without_cameras')}/{v['n']})" if v["target"] == 0 else
+                     f"detectat {v['detected']}/{v['n']} lat {_fmt(v['latency_median_s'], 1)} s"
+                     + (f"  P3>=.5 nou {v['p_emerg_reached']} ({_fmt(v['p_emerg_latency_median_s'], 1)} s) vechi "
+                        f"{v['p_emerg_reached_old']} ({_fmt(v['p_emerg_latency_median_s_old'], 1)} s)" if v["target"] == 3 else ""))
+            print(f"  scenariu {split} · {tag}: {extra}")
+    for split, e in res.get("ecu_old_filter", {}).items():
+        print(f"ECU {split} (filtrul vechi): MRM {e['mrm_reached']} false {e['mrm_false_trips']}")
     for split, e in res.get("ecu", {}).items():
         print(f"ECU {split}: viteză pe stare {[None if v is None else round(v, 2) for v in e['speed_factor_by_state']]}  "
               f"normal încetinit {_fmt(e['normal_time_slowed_pct'], 1)}% (stabil {_fmt(e['steady_normal_slowed_pct'], 1)}%)  "
