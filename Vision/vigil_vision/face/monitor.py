@@ -1,11 +1,18 @@
-"""Rulare live CV1: cameră -> față -> ochi + cap -> calibrare -> avertizări. [CV1]
+"""Monitor live Vigil: FATA (CV1) + CORP (CV2) -> avertizari. [CV1]
 
-    python -m vigil_vision.face.monitor --show            # calibrare 30 s
-    python -m vigil_vision.face.monitor --show --calib 5  # calibrare scurtă la test
-    python -m vigil_vision.face.monitor --show --mute     # fără sunete
-    python -m vigil_vision.face.monitor --show --min-sound 2  # sunet doar la nivel >= 2
+    python -m vigil_vision.face.monitor --show                 # față + corp, calibrare 30 s
+    python -m vigil_vision.face.monitor --show --calib 5       # calibrare scurtă la test
+    python -m vigil_vision.face.monitor --show --no-body       # doar fața (mai rapid)
+    python -m vigil_vision.face.monitor --show --publish       # + trimite vigil/vision pe MQTT
+    python -m vigil_vision.face.monitor --show --mute          # fără sunete
+    python -m vigil_vision.face.monitor --show --min-sound 2   # sunet doar la nivel >= 2
 
-Fereastra: camera (neschimbată) + coloană cu detalii în dreapta + bandă de avertizări jos.
+Un singur proces, o singură cameră, un cadru la rând:
+    FaceStack (face/stack.py)  -> ochi, privire, căscat, calibrare -> FaceOutput
+    Pipeline.process (CV2)     -> Pose + Hands + YOLO -> piept, respirație, telefon, postură
+                                  (primește FaceOutput: gaze_on_road, jaw_open)
+    AlertManager               -> avertizări din față + corp
+Fereastra: camera + coloană cu detalii (ochi, privire, gură, corp) + bandă de avertizări.
 În consolă apar doar avertizările noi.
 """
 from __future__ import annotations
@@ -21,12 +28,11 @@ import cv2
 import numpy as np
 
 from ..camera import CV1, Camera
-from ..perception.face import FaceDetector, Idx
-from .calibration import Calibrator
-from .eyes import EyeAnalyzer
-from .head_pose import HeadPoseAnalyzer
+from ..config import load_config
+from ..context import FaceOutput, P
+from ..perception.face import Idx
 from .alerts import AlertManager
-from .yawn import YawnAnalyzer
+from .stack import FaceStack
 
 COLORS = {0: (0, 200, 0), 1: (0, 220, 255), 2: (0, 140, 255), 3: (0, 0, 255)}  # BGR
 
@@ -123,41 +129,58 @@ class Panel:
             bar(self.img, self.x0 + 118, self.y - 1, 80, frac, frac_col)
 
 
-def render(frame_img, res, eyes, head, yawn, calib, am, t):
-    """Construiește imaginea finală: camera neschimbată + panou + avertizări."""
-    cam = frame_img.copy()
-    h, w = cam.shape[:2]
-    level = am.level if calib.done else 0
+POSTURE = {"upright": ("drept", None), "leaning": ("aplecat", ORANGE), "slumped": ("PRABUSIT", RED)}
 
-    # pe cameră doar punctele ochilor, nasul și o margine în culoarea nivelului
+
+def _draw_camera(cam, snap, ctx, level) -> None:
+    """Pe cameră: ochi + nas (CV1), zona pieptului, mâini, telefon, linia posturii (CV2)."""
+    h, w = cam.shape[:2]
+    px = lambda x, y: (int(x * w), int(y * h))
+    if ctx is not None:
+        z = ctx.signals.get("chest_zone")
+        if z:
+            on = ctx.detections.get("hand_on_chest")
+            cv2.rectangle(cam, px(z[0], z[1]), px(z[2], z[3]), (0, 0, 255) if on and on.active else (0, 200, 0), 2)
+        for hand in ctx.hands:
+            cv2.circle(cam, px(*hand.palm_center()), 6, (0, 165, 255), -1)
+        for o in ctx.objects:
+            cv2.rectangle(cam, px(o.x1, o.y1), px(o.x2, o.y2), (255, 0, 255), 2)
+        g = ctx.geom
+        if ctx.pose and g is not None:
+            head = [(ctx.pose[i].x, ctx.pose[i].y) for i in (P.NOSE, 2, 5, 7, 8) if ctx.pose[i].visibility >= 0.5]
+            if head:
+                hx, hy = sum(x for x, _ in head) / len(head), sum(y for _, y in head) / len(head)
+                state = (ctx.signals.get("slump") or {}).get("state", "upright")
+                col = {"leaning": (0, 165, 255), "slumped": (0, 0, 255)}.get(state, (200, 200, 200))
+                cv2.line(cam, px(hx, hy), px(g.sx, g.sy), col, 3)
+    res = snap.res if snap else None
     if res is not None:
+        closed = snap.eyes.eyes_closed
         for i in Idx.LEFT_EYE + Idx.RIGHT_EYE:
             x, y = res.px(i).astype(int)
-            cv2.circle(cam, (int(x), int(y)), 2, (0, 0, 255) if eyes.eyes_closed else (0, 255, 0), -1)
+            cv2.circle(cam, (int(x), int(y)), 2, (0, 0, 255) if closed else (0, 255, 0), -1)
         nx, ny = res.px(Idx.NOSE_TIP).astype(int)
         cv2.circle(cam, (int(nx), int(ny)), 3, (255, 0, 0), -1)
     cv2.rectangle(cam, (0, 0), (w - 1, h - 1), COLORS[level], 4)
 
-    H = max(h, 440)
-    canvas = np.full((H + ALERTS_H, w + PANEL_W, 3), BG, np.uint8)
-    canvas[:h, :w] = cam
-    cv2.line(canvas, (w, 0), (w, H), LINE, 1)
 
-    # ----- antet -----
-    p = Panel(canvas, w, PANEL_W)
-    text(canvas, "VIGIL - SOFER", p.x0, 30, 0.6, TEXT, 2)
+def _draw_panel(panel, snap, calib, ctx, level, t) -> int:
+    """Coloana din dreapta. Întoarce înălțimea folosită."""
+    eyes, head, yawn = snap.eyes, snap.head, snap.yawn
+    p = Panel(panel, 0, PANEL_W)
+    text(panel, "VIGIL - SOFER", p.x0, 30, 0.6, TEXT, 2)
     if not calib.done:
         badge, bcol = f"CALIBRARE {calib.progress(t) * 100:.0f}%", ORANGE
     elif level == 0:
         badge, bcol = "OK", GREEN
     else:
         badge, bcol = f"NIVEL {level}", COLORS[level]
-    (bw, bh), _ = cv2.getTextSize(badge, FONT, 0.5, 2)
-    cv2.rectangle(canvas, (p.x1 - bw - 12, 12), (p.x1, 38), bcol, -1)
-    text(canvas, badge, p.x1 - 6, 31, 0.5, TEXT, 2, right=True)
+    (bw, _), _ = cv2.getTextSize(badge, FONT, 0.5, 2)
+    cv2.rectangle(panel, (p.x1 - bw - 12, 12), (p.x1, 38), bcol, -1)
+    text(panel, badge, p.x1 - 6, 31, 0.5, TEXT, 2, right=True)
     p.y = 40
     if not calib.done:
-        bar(canvas, p.x0, p.y + 10, p.x1 - p.x0, calib.progress(t), ORANGE)
+        bar(panel, p.x0, p.y + 10, p.x1 - p.x0, calib.progress(t), ORANGE)
         p.y += 10
 
     f = lambda v, fmt=".2f": "-" if v is None else format(v, fmt)
@@ -177,7 +200,6 @@ def render(frame_img, res, eyes, head, yawn, calib, am, t):
     p.row("Ultimele 15 s", "-" if eyes.perclos_recent is None else
           f"{eyes.perclos_recent * 100:.0f}% inchisi, {eyes.blinks_recent} clipiri",
           GREEN if eyes.recovered else TEXT)
-    p.row("EAR", f(eyes.ear, ".3f"))
 
     # ----- privire -----
     p.section("PRIVIRE")
@@ -198,65 +220,164 @@ def render(frame_img, res, eyes, head, yawn, calib, am, t):
     p.row("Cascate (5 min)", f"{yawn.yawns_recent}   (total {yawn.yawn_count})",
           RED if yawn.yawns_recent >= 3 else TEXT)
 
+    # ----- corp (CV2) -----
+    p.section("CORP")
+    if ctx is None:
+        p.row("Corp", "dezactivat (--no-body)", MUTED)
+        return p.y
+    if ctx.pose is None:
+        p.row("Corp", "nu se vede", ORANGE)
+
+    def on(name: str) -> bool:
+        d = ctx.detections.get(name)
+        return bool(d and d.active)
+
+    p.row("Mana pe piept", "DA" if on("hand_on_chest") else "nu", RED if on("hand_on_chest") else TEXT)
+    b = ctx.signals.get("breathing") or {}
+    heavy = b.get("state") == "heavy"
+    rate = b.get("rate_bpm")
+    br = "GREA" if heavy else (b.get("state") or "-")
+    score = b.get("score") if isinstance(b.get("score"), (int, float)) else None
+    p.row("Respiratie", br, RED if heavy else TEXT, frac=score, frac_col=grade(score, 0.40, 0.55))
+    rr = f"{rate:.0f} / min" if isinstance(rate, (int, float)) else "-"
+    if b and not b.get("calibrated", True):
+        rr += "  (calibrare)"
+    p.row("Ritm respiratie", rr)
+    phone = float(ctx.signals.get("phone", 0.0) or 0.0)
+    pd = ctx.detections.get("phone_use")
+    usage = {"call": "apel", "looking": "se uita", "holding": "in mana"}.get(
+        (pd.attrs or {}).get("usage") if pd else None)
+    if pd and pd.active:
+        ph = usage or "da"
+    else:
+        ph = "nu" if phone < 0.05 else f"{phone:.2f}"
+    p.row("Telefon", ph, ORANGE if pd and pd.active else TEXT, frac=phone, frac_col=grade(phone, 0.25, 0.4))
+    sl = ctx.signals.get("slump") or {}
+    label, col = POSTURE.get(sl.get("state"), (sl.get("state") or "-", None))
+    if sl and not sl.get("calibrated", True):
+        label += " (calib.)"
+    p.row("Postura", label, col or TEXT)
+    return p.y
+
+
+def render(frame_img, snap, calib, am, t, ctx=None, fps: float = 0.0):
+    """Imaginea finală: camera + coloana cu detalii + banda de avertizări."""
+    cam = frame_img.copy()
+    h, w = cam.shape[:2]
+    level = am.level if calib.done else 0
+    _draw_camera(cam, snap, ctx, level)
+
+    panel = np.full((900, PANEL_W, 3), BG, np.uint8)
+    used = _draw_panel(panel, snap, calib, ctx, level, t)
+    H = max(h, used + 16)
+
+    canvas = np.full((H + ALERTS_H, w + PANEL_W, 3), BG, np.uint8)
+    canvas[:h, :w] = cam
+    canvas[:H, w:] = panel[:H]
+    cv2.line(canvas, (w, 0), (w, H), LINE, 1)
+
     # ----- bandă de avertizări -----
-    y0 = H
-    cv2.rectangle(canvas, (0, y0), (w + PANEL_W, y0 + ALERTS_H), (255, 255, 255), -1)
-    cv2.line(canvas, (0, y0), (w + PANEL_W, y0), LINE, 1)
+    y0, W = H, w + PANEL_W
+    cv2.rectangle(canvas, (0, y0), (W, y0 + ALERTS_H), (255, 255, 255), -1)
+    cv2.line(canvas, (0, y0), (W, y0), LINE, 1)
     text(canvas, "AVERTIZARI", 16, y0 + 26, 0.5, MUTED, 2)
+    if fps:
+        text(canvas, f"{fps:.0f} fps", W - 16, y0 + 26, 0.45, MUTED, 1, right=True)
     if not calib.done:
-        text(canvas, "Calibrare: priviti drept inainte, normal, fara sa zambiti.", 16, y0 + 60, 0.55)
+        text(canvas, "Calibrare: priviti drept inainte, stati normal, respirati linistit.", 16, y0 + 60, 0.55)
     elif not am.active:
         text(canvas, "Nicio avertizare - totul in regula.", 16, y0 + 60, 0.55, GREEN, 2)
     else:
         y = y0 + 40
         for a in am.active[:3]:
-            cv2.rectangle(canvas, (12, y), (w + PANEL_W - 12, y + 26), COLORS[a.level], -1)
+            cv2.rectangle(canvas, (12, y), (W - 12, y + 26), COLORS[a.level], -1)
             text(canvas, f"NIVEL {a.level}   {a.message}", 22, y + 18, 0.5, TEXT, 1)
-            text(canvas, f"{a.active_sec:.0f}s", w + PANEL_W - 22, y + 18, 0.5, TEXT, 1, right=True)
+            text(canvas, f"{a.active_sec:.0f}s", W - 22, y + 18, 0.5, TEXT, 1, right=True)
             y += 30
     return canvas
 
 
+class _FaceFeed:
+    """Dă pipeline-ului CV2 FaceOutput-ul cadrului curent (în loc de FaceWorker)."""
+
+    def __init__(self) -> None:
+        self.out: Optional[FaceOutput] = None
+
+    def latest(self, now: float) -> Optional[FaceOutput]:
+        return self.out
+
+
+class _NoPublish:
+    def publish(self, msg) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+
 def main() -> None:
-    p = argparse.ArgumentParser(description="Vigil CV1 live: ochi, privire, avertizări")
-    p.add_argument("--index", default=0, type=int)
+    p = argparse.ArgumentParser(description="Vigil live: față + corp, avertizări")
+    p.add_argument("--index", type=int, help="indexul camerei (implicit din config.yaml)")
+    p.add_argument("--config", help="cale config.yaml (implicit Vision/config.yaml)")
     p.add_argument("--show", action="store_true")
-    p.add_argument("--calib", default=30.0, type=float, help="secunde de calibrare (0 = fără)")
+    p.add_argument("--calib", default=30.0, type=float, help="secunde de calibrare față (0 = fără)")
+    p.add_argument("--no-body", action="store_true", help="doar fața (fără Pose/Hands/YOLO)")
+    p.add_argument("--publish", action="store_true", help="trimite vigil/vision pe MQTT (cu corp)")
     p.add_argument("--mute", action="store_true", help="fără sunete")
     p.add_argument("--min-sound", default=MIN_SOUND_LEVEL, type=int, help="nivelul minim cu sunet (1-3)")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s")
 
-    eyes, head, wm = EyeAnalyzer(), HeadPoseAnalyzer(), AlertManager()
-    yawn = YawnAnalyzer()
-    calib = Calibrator(duration_sec=args.calib, min_samples=1 if args.calib == 0 else 30)
+    cfg = load_config(args.config)
+    if args.index is not None:
+        cfg["camera"]["index"] = args.index
+    cfg.setdefault("face", {})["calib_sec"] = args.calib
 
-    with Camera(index=args.index) as cam, FaceDetector() as face:
+    am = AlertManager()
+    stack = FaceStack(cfg)
+    pipeline, feed, pub = None, _FaceFeed(), _NoPublish()
+
+    with Camera(**cfg["camera"]) as cam:
+        if not args.no_body:
+            from ..pipeline import Pipeline
+            if args.publish:
+                from ..publisher import Publisher
+                pub = Publisher(cfg)
+            pipeline = Pipeline(cfg, publisher=pub, camera=cam)
+            pipeline.face = feed          # fața o dăm noi, din același cadru
+        reader = cam.reader(CV1)
+        period = 1.0 / max(1, cfg.get("publish_hz", 10))
+        next_pub = 0.0
         try:
-            for frame in cam.reader(CV1):
+            for frame in reader:
                 t = frame.timestamp
-                res = face.process(frame)
-                es = eyes.update(res, t)
-                hs = head.update(res, t)
-                ys = yawn.update(res, t)
+                feed.out = stack.process(frame)
+                snap = stack.last
+                ctx = pipeline.process(frame) if pipeline is not None else None
 
-                if not calib.done:
-                    if calib.update(es, hs, t):
-                        calib.apply(eyes, head)
-                        print(f"\nCalibrare gata: {calib.result.to_dict()}")
-                else:
-                    dets = {**eyes.detections(), **yawn.detections()}
-                    for w in wm.update(es, hs, dets, t):
+                if stack.calib.done:
+                    dets = {n: (d.active, d.confidence) for n, d in (ctx.detections if ctx else {}).items()}
+                    dets.update(stack.detections())
+                    for w in am.update(snap.eyes, snap.head, dets, t):
                         print(f"{time.strftime('%H:%M:%S')} [nivel {w.level}] {w.message}")
                         if not args.mute and w.level >= args.min_sound:
                             beep(w.level)
 
+                if pipeline is not None and args.publish and t >= next_pub:
+                    pub.publish(pipeline.build_message(ctx, reader.fps))
+                    next_pub = t + period
+
                 if args.show:
-                    cv2.imshow("vigil CV1", render(frame.image, res, es, hs, ys, calib, wm, t))
+                    cv2.imshow("vigil", render(frame.image, snap, stack.calib, am, t, ctx, reader.fps))
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
         except KeyboardInterrupt:
             pass
+        finally:
+            stack.close()
+            if pipeline is not None and pipeline.body is not None:
+                pipeline.body.close()
+            pub.close()
     cv2.destroyAllWindows()
 
 

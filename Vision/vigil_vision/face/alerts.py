@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass
 from typing import Callable, Optional
 
 from .eyes import EyeState
-from .head_pose import DOWN, LEFT, RIGHT, HeadState
+from .head_pose import CENTER, DOWN, LEFT, RIGHT, HeadState
 
 
 @dataclass
@@ -42,6 +42,7 @@ class Rule:
     min_sec: float = 0.0        # condiția trebuie să țină atât până avertizăm
     repeat_sec: float = 5.0     # cât de des repetăm cât timp e activă
     cooldown_sec: float = 0.0   # după ce se oprește, cât așteptăm înainte de o nouă avertizare
+    hides: tuple[str, ...] = () # când e activă, ascunde aceste avertizări (mai puțin grave / redundante)
 
 
 @dataclass
@@ -58,7 +59,7 @@ def default_rules() -> list[Rule]:
     return [
         # --- ochi ---
         Rule("eyes_closed_critical", 3, "ALERTĂ: ochii sunt închiși de prea mult timp! Opriți în siguranță!",
-             lambda s: s.eyes.eyes_closed and s.eyes.closed_sec >= 3.0, repeat_sec=2.0),
+             lambda s: s.eyes.eyes_closed and s.eyes.closed_sec >= 3.0, repeat_sec=2.0, hides=("eyes_closed",)),
         Rule("eyes_closed", 2, "Ochii sunt închiși! Treziți-vă și priviți la drum!",
              # la căscat ochii se strâng natural: nu dăm alarmă de nivel 2 (critica rămâne)
              # privind în jos (telefon) pleoapele coboară și par închise: acolo avertizăm "privire în jos"
@@ -87,6 +88,22 @@ def default_rules() -> list[Rule]:
              lambda s: (s.head.off_road_ratio or 0) >= 0.5, min_sec=2.0, repeat_sec=15.0, cooldown_sec=10.0),
         Rule("no_face", 1, "Nu vă pot vedea fața. Vă rugăm să priviți spre drum.",
              lambda s: not s.head.face_visible, min_sec=3.0, repeat_sec=10.0),
+        # --- corp (detecții CV2 din pipeline: body/chest, breathing, phone, slump) ---
+        Rule("chest_and_breathing", 3, "URGENȚĂ: mâna pe piept și respirație grea! Sunteți bine?",
+             lambda s: s.det("hand_on_chest") and s.det("heavy_breathing"),
+             min_sec=2.0, repeat_sec=3.0, hides=("hand_on_chest", "heavy_breathing")),
+        Rule("head_on_wheel", 3, "URGENȚĂ: șoferul pare prăbușit (capul pe volan)! Răspundeți!",
+             lambda s: s.det("head_on_wheel"),
+             min_sec=2.0, repeat_sec=3.0, hides=("no_face", "look_down", "eyes_closed", "distracted")),
+        Rule("hand_on_chest", 2, "Mâna pe piept. Vă simțiți bine?",
+             lambda s: s.det("hand_on_chest"), min_sec=2.0, repeat_sec=8.0),
+        Rule("heavy_breathing", 2, "Respirație grea. Vă simțiți bine?",
+             lambda s: s.det("heavy_breathing"), min_sec=3.0, repeat_sec=10.0),
+        Rule("phone_looking", 2, "Folosiți telefonul și nu priviți drumul! Lăsați telefonul jos.",
+             lambda s: s.det("phone_use") and s.head.face_visible and s.head.direction != CENTER,
+             min_sec=1.0, repeat_sec=8.0, hides=("phone_use", "look_down", "look_left", "look_right")),
+        Rule("phone_use", 1, "Telefon în mână. Vă rugăm să-l lăsați jos.",
+             lambda s: s.det("phone_use"), min_sec=1.0, repeat_sec=10.0),
     ]
 
 
@@ -125,11 +142,12 @@ class AlertManager:
                 self._last_emit[r.code] = t
                 new.append(w)
 
-        # Cel mai sever primul; "eyes_closed" e redundant când e deja critic.
-        codes = {w.code for w in self.active}
-        if "eyes_closed_critical" in codes:
-            self.active = [w for w in self.active if w.code != "eyes_closed"]
-            new = [w for w in new if w.code != "eyes_closed"]
+        # avertizările grave le ascund pe cele redundante (ex. critic -> "ochi închiși")
+        by_code = {r.code: r for r in self.rules}
+        hidden = {h for w in self.active for h in by_code[w.code].hides}
+        self.active = [w for w in self.active if w.code not in hidden]
+        new = [w for w in new if w.code not in hidden]
+        # cel mai sever primul
         self.active.sort(key=lambda w: -w.level)
         new.sort(key=lambda w: -w.level)
         return new

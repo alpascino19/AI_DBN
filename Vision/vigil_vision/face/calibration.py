@@ -55,6 +55,8 @@ class Calibrator:
         return self.result is not None
 
     def progress(self, t: float) -> float:
+        if self.duration_sec <= 0:
+            return 1.0
         return 0.0 if self._t0 is None else min(1.0, (t - self._t0) / self.duration_sec)
 
     def update(self, eyes: EyeState, head: HeadState, t: float) -> bool:

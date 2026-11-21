@@ -146,3 +146,41 @@ def test_phone_gives_look_down_not_eyes_closed():
         codes += [a.code for a in am.update(eyes, head, {}, t)]
     assert "look_down" in codes and "distracted" in codes
     assert "eyes_closed" not in codes
+
+
+# ---------- reguli pentru corp (detecții CV2) ----------
+def _run_body(dets_fn, sec, head_dir=CENTER, face=True):
+    am = AlertManager()
+    eyes = EyeState(face_visible=face)
+    head = HeadState(face_visible=face, direction=head_dir if face else None,
+                     gaze_on_road=head_dir == CENTER if face else None)
+    codes = set()
+    for i in range(int(sec * FPS)):
+        codes |= {a.code for a in am.update(eyes, head, dets_fn(), i / FPS)}
+    return am, codes
+
+
+def test_chest_and_breathing_is_level_3_and_hides_parts():
+    am, codes = _run_body(lambda: {"hand_on_chest": (True, 0.8), "heavy_breathing": (True, 0.7)}, 4)
+    assert "chest_and_breathing" in codes and am.level == 3
+    active = {a.code for a in am.active}
+    assert "hand_on_chest" not in active and "heavy_breathing" not in active
+
+
+def test_hand_on_chest_alone_is_level_2():
+    am, codes = _run_body(lambda: {"hand_on_chest": (True, 0.8)}, 3)
+    assert "hand_on_chest" in codes and am.level == 2
+
+
+def test_head_on_wheel_hides_no_face():
+    am, codes = _run_body(lambda: {"head_on_wheel": (True, 0.9)}, 5, face=False)
+    active = {a.code for a in am.active}
+    assert "head_on_wheel" in active and "no_face" not in active and am.level == 3
+
+
+def test_phone_while_looking_away_is_level_2():
+    am, codes = _run_body(lambda: {"phone_use": (True, 0.6)}, 2, head_dir=DOWN)
+    active = {a.code for a in am.active}
+    assert "phone_looking" in active and "phone_use" not in active and "look_down" not in active
+    am2, _ = _run_body(lambda: {"phone_use": (True, 0.6)}, 2, head_dir=CENTER)
+    assert {a.code for a in am2.active} == {"phone_use"} and am2.level == 1
