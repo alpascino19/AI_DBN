@@ -116,10 +116,10 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
           <span className="text-slate-400">viteză ECU </span>
           <b className="text-lg">{carNow ? `${Math.round(carNow.speed_kmh)} km/h` : '—'}</b>
         </span>
-        {carNow?.emergency && <span className="rounded bg-red-600 px-1.5 text-xs font-semibold">⚠ urgență: oprire</span>}
-        {carNow?.braking && <span className="rounded bg-orange-500 px-1.5 text-xs font-semibold">▼ frânează</span>}
-        {carNow?.hazard && <span className="rounded bg-yellow-400 px-1.5 text-xs font-semibold text-slate-950">◆ avarii</span>}
-        {carNow?.stopped && <span className="rounded bg-slate-600 px-1.5 text-xs font-semibold">■ oprit</span>}
+        {carNow?.emergency && <span className="rounded bg-red-500/20 px-1.5 text-xs font-semibold text-red-300">urgență: oprire</span>}
+        {carNow?.braking && <span className="rounded bg-orange-500/15 px-1.5 text-xs font-semibold text-orange-300">frânează</span>}
+        {carNow?.hazard && <span className="rounded bg-yellow-400/15 px-1.5 text-xs font-semibold text-yellow-200">avarii</span>}
+        {carNow?.stopped && <span className="rounded bg-slate-800 px-1.5 text-xs font-semibold text-slate-300">oprit</span>}
         <span className="ml-auto flex gap-2">
           <button type="button" onClick={() => setTable((v) => !v)}
             className="rounded border border-slate-700 px-2 py-0.5 text-xs hover:bg-slate-800">
@@ -150,7 +150,7 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
       ) : (
         <div className="relative" onPointerLeave={() => setHover(null)}>
           {empty && (
-            <p className="absolute inset-x-0 top-20 text-center text-sm text-slate-500">
+            <p className="absolute inset-x-0 top-20 text-center text-sm text-slate-400">
               aștept vigil/ecu (ML1) și vigil/car/state (ECU_Arduino)
             </p>
           )}
@@ -161,24 +161,24 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
             {mrm.map(([a, b]) => (
               <g key={`m${a}`}>
                 <rect x={x(a)} y={M.t} width={Math.max(2, x(b) - x(a))} height={H1 - M.t - M.b} fill={C.critical} opacity={0.18} />
-                {x(b) - x(a) >= BAND_LABEL_PX && <text x={x(a) + 4} y={M.t + 11} fontSize="10" fill="#fca5a5">MRM</text>}
+                {x(b) - x(a) >= BAND_LABEL_PX && <text x={x(a) + 4} y={M.t + 11} fontSize="11" fill="#fca5a5">MRM</text>}
               </g>
             ))}
             {hazards.map(([a, b]) => (
               <g key={`h${a}`}>
                 <rect x={x(a)} y={M.t} width={Math.max(2, x(b) - x(a))} height={H1 - M.t - M.b} fill={C.warning} opacity={0.12} />
-                {x(b) - x(a) >= BAND_LABEL_PX && <text x={x(a) + 4} y={M.t + 11} fontSize="10" fill="#fde68a">avarii</text>}
+                {x(b) - x(a) >= BAND_LABEL_PX && <text x={x(a) + 4} y={M.t + 11} fontSize="11" fill="#fde68a">avarii</text>}
               </g>
             ))}
             {Array.from({ length: ymax / 40 + 1 }, (_, i) => i * 40).map((v) => (
               <g key={v}>
                 <line x1={M.l} x2={M.l + iw} y1={y1(v)} y2={y1(v)} stroke={v === 0 ? C.axis : C.grid} />
-                <text x={M.l - 6} y={y1(v) + 3} fontSize="10" textAnchor="end" fill="#64748b" className="tabular-nums">{v}</text>
+                <text x={M.l - 6} y={y1(v) + 3} fontSize="11" textAnchor="end" fill="#64748b" className="tabular-nums">{v}</text>
               </g>
             ))}
-            <text x={M.l - 6} y={10} fontSize="10" textAnchor="end" fill="#64748b">km/h</text>
+            <text x={M.l - 6} y={10} fontSize="11" textAnchor="end" fill="#64748b">km/h</text>
             {xticks.map(({ sec, px }) => (
-              <text key={sec} x={px} y={H1 - 6} fontSize="10" textAnchor={sec === 0 ? 'end' : 'middle'} fill="#64748b">
+              <text key={sec} x={px} y={H1 - 6} fontSize="11" textAnchor={sec === 0 ? 'end' : 'middle'} fill="#64748b">
                 {sec === 0 ? 'acum' : `-${sec} s`}
               </text>
             ))}
@@ -200,7 +200,7 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
             {[0, 0.5, 1].map((v) => (
               <g key={v}>
                 <line x1={M.l} x2={M.l + iw} y1={y2(v)} y2={y2(v)} stroke={v === 0 ? C.axis : C.grid} />
-                <text x={M.l - 6} y={y2(v) + 3} fontSize="10" textAnchor="end" fill="#64748b">{v}</text>
+                <text x={M.l - 6} y={y2(v) + 3} fontSize="11" textAnchor="end" fill="#64748b">{v}</text>
               </g>
             ))}
             <path d={linePath(ecuIn.map((s) => ({ t: s.t, v: s.a })), x, y2, ECU_GAP_MS)} fill="none" stroke={C.a}
@@ -244,7 +244,7 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
               <span className="text-slate-200">{EVENT_TEXT[e.event] ?? e.event}</span>
               {e.speed_kmh != null && ` la ${Math.round(e.speed_kmh)} km/h`}
               {e.detail && ` (${e.detail})`}
-              {e.id && <span className="text-slate-500"> · comanda {e.id}</span>}
+              {e.id && <span className="text-slate-400"> · comanda {e.id}</span>}
             </li>
           ))}
         </ul>
@@ -256,7 +256,7 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
 /** Vederea tabel (accesibilitate): aceleași valori, fără hover. */
 function CarTable({ ecu, car, now }: { ecu: EcuSample[]; car: CarSample[]; now: number }) {
   const rows = ecu.filter((_, i) => i % 25 === 0 || i === ecu.length - 1).slice(-10).reverse()  // ~la 5 s
-  if (!rows.length) return <p className="py-6 text-center text-sm text-slate-500">nicio dată încă</p>
+  if (!rows.length) return <p className="py-6 text-center text-sm text-slate-400">nicio dată încă</p>
   return (
     <table className="w-full text-xs tabular-nums">
       <thead className="text-slate-400">

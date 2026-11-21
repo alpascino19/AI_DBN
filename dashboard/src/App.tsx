@@ -17,16 +17,16 @@ export default function App() {
     <div className="min-h-screen">
       <Header state={state} connected={connected} broker={broker} onReset={resetAlerts} />
       <main className="grid gap-4 p-4 lg:grid-cols-[1fr_22rem]">
-        <div className="grid content-start gap-4">
+        <div className="grid min-w-0 content-start gap-4">
           <CameraWindows vision={state.vision} video={video} />
           <CarChart ecu={state.series.ecu} car={state.series.car} carNow={state.car} events={state.carEvents}
             online={state.ecuOnline} onReset={resetCar} />
-          <div className="grid gap-4 md:grid-cols-[12rem_1fr]">
+          <div className="grid items-start gap-4 md:grid-cols-[12rem_1fr]">
             <AttentionGauge state={state} />
             <Events vision={state.vision} />
           </div>
         </div>
-        <div className="grid content-start gap-4">
+        <div className="grid min-w-0 content-start gap-4">
           <AssistantCard assistant={state.assistant} connected={connected} onAsk={ask} />
           <TestPanel publish={publish} connected={connected} onDismiss={dismiss} />
           <DecisionCard decision={state.decision} history={state.decisions} />

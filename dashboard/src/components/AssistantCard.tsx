@@ -29,7 +29,7 @@ export function AssistantCard({ assistant, connected, onAsk }: {
         disabled={!connected}
         onClick={() => onAsk('listen')}
         className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-base font-semibold text-white transition
-          disabled:cursor-not-allowed disabled:opacity-40 ${listening ? 'animate-pulse bg-red-600' : 'bg-sky-600 hover:bg-sky-500'}`}
+          disabled:cursor-not-allowed disabled:opacity-40 ${listening ? 'animate-pulse bg-red-600' : 'bg-sky-700 hover:bg-sky-600'}`}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
           <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z" />
@@ -52,13 +52,13 @@ export function AssistantCard({ assistant, connected, onAsk }: {
 
       <div className="mt-3 min-h-16 text-sm" aria-live="polite">
         {!assistant ? (
-          <p className="text-slate-500">Apăsați un buton: Virgil răspunde în difuzoare.</p>
+          <p className="text-slate-400">Apăsați un buton: Virgil răspunde în difuzoare.</p>
         ) : (
           <>
-            <p className={`text-xs ${busy ? 'text-sky-300' : 'text-slate-500'}`}>{STATUS[assistant.status] ?? assistant.status}</p>
+            <p className={`text-xs ${busy ? 'text-sky-300' : 'text-slate-400'}`}>{STATUS[assistant.status] ?? assistant.status}</p>
             {assistant.heard && <p className="mt-1 text-slate-400">Șofer: „{assistant.heard}”</p>}
             {assistant.text && <p className="mt-1 text-slate-100">Virgil: {assistant.text}</p>}
-            {assistant.source && <p className="mt-1 text-xs text-slate-500">sursa: {assistant.source}</p>}
+            {assistant.source && <p className="mt-1 text-xs text-slate-400">sursa: {assistant.source}</p>}
           </>
         )}
       </div>

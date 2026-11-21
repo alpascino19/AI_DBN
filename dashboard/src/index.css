@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+:root {
+  color-scheme: dark;
+  scrollbar-color: var(--color-slate-700) var(--color-slate-950);
+}
+
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
+}
+
+::selection {
+  @apply bg-sky-500/40 text-white;
+}
+
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-sky-500;
 }

@@ -9,7 +9,7 @@ function Row({ d }: { d: Decision }) {
       <div className="flex items-center gap-2">
         <span className={`rounded px-2 py-0.5 text-xs font-bold ${sev.cls}`}>SEV {d.severity}</span>
         <span className="text-sm font-medium">{sev.label}</span>
-        <span className="ml-auto text-xs text-slate-500">{clock(d.receivedAt)}</span>
+        <span className="ml-auto text-xs text-slate-400">{clock(d.receivedAt)}</span>
       </div>
       {d.reason && <p className="text-sm text-slate-300">{d.reason}</p>}
       {d.actions.length > 0 && (
@@ -22,9 +22,9 @@ function Row({ d }: { d: Decision }) {
 export function DecisionCard({ decision, history }: { decision: Decision | null; history: Decision[] }) {
   return (
     <Card title="Decizie LLM">
-      {decision ? <Row d={decision} /> : <p className="text-sm text-slate-500">nicio decizie încă</p>}
+      {decision ? <Row d={decision} /> : <p className="text-sm text-slate-400">nicio decizie încă</p>}
       {decision?.source && (
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-slate-400">
           sursă: {decision.source}
           {decision.latency_ms !== undefined && ` · ${Math.round(decision.latency_ms)} ms`}
         </p>

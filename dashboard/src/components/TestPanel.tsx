@@ -113,7 +113,7 @@ export function TestPanel({ publish, connected, onDismiss }: { publish: Publish;
           </Btn>
         ))}
       </div>
-      <p className="mt-2 text-[11px] leading-snug text-slate-500">
+      <p className="mt-2 text-[11px] leading-snug text-slate-400">
         Răspunsul plăcii apare în graficul mașinii. Cât timp ML1 rulează, ML2 poate suprascrie o comandă ECU manuală la
         următoarea schimbare a comenzii fuzzy.
       </p>
@@ -122,7 +122,7 @@ export function TestPanel({ publish, connected, onDismiss }: { publish: Publish;
         <ul className="mt-2 space-y-0.5 border-t border-slate-800 pt-2 text-[11px] text-slate-400" aria-live="polite">
           {log.map((l) => (
             <li key={l.at + l.text}>
-              <span className="tabular-nums text-slate-500">{new Date(l.at).toLocaleTimeString('ro-RO')}</span> · {l.text}
+              <span className="tabular-nums text-slate-400">{new Date(l.at).toLocaleTimeString('ro-RO')}</span> · {l.text}
             </li>
           ))}
         </ul>

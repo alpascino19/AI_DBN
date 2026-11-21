@@ -7,7 +7,7 @@ export function Events({ vision }: { vision: Vision | null }) {
   return (
     <Card title="Evenimente active">
       {events.length === 0 ? (
-        <p className="text-sm text-slate-500">niciunul</p>
+        <p className="text-sm text-slate-400">niciunul</p>
       ) : (
         <ul className="space-y-1.5 text-sm">
           {events.map((e, i) => (
