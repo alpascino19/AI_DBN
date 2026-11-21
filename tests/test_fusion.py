@@ -59,7 +59,7 @@ class TestScenarios(unittest.TestCase):
         r = replay(generate("collapse"))
         first = next(x for x in r if x.critical)
         self.assertLess(first.ts, 5.5, "cap căzut + ochi închiși -> critic imediat")
-        self.assertLess(first.a, 0.25, "critic ocolește netezirea")
+        self.assertLess(first.a, 0.3, "critic ocolește netezirea (de la ~0.57 la < 0.3 într-un cadru)")
         self.assertLess(r[-1].a, 0.2)
 
     def test_privacy_mode_lowers_confidence(self):

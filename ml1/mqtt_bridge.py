@@ -23,6 +23,7 @@ import time
 from typing import Any, Callable
 
 from .engine import DecisionEngine
+from .service import Ml1Service
 
 log = logging.getLogger("ml1.mqtt")
 
@@ -40,13 +41,14 @@ def _decision_payload(d: dict) -> dict:
 
 
 class Bridge:
-    def __init__(self, engine: DecisionEngine, send: Callable[[str, dict], None], status_hz: float = 1.0):
-        self.engine = engine
+    def __init__(self, target: DecisionEngine | Ml1Service, send: Callable[[str, dict], None], status_hz: float = 1.0):
+        self.svc = target if isinstance(target, Ml1Service) else Ml1Service(engine=target)
+        self.engine = self.svc.engine
         self.send = send
         self.status_period = 1.0 / status_hz if status_hz > 0 else float("inf")
         self._last_status = -float("inf")
         self.received = {"vision": 0, "response": 0, "invalid": 0}
-        engine.publish_fn = lambda d: self.send(TOPIC_DECISION, _decision_payload(d))
+        self.svc.add_listener(lambda d: self.send(TOPIC_DECISION, _decision_payload(d)))
 
     def on_message(self, topic: str, payload: bytes | str) -> None:
         try:
@@ -60,13 +62,12 @@ class Bridge:
             return
         if topic == TOPIC_VISION:
             self.received["vision"] += 1
-            if not isinstance(msg.get("ts"), (int, float)):
-                msg["ts"] = time.time()
-            self.engine.on_vision(msg)   # deciziile pleacă prin engine.publish_fn
-            self._maybe_status(msg["ts"])
+            res = self.svc.ingest_vision(msg)   # deciziile pleacă prin listener
+            if res.get("accepted"):
+                self._maybe_status(res["ts"])
         elif topic == TOPIC_RESPONSE:
             self.received["response"] += 1
-            self.engine.on_driver_response(msg, ts=msg.get("ts") if isinstance(msg.get("ts"), (int, float)) else None)
+            self.svc.ingest_response(msg)
 
     def _maybe_status(self, ts: float) -> None:
         if ts - self._last_status < self.status_period:
@@ -78,7 +79,7 @@ class Bridge:
         self.send(TOPIC_STATUS, {
             "ts": ts, "a": round(r.a, 3), "confidence": round(r.confidence, 3), "critical": r.critical,
             "camera_on": r.camera_on, "capped_by": r.capped_by, "calibration": self.engine.baseline.to_dict(),
-            "stats": dict(self.engine.stats), "received": dict(self.received),
+            "stats": dict(self.engine.stats), "received": dict(self.received), "counters": dict(self.svc.counters),
         })
 
 
@@ -106,7 +107,7 @@ def run_mqtt(host: str, port: int, use_llm: bool) -> None:
     def send(topic: str, obj: dict) -> None:
         client.publish(topic, json.dumps(obj, ensure_ascii=False), qos=1 if topic == TOPIC_DECISION else 0)
 
-    bridge = Bridge(DecisionEngine(llm_fn=llm, sync=llm is None), send)
+    bridge = Bridge(Ml1Service(llm=llm), send)
 
     def on_connect(c, userdata, flags, rc, *args):
         log.info("conectat la %s:%d", host, port)

@@ -138,9 +138,10 @@ class TestRealModelRegressions(unittest.TestCase):
         """Fără întrebare adăugată, tăcerea n-ar escalada niciodată la severitatea 3."""
         llm = lambda c: json.dumps({"severity": 2, "actions": ["alarm", "esp32", "suggest_break"], "reason": "x"})
         eng = DecisionEngine(llm_fn=llm)
-        decs = replay(DATA / "drowsy.jsonl", eng)
+        msgs = [m for m in (json.loads(l) for l in (DATA / "drowsy.jsonl").read_text(encoding="utf-8").splitlines())
+                if "driver_response" not in m]   # șoferul tace
+        decs = [d for m in msgs for d in eng.on_vision(m)]
         self.assertIn(3, [d["severity"] for d in decs])
-        self.assertNotIn("call_112", [a["tool"] for d in decs for a in d["actions"]])
 
     def test_no_suggest_break_at_severity_3(self):
         d = self.run_llm(CONTEXTS["chest"], {"severity": 3, "actions": ["alarm", "esp32", "suggest_break"], "reason": "x"})
@@ -229,11 +230,26 @@ class TestEngine(unittest.TestCase):
         asks = [d["ts"] for d in decs if any(a["tool"] == "ask_driver" for a in d["actions"])]
         self.assertEqual(len(asks), 1)
 
-    def test_drowsy_never_calls_112_without_asking_are_you_ok(self):
+    def test_drowsy_driver_who_answers_gets_no_emergency(self):
+        """Demo: alarmă + „Doriți o pauză?” + răspuns coerent -> rămâne severitate 2, fără 112."""
         eng = DecisionEngine()
         decs = replay(DATA / "drowsy.jsonl", eng)
         self.assertNotIn("call_112", self.tools(decs))
-        self.assertIn(3, [d["severity"] for d in decs])
+        self.assertEqual(max(d["severity"] for d in decs), 2)
+
+    def test_silent_drowsy_driver_112_only_after_unanswered_are_you_ok(self):
+        """Șofer obosit care tace: „Doriți o pauză?” -> tăcere -> urgent + „Sunteți bine?” -> tăcere -> 112."""
+        eng = DecisionEngine()
+        msgs = [m for m in (json.loads(l) for l in (DATA / "drowsy.jsonl").read_text(encoding="utf-8").splitlines())
+                if "driver_response" not in m]
+        decs = [d for m in msgs for d in eng.on_vision(m)]
+        asks = [(d["ts"], a["args"]["question"]) for d in decs for a in d["actions"] if a["tool"] == "ask_driver"]
+        t112 = [d["ts"] for d in decs if any(a["tool"] == "call_112" for a in d["actions"])]
+        self.assertEqual(asks[0][1], PHRASES["ask_tired"])
+        ok_asks = [t for t, q in asks if q == PHRASES["ask_ok"]]
+        self.assertTrue(ok_asks, "escaladarea trece prin „Sunteți bine?”")
+        for t in t112:
+            self.assertGreaterEqual(t, ok_asks[0] + 8.0, "112 doar după 8 s fără răspuns la „Sunteți bine?”")
 
     def test_silence_counts_as_no_answer(self):
         """STT căzut / ML 2 nu trimite nimic: după 8 s tăcerea = fără răspuns."""

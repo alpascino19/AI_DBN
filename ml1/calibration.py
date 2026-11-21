@@ -10,7 +10,7 @@ Bazat pe Curs 2 (preprocesare) și Curs 5 (distribution shift):
     ca un căscat sau o clipire lungă în calibrare să nu strice valorile normale.
   * Curățare: învățăm doar din cadre „curate” (privire la drum, fără evenimente, fără telefon);
     dacă șoferul e deja obosit la pornire, NU învățăm o stare anormală ca fiind normală
-    (limitele `EAR_BOUNDS` / `PERCLOS_MAX`), iar după 3 × fereastra revenim la valorile populației.
+    (limitele `EAR_BOUNDS` / `profile.P["perclos_max_baseline"]`), iar după 3 × fereastra revenim la valorile populației.
 """
 
 from __future__ import annotations
@@ -18,9 +18,11 @@ from __future__ import annotations
 import math
 from typing import Any
 
+from .profile import P
+
 POPULATION = {"ear": 0.30, "blink": 16.0, "perclos": 0.06}
 EAR_BOUNDS = (0.18, 0.40)   # un baseline în afara acestui interval nu e plauzibil -> limitat
-PERCLOS_MAX = 0.20          # un „normal” cu PERCLOS mai mare = probabil deja obosit
+# Limita PERCLOS pentru un „normal” plauzibil și PERCLOS-ul populației: vezi profile.py (depind de semantica CV).
 BLINK_BOUNDS = (6.0, 30.0)
 
 
@@ -95,7 +97,18 @@ class DriverBaseline:
         # plauzibilitate: nu învățăm o stare anormală ca fiind „normală”
         self.stats["ear"]["median"] = min(EAR_BOUNDS[1], max(EAR_BOUNDS[0], self.stats["ear"]["median"]))
         self.stats["blink"]["median"] = min(BLINK_BOUNDS[1], max(BLINK_BOUNDS[0], self.stats["blink"]["median"]))
-        self.stats["perclos"]["median"] = min(PERCLOS_MAX, max(0.0, self.stats["perclos"]["median"]))
+        if source != "driver" or self.stats["perclos"]["n"] < self.min_samples // 2:
+            self.stats["perclos"]["median"] = P["pop_perclos"]
+        self.stats["perclos"]["median"] = min(P["perclos_max_baseline"], max(0.0, self.stats["perclos"]["median"]))
+
+    def provisional_ear(self) -> float | None:
+        """Mediana EAR din cadrele curate de până acum (după >= 15 cadre), cât calibrarea nu s-a încheiat.
+        Fără asta, în primele 30 s un șofer cu ochi mici era comparat cu populația (EAR 0.30) și
+        primea „atenție redusă” (evaluarea pe domeniul shift)."""
+        xs = self.samples["ear"]
+        if self.ready or len(xs) < 15:
+            return None
+        return min(EAR_BOUNDS[1], max(EAR_BOUNDS[0], _quantile(xs, 0.5)))
 
     # ------------------------------------------------------------ rezultate
     @property
@@ -111,7 +124,7 @@ class DriverBaseline:
         """Cât PERCLOS are șoferul „din construcție” peste media populației (de scăzut)."""
         if not self.ready:
             return 0.0
-        return max(0.0, self.stats["perclos"]["median"] - POPULATION["perclos"])
+        return max(0.0, self.stats["perclos"]["median"] - P["pop_perclos"])
 
     def calibrated_perclos(self, perclos: float | None) -> float | None:
         p = _num(perclos)

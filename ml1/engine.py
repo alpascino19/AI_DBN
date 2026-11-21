@@ -29,10 +29,14 @@ from typing import Any, Callable
 from .actions import PHRASES
 from .calibration import DriverBaseline
 from .cv_adapter import normalize_vision
-from .fusion import AttentionFusion
+from .fusion import AttentionFusion, eye_artifact
+from .profile import P
 from .reports import build_trip_report
 from .rules import answer_status, fallback_decision, rule_severity, wants_112
 from .validate import LLM_TIMEOUT_SEC, decide
+
+
+RULE_CALM_SEC = 8.0   # revenire la normal când regulile spun 0 atât timp (ales din evaluare)
 
 
 class _NoBaseline:
@@ -41,6 +45,9 @@ class _NoBaseline:
 
     def update(self, msg, ts):
         return False
+
+    def provisional_ear(self):
+        return None
 
     def to_dict(self):
         return {"ready": False, "source": "off"}
@@ -68,6 +75,7 @@ class DecisionEngine:
         self._asked_ts: float | None = None
         self._asked_q: str | None = None
         self._calm_since: float | None = None
+        self._rule0_since: float | None = None
         self._lower_since: float | None = None
         self._resp: tuple[float, dict] | None = None
         self._called_112 = False
@@ -75,6 +83,7 @@ class DecisionEngine:
         self.baseline = DriverBaseline() if calibrate else _NoBaseline()
         self._timeline: dict[str, dict] = {}
         self._a_hist: deque = deque()
+        self._closure: deque = deque()   # (ts, ochi închiși) pe ultimele 60 s
         self._last_frame_ts: float | None = None
 
         self.last_result = None
@@ -95,6 +104,13 @@ class DecisionEngine:
         with self._lock:
             out: list[dict] = []
             msg = normalize_vision(msg)  # forma reală CV (phone_use, head_on_wheel, ...) -> forma ML1
+            ts0 = msg.get("ts") if isinstance(msg.get("ts"), (int, float)) else None
+            if ts0 is not None:
+                self._track_closure(msg, ts0)
+                if P["perclos_recent"] and msg.get("perclos_recent") is None:
+                    pr = self._perclos_recent(ts0, msg.get("perclos"))
+                    if pr is not None:
+                        msg = {**msg, "perclos_recent": pr, "perclos_recent_source": "ml1"}
             r = self.fusion.update(msg)
             self.last_result = r  # pentru dashboard / debugging
             ts = r.ts
@@ -102,6 +118,10 @@ class DecisionEngine:
             self._last_frame_ts = ts
             self.stats["frames"] += 1
             self._track(msg, ts, dt, r.a)
+            if not self.baseline.ready:
+                prov = self.baseline.provisional_ear()
+                if prov is not None:   # până la finalul calibrării: mediana cadrelor curate de până acum
+                    self.fusion.baseline_ear = prov
             if self.baseline.update(msg, ts):  # calibrarea tocmai s-a încheiat
                 self.fusion.baseline_ear = self.baseline.ear
                 self.fusion.baseline_blink = self.baseline.blink
@@ -133,7 +153,12 @@ class DecisionEngine:
             # 2. revenire la normal (histerezis: 5 s de calm continuu, fără pâlpâire)
             calm = rule_sev == 0 and r.a >= 0.85
             self._calm_since = (self._calm_since if self._calm_since is not None else ts) if calm else None
-            if calm and ts - self._calm_since >= 5.0 and self._last_pub["severity"] > 0:
+            # sau: regulile spun „nimic” de RULE_CALM_SEC (scorul a revine încet după oboseală, iar
+            # alarma rămânea pornită ~20 s după ce șoferul și-a revenit) și nu așteptăm un răspuns
+            self._rule0_since = (self._rule0_since if self._rule0_since is not None else ts) if rule_sev == 0 else None
+            rule_calm = (self._rule0_since is not None and ts - self._rule0_since >= RULE_CALM_SEC
+                         and not self._waiting_answer(ts))
+            if ((calm and ts - self._calm_since >= 5.0) or rule_calm) and self._last_pub["severity"] > 0:
                 out += self._publish(fallback_decision(ctx, "revenire la normal"), ts)
                 self._reset_episode()
 
@@ -189,6 +214,10 @@ class DecisionEngine:
         vis = {k: v for k, v in vision.items() if k not in ("landmarks", "body_landmarks")}
         if self.baseline.ready and vis.get("perclos") is not None:
             vis["perclos_cal"] = self.baseline.calibrated_perclos(vis["perclos"])
+        if P["perclos_recent"] and vis.get("perclos_recent") is None:
+            pr = self._perclos_recent(ts, vis.get("perclos"))
+            if pr is not None:
+                vis["perclos_recent"] = pr
         return {
             "fusion": fusion,
             "vision": vis,
@@ -196,6 +225,33 @@ class DecisionEngine:
             "timeline": {k: dict(v) for k, v in self._timeline.items()},
             "a_trend": self._a_hist[0][1] if self._a_hist and ts - self._a_hist[0][0] >= 5 else None,
         }
+
+    def _track_closure(self, msg: dict, ts: float) -> None:
+        """Fereastra de 15 s pentru închiderea ochilor (estimarea ML1 a `perclos_recent`).
+        PERCLOS de la CV e pe 60 s și revine încet; CV folosește intern 15 s pentru „și-a revenit”,
+        dar nu publică valoarea. Închis = EAR sub 60% din EAR-ul personal (≈ pragul CV de 0.72 pe scorul
+        de închidere). Cadrele cu artefact (căscat, privire în jos) și fără față nu intră în calcul."""
+        ear = msg.get("ear")
+        visible = msg.get("camera_on") is not False and msg.get("face_detected") is not False and isinstance(ear, (int, float))
+        if visible and not eye_artifact(msg.get("events"), msg.get("phone"), msg.get("direction")):
+            base = self.fusion.baseline_ear or 0.30
+            self._closure.append((ts, ear < 0.6 * base))
+        while self._closure and ts - self._closure[0][0] > 60.0:
+            self._closure.popleft()
+
+    def _perclos_recent(self, ts: float, cv_perclos: float | None) -> float | None:
+        """Fracția de cadre cu ochii închiși pe ultimele 15 s, DAR doar dacă estimarea e consistentă cu
+        PERCLOS-ul CV: și ML1 a văzut ochii închizându-se în ultimele 60 s (cel puțin jumătate din
+        PERCLOS-ul CV). Altfel (CV măsoară închiderea și din blendshapes, ML1 doar din EAR) o estimare
+        „și-a revenit” fără acoperire ar ascunde oboseala reală — eroarea periculoasă."""
+        recent = [c for t, c in self._closure if ts - t <= 15.0]
+        if len(recent) < 10 or ts - self._closure[0][0] < 10.0:
+            return None
+        if cv_perclos is not None and cv_perclos > 0:
+            own60 = sum(1 for _, c in self._closure if c) / len(self._closure)
+            if own60 < 0.5 * cv_perclos:
+                return None
+        return round(sum(1 for c in recent if c) / len(recent), 3)
 
     def _llm_job(self, ctx: dict, frame_ts: float) -> list[dict]:
         dec = decide(ctx, self.llm_fn, self.llm_timeout)

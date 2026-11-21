@@ -19,6 +19,8 @@ import re
 from typing import Any
 
 from .actions import PHRASES
+from .fusion import eye_artifact
+from .profile import P
 
 
 def _events(vision: dict) -> dict[str, dict]:
@@ -78,39 +80,91 @@ def rule_severity(ctx: dict) -> tuple[int, str]:
     a = _num(fusion, "a", 1.0)
     ans = answer_status(ctx.get("driver_response"))
 
-    # PERCLOS corectat cu valoarea personală din calibrare, dacă există (engine îl pune în ctx)
+    # PERCLOS corectat cu valoarea personală din calibrare, dacă există (engine îl pune în ctx).
+    # Semantica CV: fracția de timp cu ochii aproape complet închiși, pe ultimele 60 s.
     perclos = _num(vision, "perclos_cal", _num(vision, "perclos", 0))
+    if P["perclos_recent"] and _num(vision, "perclos_recent", -1.0) >= 0:
+        perclos = _num(vision, "perclos_recent", 0)   # închiderea pe 15 s: fără întârzierea ferestrei de 60 s
     heavy = (vision.get("breathing_state") == "heavy" or _has(evs, "heavy_breathing", 0.6)
              or (evs.get("hand_on_chest") or {}).get("breathing") == "heavy")
     chest = _has(evs, "hand_on_chest", 0.6, 3) and heavy
-    collapse = ((vision.get("head_drop") is True and perclos >= 0.6)
+
+    # Pleoape coborâte la căscat / privire în jos / telefon NU înseamnă micro-somn (regulă preluată
+    # din alerts.py al echipei CV). Profilul `legacy` nu face excluderea (doar pentru comparație).
+    artifact = (eye_artifact(vision.get("events"), _num(vision, "phone", 0), vision.get("direction"))
+                or fusion.get("eyes_closed_artifact") is True)
+    closed_ev = evs.get("eyes_closed") if not artifact else None
+    closed_sec = _f(closed_ev.get("duration_sec"), 0) if closed_ev and _f(closed_ev.get("confidence"), 0) >= 0.7 else 0.0
+    # Tracker-ul CV unește activările separate de pauze < 1 s: durata lui `eyes_closed` e a EPISODULUI, nu a
+    # închiderii continue (clipiri lungi și dese ar părea „ochi închiși 3 s”). Dacă CV publică `closed_sec`
+    # (închiderea continuă, calculată intern de CV1), o folosim. Altfel ignorăm durata doar când EAR-ul
+    # arată CLAR ochi deschiși acum; la EAR ambiguu credem CV-ul (nu ascundem un micro-somn real).
+    cs = _num(vision, "closed_sec", -1.0)
+    if cs >= 0 and not artifact:
+        closed_sec = cs
+    elif P["artifact_exclusion"] and fusion.get("eyes_open_now") is True:
+        closed_sec = 0.0
+    eyes_closed_long = closed_sec >= P["eyes_sev2_sec"]
+    eyes_closed_crit = P["eyes_sev3_sec"] is not None and closed_sec >= P["eyes_sev3_sec"]
+    if eyes_closed_crit and P["eyes_crit_continuous"] and fusion.get("ear_available") is True and cs < 0:
+        # criticul (3) cere închidere CONTINUĂ >= 3 s și în EAR; altfel rămâne micro-somn (2), tot cu alarmă
+        eyes_closed_crit = _num(fusion, "eyes_closed_sec", 0) >= P["eyes_sev3_sec"]
+
+    # Prăbușire: NU cerem PERCLOS mare (fereastra de 60 s urcă încet: după 10 s cu ochii închiși
+    # PERCLOS e abia ~0.2). Cap căzut + ochi închiși, sau corpul prăbușit (CV2), ajung.
+    if P["perclos_recent"] or P["artifact_exclusion"]:
+        head_and_eyes = vision.get("head_drop") is True and (
+            _has(evs, "eyes_closed", 0.6) or _has(evs, "microsleep", 0.6) or perclos >= 0.6)
+    else:
+        head_and_eyes = vision.get("head_drop") is True and perclos >= 0.6
+    collapse = (head_and_eyes
                 or _has(evs, "head_on_wheel", 0.6, 2)                       # CV2: prăbușit pe volan
                 or (vision.get("posture_state") == "slumped" and _num(vision, "still_sec", 0) >= 2))
-    eyes_closed_long = _has(evs, "eyes_closed", 0.7, 2)
+
+    # Revenire rapidă: PERCLOS pe 60 s rămâne mare până la un minut după ce șoferul și-a revenit.
+    # Dacă ultimele 15 s arată normal (câmpul CV `recovered` / `perclos_recent`, sau estimarea ML1
+    # din engine), nu mai tratăm PERCLOS-ul vechi drept oboseală actuală.
+    recovered = False
+    if P["perclos_recovered"] is not None:
+        if vision.get("recovered") is True:
+            recovered = True
+        else:
+            pr = _num(vision, "perclos_recent", -1.0)
+            recovered = 0.0 <= pr <= P["perclos_recovered"]
+    perclos_drowsy = perclos >= P["perclos_drowsy"] and not recovered
 
     if fusion.get("critical") or collapse:
         return 3, "cap căzut / prăbușit, ochi închiși"
+    if eyes_closed_crit:
+        return 3, "ochi închiși de peste 3 s (adormit la volan)"
     if eyes_closed_long and ans in ("no_answer", "distress"):
         return 3, "ochi închiși prelungit + fără răspuns"
     if chest:
         if ans == "ok":  # a răspuns repede și coerent: rămânem vigilenți, dar nu urgență
             return 2, "mână pe piept, dar șoferul răspunde coerent"
         return 3, "mână pe piept + respirație grea"
-    if ans in ("no_answer", "distress") and a < 0.5:
-        return 3, "fără răspuns coerent + atenție scăzută"
+    microsleep = _has(evs, "microsleep", 0.6) and not artifact
+    fatigue_signs = eyes_closed_long or microsleep or perclos_drowsy
+    # Fără răspuns la verificarea vocală, cu semnele încă prezente (nu doar „a mic”): urgență.
+    if ans in ("no_answer", "distress") and (a < 0.5 or (P["silence_needs_signs"] and fatigue_signs)):
+        return 3, "fără răspuns coerent + semne de oboseală / atenție scăzută"
 
-    # Ochi închiși ≥ 2 s fără cap căzut = micro-somn: alarmă puternică (2), nu urgență medicală (3).
+    # Ochi închiși ≥ 1.5 s fără cap căzut = micro-somn: alarmă puternică (2), nu urgență medicală (3).
     if eyes_closed_long:
         return 2, "ochi închiși prelungit (micro-somn)"
-    if _has(evs, "microsleep", 0.6) or perclos >= 0.35 or a < 0.5:
+    if microsleep or perclos_drowsy or a < 0.5:
         return 2, "semne de somnolență (PERCLOS / micro-somn)"
-    if _has(evs, "yawn", 0.7) and perclos >= 0.2:
+    if _has(evs, "frequent_yawning", 0.5) or _has(evs, "low_blink_rate", 0.5, 5) and perclos >= P["perclos_yawn"]:
+        return 2, "căscat des / clipit rar: oboseală"
+    if _has(evs, "yawn", 0.6) and perclos >= P["perclos_yawn"] and not recovered:
         return 2, "căscat + ochi obosiți"
 
     if _num(vision, "phone", 0) >= 0.6 or _has(evs, "phone_in_hand", 0.6, 2):
         return 1, "telefon în mână"
     if vision.get("gaze_on_road") is False and _has(evs, "gaze_off_road", 0.6, 2):
         return 1, "privire în afara drumului"
+    if _num(vision, "off_road_ratio", 0) >= 0.5:   # dacă CV publică HeadState.off_road_ratio (10 s)
+        return 1, "privire des în afara drumului"
     if _has(evs, "hand_on_chest", 0.5) or _has(evs, "heavy_breathing", 0.5):
         # semn medical încă scurt: nu-i spunem „priviți drumul”, așteptăm pragul de 3 s
         return 0, "observăm un posibil semn medical"

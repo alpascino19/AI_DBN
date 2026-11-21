@@ -31,11 +31,13 @@ import argparse
 import json
 import math
 import time
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 
+from . import profile
 from .engine import DecisionEngine
 
 HZ = 5
@@ -43,6 +45,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 FIG = DOCS / "figures"
 CV_MIN_DUR = {"hand_on_chest": 2.0, "heavy_breathing": 3.0, "phone_use": 1.0, "head_on_wheel": 2.0, "default": 1.0}
+CV_GAP_SEC = 1.0   # Vision/config.yaml events.gap_sec
 K = 4
 SEV_NAMES = ["0 OK", "1 Redusă", "2 Medie", "3 Ridicată"]
 # Cost asimetric: subestimare cu k trepte = 5k (×2 dacă era urgență), supraestimare = 1k.
@@ -69,10 +72,10 @@ def make_drivers(n: int, rng: np.random.Generator, prefix: str, shift: bool = Fa
     out = []
     for i in range(n):
         if shift:  # ochi mici / PERCLOS măsurat mare / zgomot / fața pierdută des
-            d = Driver(f"{prefix}{i}", rng.uniform(0.20, 0.24), rng.uniform(0.12, 0.18), rng.uniform(8, 26),
+            d = Driver(f"{prefix}{i}", rng.uniform(0.20, 0.24), rng.uniform(0.07, 0.11), rng.uniform(8, 26),
                        rng.uniform(1.4, 2.0), rng.uniform(0.05, 0.10), rng.uniform(0.7, 0.9), rng.uniform(1.0, 2.5), "shift")
         else:
-            d = Driver(f"{prefix}{i}", float(np.clip(rng.normal(0.29, 0.02), 0.25, 0.34)), rng.uniform(0.03, 0.09),
+            d = Driver(f"{prefix}{i}", float(np.clip(rng.normal(0.29, 0.02), 0.25, 0.34)), rng.uniform(0.02, 0.05),
                        rng.uniform(10, 22), rng.uniform(0.6, 1.2), rng.uniform(0.0, 0.02), rng.uniform(0.85, 1.0),
                        rng.uniform(0.8, 2.0), "standard")
         out.append(d)
@@ -136,38 +139,63 @@ class TripSim:
         # (comparație pereche, Curs 5: modele comparate în aceleași condiții).
         self.behavior_seed = int(rng.integers(1 << 30))
         self._build()
+        self._responsiveness()
 
     def _events(self, t: float, active: dict[str, dict]) -> list[dict]:
-        """Emulează tracker-ul CV: eveniment raportat doar după durata minimă (CV_MIN_DUR)."""
+        """Emulează FIDEL tracker-ul CV (Vision/vigil_vision/events/tracker.py):
+        * pauzele mai scurte de CV_GAP_SEC NU întrerup evenimentul (durata = episodul, nu închiderea continuă);
+        * evenimentul apare doar după durata minimă (CV_MIN_DUR)."""
+        for name, attrs in active.items():
+            st = self.active_since.get(name)
+            if st is None:
+                self.active_since[name] = [t, t, attrs]
+            else:
+                st[1], st[2] = t, attrs
         for name in list(self.active_since):
-            if name not in active:
+            if t - self.active_since[name][1] > CV_GAP_SEC:
                 del self.active_since[name]
         out = []
-        for name, attrs in active.items():
-            start = self.active_since.setdefault(name, t)
-            dur = t - start
+        for name, (start, last, attrs) in self.active_since.items():
+            dur = last - start
             if dur >= CV_MIN_DUR.get(name, CV_MIN_DUR["default"]):
                 conf = float(np.clip(self.rng.normal(0.82, 0.05) * self.d.conf_scale, 0.3, 0.99))
                 out.append({"event": name, "duration_sec": round(dur, 1), "confidence": round(conf, 2), **attrs})
         return out
 
     def _build(self) -> None:
+        """Semantica reală CV1/CV2 (Vision/vigil_vision/face/eyes.py, stack.py, pipeline.py):
+        * închiderea ochilor e simulată cadru cu cadru (reprize, nu valori independente);
+        * PERCLOS = fracția cadrelor „închise” pe ultimele 60 s, None în primele 10 s;
+        * artefacte: pleoapele PAR închise la privit în jos (telefon) și la căscat — CV le măsoară ca închise;
+        * evenimente CV1: eyes_closed, microsleep (închis >= 0.5 s), gaze_off_road (cu direcție),
+          low_blink_rate, yawn, head_drop; CV2: phone_use, hand_on_chest, heavy_breathing, head_on_wheel."""
         d, rng, t0 = self.d, self.rng, 0.0
         prev_label = 0
+        window: deque = deque()          # (t, închis măsurat) pentru PERCLOS pe 60 s
+        run_left = 0                     # cadre rămase din repriza de închidere curentă
+        closed_since = None
         for si, (kind, dur, p) in enumerate(self.segs):
             n_frames = int(round(dur * HZ))   # ts = index / HZ exact (fără derivă între segmente)
+            seg_rng = np.random.default_rng([self.behavior_seed, si, 7])
+            phone_lowered = seg_rng.random() < 0.6          # privește în jos cu pleoapele coborâte
+            glance_dir = "left" if seg_rng.random() < 0.5 else "right"
             for i in range(n_frames):
                 tau, t = i / HZ, round(t0 + i / HZ, 2)
-                D, phone, gaze_off, chest, collapse, yawn, eyes_burst, cam = 0.02, False, False, False, False, False, False, True
+                D, phone, gaze_off, chest, collapse, yawn, eyes_burst, cam = 0.0, False, False, False, False, False, False, True
+                gaze_dir, artifact_closed = None, False
                 label = 0
                 if kind == "glance":
-                    gaze_off = tau < p["g"]
+                    gaze_off, gaze_dir = tau < p["g"], glance_dir
                 elif kind == "yawn":
                     yawn = tau < 2.5
+                    artifact_closed = 0.8 <= tau < 2.0             # ochi strânși în timpul căscatului
                 elif kind == "touch":
                     chest = tau < 1.5          # sub pragul CV de 2 s -> fără eveniment
                 elif kind == "phone":
-                    phone, gaze_off, label = True, rng.random() < 0.7, 1
+                    phone, label = True, 1
+                    gaze_off, gaze_dir = rng.random() < 0.7, "down"
+                    artifact_closed = phone_lowered and 1.0 <= tau < 3.5   # pleoape coborâte privind telefonul
+                    gaze_off = gaze_off or artifact_closed
                 elif kind == "fatigue":
                     D = _fatigue_level(tau, p)
                     in_hold = p["rise"] <= tau < p["rise"] + p["hold"]
@@ -188,16 +216,45 @@ class TripSim:
                     prev_label = label
 
                 if not cam:
+                    window.clear()
+                    closed_since = None
                     msg = {"ts": t, "camera_on": False, "events": [], "phone": 0.0}
                 else:
                     n = d.noise
-                    face = not (collapse and rng.random() < 0.7) and rng.random() >= d.face_drop
-                    closed = collapse or eyes_burst
-                    ear = d.ear0 * (0.3 if closed else (1 - 0.45 * D)) + rng.normal(0, 0.012 * n)
-                    perclos = d.perclos0 + (0.9 if collapse else 0.55 * D) + rng.normal(0, 0.015 * n)
+                    face = not (collapse and tau >= 2 and rng.random() < 0.7) and rng.random() >= d.face_drop
+                    # reprize de închidere: clipiri lungi tot mai dese și mai lungi odată cu oboseala
+                    if run_left <= 0 and rng.random() < (0.15 + 0.30 * D) / HZ:
+                        run_left = max(1, int(round((0.15 + 0.9 * D ** 1.3) * HZ)))
+                    blink_closed = run_left > 0
+                    run_left -= 1
+                    closed_true = collapse or eyes_burst or blink_closed
+                    measured_closed = closed_true or artifact_closed
+                    if face:
+                        window.append((t, measured_closed))
+                    while window and t - window[0][0] > 60.0:
+                        window.popleft()
+                    closed_since = (closed_since if closed_since is not None else t) if measured_closed else None
+                    elapsed = t - (window[0][0] if window else t)
+                    perclos = None
+                    if window and t >= 10.0 and elapsed >= 9.8:
+                        perclos = sum(1 for _, c in window if c) / len(window)
+                        perclos = float(np.clip(perclos + (d.perclos0 - 0.03) + rng.normal(0, 0.005 * n), 0, 1))
+                    ear = d.ear0 * (0.25 if measured_closed else (1 - 0.15 * D)) + rng.normal(0, 0.012 * n)
+                    blink = max(0.0, d.blink0 * (1 - 0.6 * D) + rng.normal(0, 1.5 * n))
+
                     active: dict[str, dict] = {}
+                    if measured_closed:
+                        active["eyes_closed"] = {}
+                        if closed_since is not None and t - closed_since >= 0.5:
+                            active["microsleep"] = {}
+                    if gaze_off or collapse:
+                        active["gaze_off_road"] = {"direction": gaze_dir or "down"}
+                    if yawn:
+                        active["yawn"] = {}
+                    if t >= 10.0 and blink < 8.0:
+                        active["low_blink_rate"] = {}
                     if phone:
-                        active["phone_use"] = {"in_hand": True}
+                        active["phone_use"] = {"in_hand": True, "usage": "looking"}
                     if chest:
                         active["hand_on_chest"] = {"side": "left"}
                         if kind == "chest":
@@ -205,20 +262,19 @@ class TripSim:
                             active["heavy_breathing"] = {"rate_bpm": 32.0}
                     if collapse:
                         active["head_drop"] = {}
-                        active["eyes_closed"] = {}
                         if tau >= 3:
                             active["head_on_wheel"] = {"face_visible": False}
-                    if eyes_burst:
-                        active["eyes_closed"] = {}
-                    if yawn:
-                        active["yawn"] = {}
+                    if not face:   # fără față CV1 nu produce evenimente de față
+                        for k in ("eyes_closed", "microsleep", "gaze_off_road", "yawn", "low_blink_rate"):
+                            active.pop(k, None)
                     msg = {
                         "ts": t, "camera_on": True, "face_detected": face, "body_detected": True,
                         "ear": round(float(np.clip(ear, 0.03, 0.45)), 3) if face else None,
-                        "perclos": round(float(np.clip(perclos, 0, 1)), 3) if face else None,
-                        "blink_rate": round(float(max(0.0, d.blink0 * (1 - 0.6 * D) + rng.normal(0, 1.5 * n))), 1) if face else None,
+                        "perclos": round(perclos, 3) if (face and perclos is not None) else None,
+                        "blink_rate": round(float(blink), 1) if (face and t >= 10.0) else None,
                         "gaze_on_road": (not gaze_off and not collapse) if face else None,
-                        "head_drop": collapse if face else None,
+                        # CV: head_drop de la față SAU de la corpul prăbușit (pipeline._head_drop)
+                        "head_drop": True if collapse else (False if face else None),
                         "phone": round(float(np.clip(rng.normal(0.82, 0.06), 0, 1)) if phone else abs(rng.normal(0.02, 0.02)), 2),
                         "breathing": {"state": "heavy" if kind == "chest" else "normal"},
                         "posture": {"state": "slumped" if collapse and tau >= 3 else "upright",
@@ -231,6 +287,28 @@ class TripSim:
                 self.seg_idx.append(si)
             t0 += n_frames / HZ
         self._grace()
+
+    def _answers(self, si: int, ok_q: bool) -> bool:
+        """Același tragere ca în respond(): șoferul răspunde la acest tip de întrebare în acest episod?"""
+        kind = self.segs[si][0]
+        r = np.random.default_rng([self.behavior_seed, si, int(ok_q)]).random()
+        if kind == "collapse":
+            return False
+        if kind == "chest":
+            return r < 0.5
+        if kind == "fatigue":
+            return r < (0.9 if ok_q else 0.7)
+        return True
+
+    def _responsiveness(self) -> None:
+        """Tabelul de severitate (TASKS.md): ochi închiși / oboseală + FĂRĂ răspuns vocal = 3. Un episod de
+        oboseală în care șoferul simulat tace e deci ambiguu între 2 și 3: cadrele lui de severitate 2 nu
+        intră în matrice, iar un 112 după un „Sunteți bine?” fără răspuns e acceptabil (nici corect, nici fals)."""
+        self.unresponsive = {si for si, (kind, _, _) in enumerate(self.segs)
+                             if kind == "fatigue" and not (self._answers(si, False) and self._answers(si, True))}
+        for i, si in enumerate(self.seg_idx):
+            if si in self.unresponsive and self.labels[i] == 2:
+                self.labels[i] = -1
 
     def _grace(self) -> None:
         """Ferestre „nu contează”: 4 s după o escaladare reală, 12 s după o de-escaladare
@@ -483,12 +561,15 @@ def trip_metrics(sim: TripSim, run: dict) -> dict:
     fa = sum(1 for d in run["decisions"] if d["severity"] >= 1 and lab_raw[min(len(lab_raw) - 1, int(d["ts"] * HZ))] == 0)
     normal_hours = (lab_raw == 0).sum() / HZ / 3600
     emerg = sim.emergency_onset is not None
-    t112 = run["t112"]
+    calls = [d["ts"] for d in run["decisions"] if any(a["tool"] == "call_112" for a in d["actions"])]
+    seg_at = lambda t: sim.seg_idx[min(len(sim.seg_idx) - 1, int(round(t * HZ)))]
+    false_calls = [t for t in calls if not (emerg and t >= sim.emergency_onset)
+                   and seg_at(t) not in sim.unresponsive]
+    good_calls = [t for t in calls if emerg and t >= sim.emergency_onset]
+    t112 = good_calls[0] if good_calls else (false_calls[0] if false_calls else None)
     return {
         "cm": cm, "latency": lat, "false_alarms": fa, "normal_hours": normal_hours,
-        "112": ("tp" if emerg and t112 is not None and t112 >= sim.emergency_onset else
-                "fn" if emerg and (t112 is None or t112 < sim.emergency_onset) else
-                "fp" if t112 is not None else "tn"),
+        "112": ("fp" if false_calls else "tp" if good_calls else "fn" if emerg else "tn"),
         "t112_delay": (t112 - sim.emergency_onset) if (emerg and t112 is not None and t112 >= sim.emergency_onset) else None,
     }
 
@@ -662,11 +743,26 @@ def main(argv=None) -> dict:
     drivers = {k: make_drivers(v, rng, k[:2], shift=(k == "shift")) for k, v in n.items()}
     sims = {k: [TripSim(d, make_trip(rng), rng) for d in ds] for k, ds in drivers.items()}
 
+    # Profilul de praguri (ml1/profile.py) ales pe VALIDARE: costul minim (Curs 5)
+    profile_val = {}
+    runs_legacy = {}
+    for name in ("legacy", "cv", "cv_signs"):
+        profile.use(name)
+        rv = [run_system(s) for s in sims["val"]]
+        sv = summarize(name, sims["val"], rv, rng)
+        profile_val[name] = {"macro_f1": sv["scores"]["macro_f1"], "cost": sv["scores"]["cost_per_frame"],
+                             "false_alarms_per_hour": sv["false_alarms_per_hour"], "calls_112": sv["calls_112"]}
+        if name == "legacy":
+            runs_legacy = {k: [run_system(s) for s in sims[k]] for k in ("test", "shift")}
+    chosen = min(profile_val, key=lambda n: profile_val[n]["cost"])
+    profile.use(chosen)
+
     runs = {k: [run_system(s) for s in sims[k]] for k in sims}
     runs_nocal = {k: [run_system(s, calibrate=False) for s in sims[k]] for k in ("test", "shift")}
 
     results: dict = {"config": {"seed": args.seed, "drivers": n, "hz": HZ,
-                                "frames": {k: int(sum(len(s.frames) for s in v)) for k, v in sims.items()}}}
+                                "frames": {k: int(sum(len(s.frames) for s in v)) for k, v in sims.items()}},
+                     "profile_val": profile_val, "profile_chosen": chosen}
 
     # pragurile pe a: alese pe validare
     cuts = tune_a_thresholds(sims["val"], runs["val"])
@@ -692,6 +788,7 @@ def main(argv=None) -> dict:
         res["prag pe a"] = frame_summary("prag pe a", S, [a_threshold_predict(r["a"], cuts) for r in R], rng)
         res["softmax"] = frame_summary("softmax", S, [softmax_proba(std.transform(r["X"]), sm).argmax(1) for r in R], rng)
         res["arbore"] = frame_summary("arbore", S, [tree.predict(r["X"]) for r in R], rng)
+        res["reguli, praguri vechi (legacy)"] = summarize("legacy", S, runs_legacy[split], rng)
         res["rules fără calibrare"] = summarize("rules fără calibrare", S, runs_nocal[split], rng)
         res["rules+calibrare"] = summarize("rules+calibrare", S, R, rng)
         res["rules+calibrare"]["_runs"] = R
@@ -726,6 +823,7 @@ def main(argv=None) -> dict:
         results["figures"] = plot_all(sims["test"], results["test"], roc, rel, ex)
     for split in ("test", "shift"):
         results[split]["rules+calibrare"].pop("_runs", None)
+    profile.use("cv")
     results["elapsed_s"] = round(time.time() - t_start, 1)
     if not args.no_write:
         write_report(results)
@@ -774,6 +872,15 @@ def write_report(res: dict) -> None:
             f"severitate {lv}: mediană {_fmt(lat[lv]['median_s'], 1)} s, p90 {_fmt(lat[lv]['p90_s'], 1)} s, ratate {lat[lv]['missed']}/{lat[lv]['n']}"
             for lv in (1, 2, 3)))
         L.append("")
+    pv = res.get("profile_val", {})
+    if pv:
+        L += ["## Alegerea profilului de praguri (pe validare)", "",
+              "| Profil | macro-F1 | cost / cadru | alarme false / oră | 112 corecte · ratate · false |", "|---|---|---|---|---|"]
+        for name, v in pv.items():
+            c = v["calls_112"]
+            L.append(f"| {name}{' **(ales)**' if name == res['profile_chosen'] else ''} | {v['macro_f1']:.3f} | "
+                     f"{v['cost']:.3f} | {_fmt(v['false_alarms_per_hour'], 1)} | {c['tp']} · {c['fn']} · {c['fp']} |")
+        L.append("")
     L += [f"Praguri pe scorul a alese pe validare (cost minim): {res['a_cuts_from_val']} "
           "(sub primul = 1, sub al doilea = 2, sub al treilea = 3).", "",
           f"Scorul 1 − a ca detector pentru severitate ≥ 2 (test): ROC-AUC {res['roc_attention']['auc']:.3f}, "
@@ -794,6 +901,8 @@ def print_summary(res: dict) -> None:
                 c = r["calls_112"]
                 extra = f"  FA/h={_fmt(r['false_alarms_per_hour'], 1)}  112 tp/fn/fp={c['tp']}/{c['fn']}/{c['fp']}"
             print(f"  {name:<24} macroF1={s['macro_f1']:.3f}  recall3={s['recall'][3]:.2f}  cost={s['cost_per_frame']:.3f}{extra}")
+    print("\nprofil (val):", {k: (round(v['macro_f1'], 3), round(v['cost'], 3)) for k, v in res['profile_val'].items()},
+          "ales:", res['profile_chosen'])
     print(f"\npraguri a (val): {res['a_cuts_from_val']}   AUC(1-a)={res['roc_attention']['auc']:.3f}   {res['elapsed_s']} s")
 
 

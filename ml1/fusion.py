@@ -22,6 +22,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+from .profile import P
+
 # ---------------------------------------------------------------- config ----
 
 # Ponderi pentru a_raw (se renormalizează peste semnalele disponibile).
@@ -49,6 +51,9 @@ EVENT_SEVERITY = {
     "head_drop": 1.0,
     "head_on_wheel": 1.0,   # CV2: prăbușit pe volan
     "phone_use": 0.4,       # numele CV2 (normalizat oricum la phone_in_hand)
+    "low_blink_rate": 0.3,  # CV1: clipit rar (privit în gol / somnolență)
+    "hyper_blinking": 0.3,  # CV1: clipit foarte des
+    "frequent_yawning": 0.5,  # CV1: căscat des = oboseală
     "microsleep": 0.8,
     "hand_on_chest": 0.6,
     "heavy_breathing": 0.4,
@@ -94,11 +99,30 @@ def _ramp_down(x: float, good: float, bad: float) -> float:
 
 # ----------------------------------------------------- sub-scoruri (0..1) ----
 
-def score_eyes(perclos: float | None, ear: float | None, baseline_ear: float | None) -> float | None:
+def eye_artifact(events: Any, phone: float | None = None, direction: Any = None) -> bool:
+    """Pleoapele PAR închise fără să fie somnolență: căscat, privire în jos, telefon în mână.
+    Cunoștință de domeniu preluată din regulile CV (Vision/vigil_vision/face/alerts.py)."""
+    if not P["artifact_exclusion"]:
+        return False
+    if (phone or 0.0) >= 0.5 or direction == "down":   # `direction` dacă CV îl publică (HeadState)
+        return True
+    for e in events if isinstance(events, list) else []:
+        if not isinstance(e, dict) or (_num(e.get("confidence")) or 0.0) < 0.5:
+            continue
+        name = e.get("event")
+        if name in ("yawn", "phone_in_hand", "phone_use"):
+            return True
+        if name == "gaze_off_road" and e.get("direction") == "down":
+            return True
+    return False
+
+
+def score_eyes(perclos: float | None, ear: float | None, baseline_ear: float | None,
+               artifact: bool = False) -> float | None:
     parts: list[tuple[float, float]] = []
     if perclos is not None:
-        parts.append((0.7, _ramp_down(_clamp(perclos), good=0.15, bad=0.45)))
-    if ear is not None:
+        parts.append((0.7, _ramp_down(_clamp(perclos), good=P["perclos_good"], bad=P["perclos_bad"])))
+    if ear is not None and not artifact:  # EAR instantaneu e înșelător la căscat / privire în jos
         base = baseline_ear if baseline_ear and baseline_ear > 0 else 0.30
         ratio = ear / base  # ochi deschiși normal ≈ 1
         parts.append((0.3, _clamp((ratio - 0.55) / (0.85 - 0.55))))
@@ -126,10 +150,13 @@ def score_events(events: Any) -> float | None:
     if not isinstance(events, list):
         return None
     worst = 0.0
+    artifact = eye_artifact(events)
     for ev in events:
         if not isinstance(ev, dict):
             continue
         name = ev.get("event")
+        if artifact and name in ("eyes_closed", "microsleep"):
+            continue  # pleoape coborâte la căscat / privire în jos: nu e micro-somn
         sev = EVENT_SEVERITY.get(name, 0.0)
         conf = _clamp(_num(ev.get("confidence")) or 0.0)
         dur = _num(ev.get("duration_sec")) or 0.0
@@ -166,6 +193,10 @@ class FusionResult:
     contributions: dict[str, dict[str, float]] = field(default_factory=dict)
     capped_by: str | None = None  # semnalul care a plafonat a_raw (pentru dashboard)
     low_a_sec: float = 0.0        # de cât timp a < LOW_A (persistența, pentru regula generică)
+    eyes_open_now: bool = False   # EAR clar deschis acum (folosit să nu credem un eyes_closed „unit” de tracker)
+    eyes_closed_sec: float = 0.0  # de cât timp EAR arată ochii închiși CONTINUU
+    ear_available: bool = False   # EAR valid în acest cadru (față vizibilă, fără artefact)
+    eyes_closed_artifact: bool = False  # episodul curent de ochi închiși a început la căscat / privit în jos
 
     def to_dict(self) -> dict:
         return {
@@ -178,6 +209,10 @@ class FusionResult:
             "contributions": self.contributions,
             "capped_by": self.capped_by,
             "low_a_sec": round(self.low_a_sec, 2),
+            "eyes_open_now": self.eyes_open_now,
+            "eyes_closed_sec": round(self.eyes_closed_sec, 2),
+            "ear_available": self.ear_available,
+            "eyes_closed_artifact": self.eyes_closed_artifact,
         }
 
 
@@ -187,6 +222,12 @@ class AttentionFusion:
         self.baseline_blink: float | None = None
         self.perclos_offset = 0.0   # din calibrare: PERCLOS „din construcție” al șoferului
         self._face_missing_since: float | None = None
+        self._ear_closed_since: float | None = None
+        self._art_episode_start: float | None = None
+        self.eyes_closed_artifact = False
+        self.eyes_open_now = False
+        self.eyes_closed_sec = 0.0
+        self.ear_available = False
         self._low_since: float | None = None
         self.low_a_sec = 0.0        # de cât timp a < LOW_A (pentru regula generică de severitate 1)
         self.a = initial_a
@@ -218,6 +259,11 @@ class AttentionFusion:
 
         if camera_on:
             perclos = _num(msg.get("perclos"))
+            # PERCLOS pe 60 s (CV) întârzie zeci de secunde și la debut, și la revenire. Când avem închiderea
+            # pe ultimele 15 s (de la CV sau estimarea ML1, verificată că e consistentă cu CV), o folosim.
+            recent = _num(msg.get("perclos_recent")) if P["perclos_recent"] else None
+            if recent is not None:
+                perclos = recent
             if perclos is not None:
                 perclos = max(0.0, perclos - self.perclos_offset)
             gaze = None if not isinstance(msg.get("gaze_on_road"), bool) else float(msg["gaze_on_road"])
@@ -233,7 +279,8 @@ class AttentionFusion:
             else:
                 self._face_missing_since = None
             cand = {
-                "eyes": score_eyes(perclos, _num(msg.get("ear")), self.baseline_ear),
+                "eyes": score_eyes(perclos, _num(msg.get("ear")), self.baseline_ear,
+                                   eye_artifact(msg.get("events"), _num(msg.get("phone")), msg.get("direction"))),
                 "gaze": gaze,
                 "head": None if not isinstance(msg.get("head_drop"), bool) else (0.0 if msg["head_drop"] else 1.0),
                 "phone": None if _num(msg.get("phone")) is None else 1.0 - _clamp(_num(msg["phone"])),
@@ -241,6 +288,42 @@ class AttentionFusion:
                 "events": score_events(msg.get("events")),
             }
             scores.update({k: v for k, v in cand.items() if v is not None})
+
+            # „Ochi închiși ACUM” (Curs 2: semnale cu scări de timp diferite nu se mediază orbește):
+            # PERCLOS e istoria pe 60 s și urcă încet; o închidere susținută (>= 0.4 s, deci nu o clipire)
+            # sau un eveniment CV de ochi închiși plafonează direct scorul ochilor. Altfel un șofer
+            # prăbușit ar avea scorul ochilor ~0.7 pentru că „ultimul minut a fost normal”.
+            art = eye_artifact(msg.get("events"), _num(msg.get("phone")), msg.get("direction"))
+            # Un episod de ochi închiși care a ÎNCEPUT în timpul unui căscat / privit în jos rămâne artefact
+            # până se termină, chiar dacă evenimentul de căscat a dispărut între timp (tracker-ul CV
+            # prelungește episodul peste pauze < 1 s).
+            ec = next((e for e in msg.get("events") or [] if isinstance(e, dict) and e.get("event") == "eyes_closed"), None)
+            if ec is None:
+                self._art_episode_start = None
+            else:
+                start = ts - (_num(ec.get("duration_sec")) or 0.0)
+                if art:
+                    self._art_episode_start = start
+                elif self._art_episode_start is not None and abs(start - self._art_episode_start) <= 0.6:
+                    art = True
+            self.eyes_closed_artifact = bool(art and ec is not None)
+            ear_now = _num(msg.get("ear"))
+            if ear_now is not None and not art and ear_now < 0.6 * (self.baseline_ear or 0.30):
+                self._ear_closed_since = ts if self._ear_closed_since is None else self._ear_closed_since
+            else:
+                self._ear_closed_since = None
+            closed_now = self._ear_closed_since is not None and ts - self._ear_closed_since >= 0.4
+            if not art:
+                for e in msg.get("events") if isinstance(msg.get("events"), list) else []:
+                    if (isinstance(e, dict) and e.get("event") in ("eyes_closed", "microsleep")
+                            and (_num(e.get("confidence")) or 0.0) >= 0.6):
+                        closed_now = True
+            if closed_now:
+                scores["eyes"] = min(scores.get("eyes", 1.0), 0.1)
+            self.eyes_closed_sec = (ts - self._ear_closed_since) if self._ear_closed_since is not None else 0.0
+            self.ear_available = ear_now is not None and not art
+            self.eyes_open_now = (ear_now is not None and not art
+                                  and ear_now > 0.85 * (self.baseline_ear or 0.30))
 
         if self._voice and ts - self._voice[0] <= VOICE_TTL:
             v = score_voice(self._voice[1])
@@ -270,7 +353,7 @@ class AttentionFusion:
         }
 
         # semnale critice: ocolesc netezirea (nu așteptăm 1 s la cap căzut)
-        eyes_closed = scores.get("eyes", 1.0) < 0.3
+        eyes_closed = scores.get("eyes", 1.0) < 0.3   # include închiderea susținută de mai sus
         critical = (
             (scores.get("head") == 0.0 and eyes_closed)        # cap căzut + ochi închiși
             or scores.get("events", 1.0) <= 0.1                # eveniment grav, sigur, prelungit
@@ -306,7 +389,9 @@ class AttentionFusion:
             confidence += SOURCE_CONFIDENCE["driving"]
 
         return FusionResult(ts, self.a, a_raw, _clamp(confidence), camera_on, bool(critical),
-                            contributions, capped_by, self.low_a_sec)
+                            contributions, capped_by, self.low_a_sec, self.eyes_open_now if camera_on else False,
+                            self.eyes_closed_sec if camera_on else 0.0, self.ear_available if camera_on else False,
+                            self.eyes_closed_artifact if camera_on else False)
 
     @staticmethod
     def _camera_on(msg: dict) -> bool:

@@ -22,13 +22,22 @@ Cameră → CV (față + corp) → fuziune / scor de atenție → LLM (decide) �
 - [ ] Transformă detecțiile în **evenimente cu durată și încredere** (ex. `hand_on_chest`, 4 s, 0.8) și le publică pe `vigil/vision`
 
 ## ML 1 — Motorul de decizie LLM
-- [ ] Fuziune: semnale → scor `a` ∈ [0, 1] (medie ponderată, netezită); fără cameră → încredere mai mică
-- [ ] LLM local (Ollama: Llama 3 / Mistral / Phi-3) cu **function calling**: primește evenimentele din cameră și alege acțiunea + severitatea
-- [ ] Prompt de sistem cu regulile de severitate (tabelul de mai jos) și câteva exemple
-- [ ] Raționament contextual: o privire de 1 s spre telefon ≠ mână pe piept + respirație grea + cap căzut
-- [ ] Validarea răspunsului LLM: acțiune necunoscută sau JSON invalid → reguli fixe de rezervă (plan B și pentru latență)
-- [ ] Textul raportului 112 (semne observate, durata, locație simulată) și al raportului post-cursă
-- [ ] **Owner pitch**
+- [x] Fuziune: semnale → scor `a` ∈ [0, 1] (medie ponderată, netezită); fără cameră → încredere mai mică — `ml1/fusion.py`, date de test în `tests/data/`
+- [x] LLM local pentru controllerul din mașină: `qwen2.5:1.5b` (Apache 2.0, ~1 GB), rezervă `llama3.2:1b`, structured output cu meniu de acțiuni — `ml1/llm_client.py`, `ml1/actions.py` (vezi `ml1/README.md`)
+  - [x] Ollama instalat, `qwen2.5:1.5b` rulat pe laptop (RTX 4050, 100% GPU, 1.1 GB): p50 364 ms, p95 448 ms, 100% JSON valid, 100% severitate corectă pe cele 5 contexte (`python -m ml1.bench`)
+  - Scenariile complete cu modelul real au scos 3 greșeli (alertă inventată, reminder greșit, fără întrebare vocală) → gardurile din `validate.apply_safety`, cu teste de regresie
+- [x] Prompt de sistem cu regulile de severitate și 5 exemple (prefix fix → KV-cache) — `ml1/prompt.py`
+- [x] Raționament contextual: durate + combinații + răspunsul șoferului; engine apelează LLM-ul doar la schimbare, cale rapidă din reguli la severitate 3 — `ml1/engine.py`
+- [x] Validarea răspunsului LLM: acțiune necunoscută sau JSON invalid → reguli fixe de rezervă (plan B și pentru latență) — `ml1/validate.py`, `ml1/rules.py`, `ml1/tools.py`
+- [x] Textul raportului 112 (semne observate, durata, locație simulată) și al raportului post-cursă — `ml1/reports.py` (șablon, nu LLM)
+- [x] Integrare cu datele reale CV (`Vision/`): `ml1/cv_adapter.py` (phone_use, head_on_wheel, breathing/posture, fața lipsă), `ml1/mqtt_bridge.py` (vigil/vision → vigil/decision)
+- [x] Calibrare personală (30 s, mediană/IQR) — `ml1/calibration.py`; evaluare după protocolul din C5 — `ml1/evaluate.py`, `docs/EVALUATION_RESULTS.md`
+- [x] Documentație — `docs/` (arhitectură, metode ML legate de C1–C6, evaluare, alegerea modelului, runbook)
+- [x] Aliniere la codul real CV1/CV2 (PERCLOS pe 60 s, ochi închiși 1.5 / 3 s, artefacte căscat / privit în jos, tracker cu pauze) — `ml1/profile.py`, `docs/CV_INTEGRATION.md`; simulatorul de evaluare rescris în aceeași semantică
+- [x] Pregătire pentru serverul Spring Boot + camera live: `ml1/service.py`, `ml1/http_api.py` (REST + SSE), camelCase / ms / ISO / plicuri / duplicate / mesaje vechi — `docs/API.md`
+- [ ] De la CV (opțional): publicat `perclos_recent` / `recovered`, `closed_sec`, `off_road_ratio`, `direction`; alertele locale CV pe mut în demo
+- [ ] De la ML2: `vigil/driver_response` după fiecare întrebare (altfel 8 s de tăcere = fără răspuns)
+- [x] **Owner pitch** — `PITCH.md` (script de 3 min + întrebări probabile; de repetat cu echipa)
 
 ## ML 2 — Executorul de acțiuni, vocea și hardware-ul
 - [ ] Uneltele pe care le apelează LLM-ul: `speak(text)`, `play_alarm(level)`, `ask_driver(question)`, `set_esp32(level)`, `call_112(report)`, `suggest_break()`

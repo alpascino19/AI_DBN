@@ -72,7 +72,8 @@ class TestNewRules(unittest.TestCase):
         self.assertEqual(rule_severity(c)[0], 3)
 
     def test_calibrated_perclos_is_used(self):
-        c = self.ctx(perclos=0.38, perclos_cal=0.25)
+        # semantica CV: 0.20 brut ar fi oboseală (>= 0.15), dar corectat cu calibrarea e 0.10
+        c = self.ctx(perclos=0.20, perclos_cal=0.10)
         c["fusion"]["a"] = 0.9
         self.assertEqual(rule_severity(c)[0], 0)
 
@@ -98,13 +99,13 @@ class TestCalibration(unittest.TestCase):
 
     def test_learns_robust_driver_baseline(self):
         b = DriverBaseline()
-        frames = self.frames(0.22, 0.15)
+        frames = self.frames(0.22, 0.08)   # ochi mici; PERCLOS rezidual 0.08 (CV calibrează deja închiderea)
         frames[50]["ear"] = 0.01  # o clipire lungă / outlier nu strică mediana
         done = [b.update(f, f["ts"]) for f in frames]
         self.assertTrue(any(done))
         self.assertEqual(b.source, "driver")
         self.assertAlmostEqual(b.ear, 0.22, delta=0.01)
-        self.assertAlmostEqual(b.perclos_offset, 0.09, delta=0.02)
+        self.assertAlmostEqual(b.perclos_offset, 0.05, delta=0.02)
 
     def test_ignores_unclean_frames(self):
         b = DriverBaseline()
@@ -117,7 +118,8 @@ class TestCalibration(unittest.TestCase):
         b = DriverBaseline()
         for f in self.frames(0.30, 0.45):
             b.update(f, f["ts"])
-        self.assertLessEqual(b.perclos_offset, 0.20 - 0.06 + 1e-9)
+        from ml1.profile import P
+        self.assertLessEqual(b.perclos_offset, P["perclos_max_baseline"] - P["pop_perclos"] + 1e-9)
 
     def test_falls_back_to_population(self):
         b = DriverBaseline()
@@ -129,7 +131,7 @@ class TestCalibration(unittest.TestCase):
 
     def test_engine_applies_calibration(self):
         eng = DecisionEngine()
-        for f in self.frames(0.22, 0.15, n=170):
+        for f in self.frames(0.22, 0.07, n=170):
             eng.on_vision(f)
         self.assertTrue(eng.baseline.ready)
         self.assertAlmostEqual(eng.fusion.baseline_ear, 0.22, delta=0.01)
@@ -146,8 +148,11 @@ class TestCVDemoEndToEnd(unittest.TestCase):
         for ph, d in decs:
             by_phase.setdefault(ph, []).append(d)
         self.assertIn(1, [d["severity"] for d in by_phase.get("phone", [])])
-        self.assertTrue(all(d["severity"] <= 2 for d in by_phase.get("drowsy", [])),
-                        "somnolența CV (eyes_closed 2.5 s) nu e urgență medicală")
+        # eyes_closed 2.5 s (sub pragul critic de 3 s) nu e tratat ca prăbușire / adormit; escaladarea
+        # pe tăcere (nimeni nu răspunde în demo-ul CV) e voită și are alt motiv.
+        reasons = [d["reason"] for d in by_phase.get("drowsy", []) if d["severity"] == 3]
+        self.assertFalse([r for r in reasons if "cap căzut" in r or "peste 3 s" in r], reasons)
+        self.assertIn(2, [d["severity"] for d in by_phase.get("drowsy", [])])
         tools = [a["tool"] for _, d in decs for a in d["actions"]]
         self.assertEqual(tools.count("call_112"), 1, "urgența CV ajunge la 112 o singură dată (fără răspunsuri vocale)")
         self.assertIn("Sunteți bine?", [a["args"].get("question") for _, d in decs for a in d["actions"]])
@@ -192,6 +197,75 @@ class TestEvaluationQuick(unittest.TestCase):
         rng = np.random.default_rng(5)
         s = TripSim(make_drivers(1, rng, "t")[0], make_trip(rng), rng)
         self.assertTrue(all(abs(f["ts"] - i / HZ) < 1e-9 for i, f in enumerate(s.frames)))
+
+
+class TestRealCVSemantics(unittest.TestCase):
+    """Comportamente aliniate la codul real CV (Vision/vigil_vision/face/*.py) — vezi docs/CV_INTEGRATION.md."""
+
+    def ctx(self, fusion=None, **vision):
+        return {"fusion": {"a": 0.9, "low_a_sec": 0, **(fusion or {})},
+                "vision": {"events": [], **vision}, "driver_response": None}
+
+    def test_perclos_015_is_fatigue_in_cv_semantics(self):
+        self.assertEqual(rule_severity(self.ctx(perclos=0.16))[0], 2)
+        self.assertEqual(rule_severity(self.ctx(perclos=0.05))[0], 0)
+
+    def test_yawn_and_looking_down_are_not_microsleep(self):
+        closed = {"event": "eyes_closed", "duration_sec": 2.0, "confidence": 0.9}
+        self.assertEqual(rule_severity(self.ctx(events=[closed]))[0], 2)
+        yawn = {"event": "yawn", "duration_sec": 1.5, "confidence": 0.8}
+        self.assertEqual(rule_severity(self.ctx(events=[closed, yawn]))[0], 0)
+        down = {"event": "gaze_off_road", "duration_sec": 2.0, "confidence": 0.7, "direction": "down"}
+        self.assertNotEqual(rule_severity(self.ctx(events=[closed, down]))[0], 2)
+
+    def test_three_seconds_needs_continuous_closure(self):
+        """Tracker-ul CV unește clipirile dese într-un episod lung: 3 s de episod != 3 s de ochi închiși."""
+        ev = [{"event": "eyes_closed", "duration_sec": 3.5, "confidence": 0.9}]
+        merged = self.ctx(fusion={"ear_available": True, "eyes_closed_sec": 0.6}, events=ev)
+        continuous = self.ctx(fusion={"ear_available": True, "eyes_closed_sec": 3.2}, events=ev)
+        self.assertEqual(rule_severity(merged)[0], 2)
+        self.assertEqual(rule_severity(continuous)[0], 3)
+
+    def test_eyes_clearly_open_discards_merged_episode(self):
+        ev = [{"event": "eyes_closed", "duration_sec": 2.0, "confidence": 0.9}]
+        self.assertEqual(rule_severity(self.ctx(fusion={"eyes_open_now": True}, events=ev))[0], 0)
+
+    def test_recovery_signals(self):
+        self.assertEqual(rule_severity(self.ctx(perclos=0.25, recovered=True))[0], 0)
+        self.assertEqual(rule_severity(self.ctx(perclos=0.25, perclos_recent=0.02))[0], 0)
+        self.assertEqual(rule_severity(self.ctx(perclos=0.25))[0], 2)
+
+    def test_optional_cv_fields(self):
+        ev = [{"event": "eyes_closed", "duration_sec": 3.5, "confidence": 0.9}]
+        self.assertEqual(rule_severity(self.ctx(events=ev, closed_sec=0.4))[0], 0)
+        self.assertEqual(rule_severity(self.ctx(events=ev, closed_sec=3.2))[0], 3)
+        self.assertEqual(rule_severity(self.ctx(off_road_ratio=0.6))[0], 1)
+
+    def test_collapse_without_face_or_perclos(self):
+        """CV: head_drop vine și din corpul prăbușit, fără față; PERCLOS pe 60 s nu ajunge la 0.6 repede."""
+        self.assertEqual(rule_severity(self.ctx(head_drop=True, perclos=0.1, events=[
+            {"event": "eyes_closed", "duration_sec": 1.0, "confidence": 0.8}]))[0], 3)
+        self.assertEqual(rule_severity(self.ctx(head_drop=True, face_detected=False, events=[
+            {"event": "head_on_wheel", "duration_sec": 2.5, "confidence": 0.85}]))[0], 3)
+
+    def test_provisional_baseline_during_calibration(self):
+        """În primele 30 s un șofer cu ochi mici nu mai e comparat cu populația."""
+        eng = DecisionEngine()
+        rng = np.random.default_rng(1)
+        for i in range(50):
+            eng.on_vision({"ts": i / 5, "camera_on": True, "face_detected": True, "gaze_on_road": True,
+                           "phone": 0.0, "events": [], "ear": 0.22 + rng.normal(0, 0.005), "perclos": None})
+        self.assertFalse(eng.baseline.ready)
+        self.assertAlmostEqual(eng.fusion.baseline_ear, 0.22, delta=0.01)
+        self.assertGreater(eng.last_result.a, 0.9)
+
+    def test_legacy_profile_still_available_for_comparison(self):
+        from ml1 import profile
+        try:
+            profile.use("legacy")
+            self.assertEqual(rule_severity(self.ctx(perclos=0.16))[0], 0)
+        finally:
+            profile.use("cv")
 
 
 if __name__ == "__main__":

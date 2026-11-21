@@ -25,7 +25,7 @@ def _frame(rng: random.Random, t: float, **over) -> dict:
         "ts": round(t, 2),
         "camera_on": True,
         "ear": round(rng.gauss(0.30, 0.015), 3),
-        "perclos": round(abs(rng.gauss(0.06, 0.02)), 3),
+        "perclos": round(abs(rng.gauss(0.03, 0.01)), 3),  # semantica CV: % timp cu ochii aproape închiși, 60 s
         "blink_rate": round(rng.gauss(16, 2), 1),
         "gaze_on_road": True,
         "head_drop": False,
@@ -88,10 +88,13 @@ def drowsy(rng):
         out.append(_frame(
             rng, t,
             ear=round(0.30 - 0.12 * k + rng.gauss(0, 0.01), 3),
-            perclos=round(0.06 + 0.45 * k, 3),
+            perclos=round(0.03 + 0.30 * k, 3),
             blink_rate=round(16 - 11 * k, 1),
             events=events,
         ))
+    # conversația din demo (TASKS.md: „alarmă + Faceți o pauză? + conversație scurtă”): șoferul răspunde
+    out.insert(16 * HZ, {"ts": 16.0, "driver_response": {"answered": True, "latency_sec": 2.0,
+                                                          "text": "da, opresc la prima parcare"}})
     return out
 
 
@@ -119,7 +122,7 @@ def collapse(rng):
             out.append(_frame(rng, t, events=[_ev("hand_on_chest", t, 0.8, breathing="heavy")]))
         else:
             d = t - 5
-            out.append(_frame(rng, t, ear=0.08, perclos=0.95, blink_rate=0, gaze_on_road=False,
+            out.append(_frame(rng, t, ear=0.08, perclos=round(min(1.0, 0.04 + d / 60), 3), blink_rate=0, gaze_on_road=False,
                               head_drop=True, events=[_ev("head_drop", d, 0.9), _ev("eyes_closed", d, 0.9)]))
     out.insert(10 * HZ, {"ts": 10.0, "driver_response": {"answered": False, "latency_sec": None, "text": None}})
     return out

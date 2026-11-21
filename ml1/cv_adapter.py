@@ -16,11 +16,15 @@ from __future__ import annotations
 
 import math
 import random
+import re
+from datetime import datetime
 import sys
 from pathlib import Path
 from typing import Any
 
 EVENT_ALIASES = {
+    "yawning": "yawn",                 # numele intern CV1 (yawn.py)
+    "eyes_closed_long": "microsleep",  # numele intern CV1 (eyes.py)
     "phone_use": "phone_in_hand",      # CV2
     "phone": "phone_in_hand",
     "head_on_wheel": "head_on_wheel",  # CV2: prăbușit în față
@@ -41,10 +45,65 @@ def _num(v: Any) -> float | None:
     return f if math.isfinite(f) else None
 
 
+_CAMEL = re.compile(r"(?<!^)(?=[A-Z])")
+ENVELOPE_KEYS = ("payload", "data", "vision", "message", "body")
+KNOWN = {"ear", "perclos", "blink_rate", "gaze_on_road", "head_drop", "phone", "events", "camera_on", "ts"}
+
+
+def _snake(key: str) -> str:
+    """camelCase (Jackson / Spring Boot) -> snake_case: blinkRate -> blink_rate."""
+    return _CAMEL.sub("_", key).lower() if isinstance(key, str) and any(c.isupper() for c in key) else key
+
+
+def _snake_keys(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {_snake(k): _snake_keys(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_snake_keys(v) for v in obj]
+    return obj
+
+
+def normalize_ts(v: Any) -> float | None:
+    """Timpul în secunde epoch. Acceptă secunde, milisecunde (Java `currentTimeMillis`),
+    microsecunde și șiruri ISO-8601 (`Instant.toString()` din Java)."""
+    if isinstance(v, str):
+        try:
+            return datetime.fromisoformat(v.replace("Z", "+00:00")).timestamp()
+        except ValueError:
+            v = _num(v)
+    t = _num(v)
+    if t is None:
+        return None
+    if t > 1e14:      # microsecunde
+        return t / 1e6
+    if t > 1e11:      # milisecunde
+        return t / 1e3
+    return t
+
+
+def unwrap(msg: Any) -> Any:
+    """Scoate mesajul din plicuri de tip {"type": "...", "payload": {...}} (server / broker)."""
+    for _ in range(3):
+        if not isinstance(msg, dict) or KNOWN & set(map(_snake, msg)):
+            return msg
+        inner = next((msg[k] for k in ENVELOPE_KEYS if isinstance(msg.get(k), dict)), None)
+        if inner is None:
+            return msg
+        msg = inner
+    return msg
+
+
 def normalize_vision(msg: Any) -> dict:
+    msg = _snake_keys(unwrap(msg))
     if not isinstance(msg, dict):
         return {}
     out = {k: v for k, v in msg.items() if k not in ("landmarks", "body_landmarks", "events", "breathing", "posture")}
+    if "ts" in msg:
+        ts = normalize_ts(msg.get("ts"))
+        if ts is None:
+            out.pop("ts", None)
+        else:
+            out["ts"] = ts
 
     for key, (lo, hi) in RANGES.items():
         if key in msg:
