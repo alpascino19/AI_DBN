@@ -6,7 +6,7 @@ rem Fara IP, il cere. Prima data instaleaza singur pachetele Vision in .venv.
 setlocal
 chcp 65001 >nul
 cd /d "%~dp0.."
-set "IP=%~"
+set "IP=%~172.22.118.20"
 if "%IP%"=="" set /p "IP=172.22.118.20"
 if "%IP%"=="" (echo Lipseste IP-ul. & goto :end)
 call :venv || goto :end
