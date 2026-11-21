@@ -63,7 +63,8 @@ class Executor:
             log.warning("decizie respinsă, JSON invalid: %r", payload)
             return
         sev = decision.get("severity") if isinstance(decision, dict) else None
-        if type(sev) is not int or sev not in (1, 2, 3) or not isinstance(decision.get("actions"), list):
+        # 0 = „revenire la normal” de la ML1 (vine cu set_esp32 0): fără ea, LED-ul rămânea aprins după o urgență
+        if type(sev) is not int or sev not in (0, 1, 2, 3) or not isinstance(decision.get("actions"), list):
             log.warning("decizie respinsă, severitate/acțiuni invalide: %r", decision)
             return
         log.info("decizie sev=%d: %s", sev, decision.get("reason", ""))

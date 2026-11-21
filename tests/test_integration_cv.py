@@ -268,5 +268,27 @@ class TestRealCVSemantics(unittest.TestCase):
             profile.use("cv")
 
 
+class TestNoAnswerExpiry(unittest.TestCase):
+    def test_old_no_answer_stops_counting(self):
+        """Testul cap-coadă: un „fără răspuns” de acum minute ținea episodul de urgență deschis și în fazele
+        normale de după. După NO_ANSWER_TTL nu mai contează."""
+        from ml1.engine import NO_ANSWER_TTL
+        eng = DecisionEngine()
+        eng._asked_ts, eng._asked_q = 0.0, "Sunteți bine?"
+        ctx = eng._context({"a": 0.9}, {"events": []}, eng.ask_timeout + 1)
+        self.assertFalse(ctx["driver_response"]["answered"])
+        ctx = eng._context({"a": 0.9}, {"events": []}, eng.ask_timeout + NO_ANSWER_TTL + 1)
+        self.assertIsNone(ctx["driver_response"])
+        self.assertIsNone(eng._asked_ts)
+
+    def test_explicit_silence_from_ml2_also_expires(self):
+        from ml1.engine import NO_ANSWER_TTL
+        eng = DecisionEngine()
+        eng._asked_ts, eng._asked_q = 0.0, "Sunteți bine?"
+        eng.on_driver_response({"answered": False, "latency_sec": None, "text": None}, ts=5.0)
+        self.assertFalse(eng._context({"a": 0.9}, {"events": []}, 10.0)["driver_response"]["answered"])
+        self.assertIsNone(eng._context({"a": 0.9}, {"events": []}, 5.0 + NO_ANSWER_TTL + 1)["driver_response"])
+
+
 if __name__ == "__main__":
     unittest.main()

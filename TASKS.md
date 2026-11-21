@@ -36,7 +36,9 @@ Cameră → CV (față + corp) → fuziune / scor de atenție → LLM (decide) �
 - [x] Aliniere la codul real CV1/CV2 (PERCLOS pe 60 s, ochi închiși 1.5 / 3 s, artefacte căscat / privit în jos, tracker cu pauze) — `ml1/profile.py`, `docs/CV_INTEGRATION.md`; simulatorul de evaluare rescris în aceeași semantică
 - [x] Pregătire pentru serverul Spring Boot + camera live: `ml1/service.py`, `ml1/http_api.py` (REST + SSE), camelCase / ms / ISO / plicuri / duplicate / mesaje vechi — `docs/API.md`
 - [ ] De la CV (opțional): publicat `perclos_recent` / `recovered`, `closed_sec`, `off_road_ratio`, `direction`; alertele locale CV pe mut în demo
-- [ ] De la ML2: `vigil/driver_response` după fiecare întrebare (altfel 8 s de tăcere = fără răspuns)
+- [x] ML2 integrat: răspunde pe `vigil/driver_response`; acceptă severitatea 0 (revenire la normal + ESP32 stins)
+- [x] Sistem combinat: `run_vigil.py` (Vision -> ML1 -> ML2 prin Mosquitto), `requirements.txt` comun, `.venv`; testat cap-coadă cu `--fake`
+- [x] Conversația ML2 pe Qwen (`qwen2.5:3b` prin `run_vigil.py`; Gemma rămâne implicit pentru ML2 pornit singur)
 - [x] **Owner pitch** — `PITCH.md` (script de 3 min + întrebări probabile; de repetat cu echipa)
 
 ## ML 2 — Executorul de acțiuni, vocea și hardware-ul

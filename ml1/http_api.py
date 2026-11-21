@@ -153,11 +153,35 @@ def serve(svc: Ml1Service, host: str = "127.0.0.1", port: int = 8090, token: str
     return server
 
 
+def attach_mqtt(svc: Ml1Service, broker: str, port: int = 1883):
+    """Cadrele vin prin HTTP (serverul Spring), dar ML2 ascultă pe MQTT: deciziile pleacă pe vigil/decision,
+    iar răspunsurile șoferului (vigil/driver_response) intră înapoi în același serviciu."""
+    try:
+        import paho.mqtt.client as mqtt
+    except ImportError:
+        print("Lipsește paho-mqtt: deciziile NU ajung la ML2 (pip install paho-mqtt)")
+        return None
+    from .mqtt_bridge import TOPIC_DECISION, TOPIC_RESPONSE, _decision_payload
+    client = (mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="vigil-ml1-http")
+              if hasattr(mqtt, "CallbackAPIVersion") else mqtt.Client(client_id="vigil-ml1-http"))
+    client.on_connect = lambda c, *a: c.subscribe(TOPIC_RESPONSE, qos=1)
+    client.on_message = lambda c, u, m: svc.ingest_response(json.loads(m.payload))
+    client.reconnect_delay_set(1, 10)
+    client.connect_async(broker, port, keepalive=30)
+    client.loop_start()
+    svc.add_listener(lambda d: client.publish(TOPIC_DECISION, json.dumps(_decision_payload(d), ensure_ascii=False), qos=1))
+    print(f"decizii -> MQTT {broker}:{port} {TOPIC_DECISION}")
+    return client
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--host", default="127.0.0.1", help="0.0.0.0 ca serverul Spring să ajungă din rețea")
     p.add_argument("--port", type=int, default=8090)
     p.add_argument("--llm", action="store_true")
+    p.add_argument("--mqtt-out", action="store_true",
+                   help="publică deciziile și pe MQTT (vigil/decision) pentru ML2; răspunsurile ML2 vin înapoi")
+    p.add_argument("--broker", default="localhost")
     args = p.parse_args()
 
     llm = None
@@ -170,6 +194,8 @@ def main() -> None:
         else:
             print("Ollama indisponibil: doar reguli fixe")
     svc = Ml1Service(llm=llm)
+    if args.mqtt_out:
+        attach_mqtt(svc, args.broker)
     token = os.environ.get("ML1_API_TOKEN") or None
     server = serve(svc, args.host, args.port, token)
     print(f"ML1 API: http://{args.host}:{args.port}/api/v1  (token: {'da' if token else 'nu'})  Ctrl+C oprește")

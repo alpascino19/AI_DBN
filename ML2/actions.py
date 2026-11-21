@@ -3,6 +3,7 @@
 import difflib
 import json
 import logging
+import os
 import pathlib
 import random
 import re
@@ -28,7 +29,8 @@ EDGE_TIMEOUT_SEC = 5
 
 # --- conversația: LLM local prin Ollama ---
 OLLAMA_URL = "http://localhost:11434/api/chat"
-LLM_MODEL = "gemma3:4b"
+# VIGIL_VOICE_LLM alege alt model (ex. qwen2.5:3b, pornit așa de run_vigil.py); implicit gemma3:4b
+LLM_MODEL = os.environ.get("VIGIL_VOICE_LLM", "gemma3:4b")
 LLM_TIMEOUT_SEC = 15
 MAX_TURNS = 3  # câte răspunsuri ale șoferului ascultăm într-o conversație
 WAKE_WORDS = ("virgil", "vigil")  # „Hei Virgil” trezește asistentul; Whisper scrie numele în mai multe feluri

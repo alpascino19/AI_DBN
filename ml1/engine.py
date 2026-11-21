@@ -36,6 +36,7 @@ from .rules import answer_status, fallback_decision, rule_severity, wants_112
 from .validate import LLM_TIMEOUT_SEC, decide
 
 
+NO_ANSWER_TTL = 60.0   # după atât, o întrebare fără răspuns nu mai contează
 RULE_CALM_SEC = 8.0   # revenire la normal când regulile spun 0 atât timp (ales din evaluare)
 
 
@@ -159,7 +160,9 @@ class DecisionEngine:
             rule_calm = (self._rule0_since is not None and ts - self._rule0_since >= RULE_CALM_SEC
                          and not self._waiting_answer(ts))
             if ((calm and ts - self._calm_since >= 5.0) or rule_calm) and self._last_pub["severity"] > 0:
-                out += self._publish(fallback_decision(ctx, "revenire la normal"), ts)
+                clear = fallback_decision(ctx, "revenire la normal")
+                clear["actions"] = [{"tool": "set_esp32", "args": {"level": 0}}]   # stinge LED-ul / buzzer-ul
+                out += self._publish(clear, ts)
                 self._reset_episode()
 
             # 3. LLM doar la schimbare
@@ -207,8 +210,17 @@ class DecisionEngine:
     def _context(self, fusion: dict, vision: dict, ts: float) -> dict:
         resp = None
         if self._asked_ts is not None:
-            if self._resp and self._resp[0] >= self._asked_ts:
+            answered_now = self._resp and self._resp[0] >= self._asked_ts
+            silent_reply = answered_now and self._resp[1].get("answered") is False
+            if silent_reply and ts - self._resp[0] >= NO_ANSWER_TTL:
+                # tăcerea raportată explicit de ML2 expiră la fel ca cea dedusă de ML1 (vezi mai jos)
+                self._asked_ts = self._asked_q = None
+            elif answered_now:
                 resp = {**self._resp[1], "question": self._asked_q}
+            elif ts - self._asked_ts >= self.ask_timeout + NO_ANSWER_TTL:
+                # „fără răspuns” de acum > 1 min nu mai descrie șoferul de acum (testul cap-coadă: alarmele
+                # continuau și în fazele normale de după); dacă semnele grave persistă, regulile întreabă din nou
+                self._asked_ts = self._asked_q = None
             elif ts - self._asked_ts >= self.ask_timeout:
                 resp = {"answered": False, "latency_sec": None, "text": None, "timeout": True, "question": self._asked_q}
         vis = {k: v for k, v in vision.items() if k not in ("landmarks", "body_landmarks")}
