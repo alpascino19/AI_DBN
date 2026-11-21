@@ -88,6 +88,12 @@ class FaceStack:
             "direction": hs.direction, "yaw": hs.yaw, "pitch": hs.pitch,
             "yawning": ys.yawning, "yawns_recent": ys.yawns_recent,
             "consciousness": us.state, "unconscious_score": us.score,
+            # pentru CV2 (body/chest.py): mâna la bărbie / gură nu e "mână pe piept"
+            "chin": None if res is None else (round(float(res.landmarks[Idx.CHIN, 0]), 4),
+                                              round(float(res.landmarks[Idx.CHIN, 1]), 4)),
+            "mouth": None if res is None else (
+                round(float((res.landmarks[Idx.LIP_TOP, 0] + res.landmarks[Idx.LIP_BOTTOM, 0]) / 2), 4),
+                round(float((res.landmarks[Idx.LIP_TOP, 1] + res.landmarks[Idx.LIP_BOTTOM, 1]) / 2), 4)),
             "calibrated": self.calib.done,
         }
         raw = self.detections()

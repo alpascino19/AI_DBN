@@ -63,10 +63,12 @@ class Executor:
             log.warning("decizie respinsă, JSON invalid: %r", payload)
             return
         sev = decision.get("severity") if isinstance(decision, dict) else None
-        if type(sev) is not int or sev not in (1, 2, 3) or not isinstance(decision.get("actions"), list):
+        if type(sev) is not int or sev not in (0, 1, 2, 3) or not isinstance(decision.get("actions"), list):
             log.warning("decizie respinsă, severitate/acțiuni invalide: %r", decision)
             return
         log.info("decizie sev=%d: %s", sev, decision.get("reason", ""))
+        if sev == 0:  # ML 1: revenire la normal -> stingem ESP32; restul acțiunilor (de obicei niciuna) merg normal
+            self.publish_alert(0)
         now = time.monotonic()
         with self.lock:
             if sev == 3:

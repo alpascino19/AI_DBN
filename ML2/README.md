@@ -69,7 +69,7 @@ python -m venv .venv
 | Program | Instalare | Pentru ce |
 |---|---|---|
 | **Mosquitto** (broker MQTT) | `winget install -e --id EclipseFoundation.Mosquitto` | comunicarea dintre module |
-| **Ollama** (LLM local) | `winget install -e --id Ollama.Ollama`, apoi `ollama pull gemma3:4b` (3,4 GB) | replicile conversației |
+| **Ollama** (LLM local) | `winget install -e --id Ollama.Ollama`, apoi `ollama pull qwen2.5:1.5b` (1 GB; același model ca ML 1). Opțional, pentru conversații mai bune: `ollama pull gemma3:4b` (3,4 GB) | replicile conversației |
 | **ffmpeg** | `winget install -e --id Gyan.FFmpeg` | decodează vocea edge-tts |
 | **arduino-cli** | `winget install -e --id ArduinoSA.CLI` | compilează și flashuiește ESP32 |
 
@@ -90,6 +90,7 @@ Copy-Item 'CALEA\ML2\mosquitto.conf' "$d\mosquitto.conf" -Force
 Restart-Service mosquitto
 ```
 Verificare: `netstat -ano | findstr :1883` trebuie să arate **o singură** linie `0.0.0.0:1883 ... LISTENING`. Brokerul pornește apoi singur la fiecare boot.
+Configul deschide și portul **9001 (WebSocket)**, pentru dashboard-ul React (`dashboard/`).
 
 ### 2.4 Placa ESP32
 Placa folosită e un **ESP32-C3** (de exemplu SuperMini). Pașii:
@@ -156,7 +157,7 @@ mesaj JSON ──► validare decizie ──► pentru fiecare acțiune:
                                       ├─ debounce: aceeași unealtă la aceeași severitate în ultimele 10 s? ──► aruncată
                                       └─ pusă în coadă, după severitate
 ```
-- **Validarea decizie:** JSON corect, `severity` întreg 1/2/3, `actions` listă. Orice altceva e respins și logat, fără ca programul să cadă.
+- **Validarea decizie:** JSON corect, `severity` întreg 0–3, `actions` listă. Orice altceva e respins și logat, fără ca programul să cadă. `severity: 0` e „revenire la normal” de la ML 1 și stinge ESP32.
 - **Validarea acțiunii:**
   - doar cele 6 unelte cunoscute;
   - exact argumentele cerute, cu tipul corect (`True` nu trece drept număr);
@@ -199,7 +200,7 @@ mesaj JSON ──► validare decizie ──► pentru fiecare acțiune:
 4. Transcrie cu Whisper (detalii mai jos).
 5. **Publică imediat** pe `vigil/driver_response`: `{"answered": true/false, "latency_sec": ..., "text": ...}`.
 6. Dacă șoferul **tace**: conversația se oprește aici, iar ML 1 decide escaladarea.
-7. Dacă a răspuns: LLM-ul local (Ollama, `gemma3:4b`) generează replica următoare, de exemplu „De când conduceți fără pauză?”. Se repetă de la pasul 1, cu **cel mult 3 răspunsuri** ale șoferului.
+7. Dacă a răspuns: LLM-ul local (Ollama, modelul din `VIGIL_MODEL`, implicit `qwen2.5:1.5b`) generează replica următoare, de exemplu „De când conduceți fără pauză?”. Se repetă de la pasul 1, cu **cel mult 3 răspunsuri** ale șoferului.
 8. Conversația se încheie când LLM-ul spune că și-a atins scopul (șoferul e bine sau trebuie să oprească) sau când replica nu conține nicio întrebare.
 
 Fiecare răspuns pleacă pe MQTT pe loc, nu la finalul conversației. Dacă șoferul spune „mă doare pieptul”, ML 1 află imediat.
@@ -340,7 +341,7 @@ Toate se află în capul fișierului `actions.py`.
 | `WHISPER_MODEL` | `small` | `large-v3-turbo` recunoaște mai bine frazele libere, dar e ~3× mai lent (~6 s/frază) |
 | `PROMPT` | context + „Hei Virgil” | ghidează Whisper. **Nu pune răspunsuri-exemplu**: pe audio scurt Whisper copiază promptul |
 | `EDGE_VOICE` | `ro-RO-EmilNeural` | sau `ro-RO-AlinaNeural` |
-| `LLM_MODEL` | `gemma3:4b` | `llama3.2:3b` e mai rapid, dar inventează și nu respectă regulile |
+| `LLM_MODEL` | variabila de mediu `VIGIL_MODEL`, implicit `qwen2.5:1.5b` | aceeași variabilă ca ML 1. `qwen2.5:1.5b`: ~2,9 s/replică, dar româna liberă e slabă (merg bine doar situațiile din exemplele din prompt). `gemma3:4b`: ~4,4 s, româna corectă. Pentru ML 2 pe gemma: `$env:VIGIL_MODEL='gemma3:4b'` în terminalul executorului. Ambele încap împreună pe un GTX 1650 de 4 GB (testat). `llama3.2:3b` inventează și nu respectă regulile |
 | `MAX_TURNS` | 3 | răspunsuri ale șoferului într-un `ask_driver` |
 | `PERSONA` | — | personalitatea și regulile lui Virgil. **Fără ghilimele românești „...” în text**: modelul le copiază și strică JSON-ul |
 
@@ -372,9 +373,10 @@ Toate se află în capul fișierului `actions.py`.
 | Simptom | Cauză / soluție |
 |---|---|
 | **Recunoaștere vocală slabă** | Microfonul laptopului prinde oamenii din jur aproape la fel de tare ca pe șofer (diferență de ~4 dB). **Folosiți căști cu microfon.** Scădeți volumul microfonului la 60–70% dacă apare avertismentul de saturare. |
-| Conversația are pauze de ~7 s | Atât durează `gemma3:4b` pe un GTX 1650 de 4 GB (modelul încape doar pe jumătate în placa video). Un laptop cu placă video mai puternică le reduce. Dacă ML 1 rulează alt LLM pe același laptop, se încetinesc reciproc. |
+| Conversația are pauze lungi | Replica LLM durează ~2,9 s cu `qwen2.5:1.5b` și ~4,4 s cu `gemma3:4b` pe un GTX 1650 (după prima încărcare). Dacă ML 1 și ML 2 cer un răspuns în același timp, se încetinesc reciproc. |
+| Replici fără sens sau bucăți din instrucțiuni („pui o întrebare scurtă...”) | `qwen2.5:1.5b` e prea mic pentru conversație liberă în română. Treceți ML 2 pe `gemma3:4b` (vezi `LLM_MODEL` în secțiunea 6). |
 | `edge-tts indisponibil`, vocea devine robotică | Fără internet sau internet lent: trece automat pe Piper. |
-| Prima întrebare vine târziu | Prima încărcare a lui `gemma3:4b` durează ~50 s. Așteptați mesajul `modelele de voce sunt încărcate`. |
+| Prima întrebare vine târziu | Prima încărcare a modelului de pe disc durează 15–50 s. Așteptați mesajul `modelele de voce sunt încărcate`. |
 | ESP32: `NU văd <rețea>` | Rețeaua e pe 5 GHz. Setați 2.4 GHz și reporniți hotspotul. |
 | ESP32: `mqtt: eroare -2` | Brokerul nu e accesibil: IP greșit în `BROKER_IP` (s-a schimbat IP-ul laptopului?) sau broker oprit (`Get-Service mosquitto`). |
 | ESP32 nu primește nimic, deși scrie `mqtt: ok` | Rulează două brokere (vezi 2.3). `netstat -ano \| findstr :1883` trebuie să arate o singură linie LISTENING. |
