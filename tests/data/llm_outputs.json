@@ -1,0 +1,105 @@
+[
+  {"name": "good_json_phone", "ctx": "phone",
+   "raw": "{\"severity\": 1, \"actions\": [{\"tool\": \"speak\", \"args\": {\"text\": \"Vă rugăm să lăsați telefonul și să priviți drumul.\"}}], \"reason\": \"telefon în mână 6 s\"}",
+   "expect": {"source": "llm", "severity": 1, "has": ["speak"]}},
+
+  {"name": "fenced_with_chatter", "ctx": "drowsy",
+   "raw": "Sigur! Iată decizia:\n```json\n{\"severity\": 2, \"actions\": [{\"tool\": \"play_alarm\", \"args\": {\"level\": 2}}, {\"tool\": \"suggest_break\", \"args\": {}}], \"reason\": \"PERCLOS 0.45 + micro-somn\"}\n```\nSper că ajută!",
+   "expect": {"source": "llm", "severity": 2, "has": ["play_alarm", "suggest_break"]}},
+
+  {"name": "ollama_tool_calls", "ctx": "drowsy",
+   "raw": {"message": {"role": "assistant", "content": "", "tool_calls": [
+     {"function": {"name": "play_alarm", "arguments": {"level": 2}}},
+     {"function": {"name": "suggest_break", "arguments": {}}}]}},
+   "expect": {"source": "llm", "severity": 2, "has": ["play_alarm", "suggest_break"], "warnings": true}},
+
+  {"name": "tool_calls_string_args", "ctx": "drowsy",
+   "raw": {"message": {"content": "{\"severity\": 2, \"reason\": \"somnolență\"}", "tool_calls": [
+     {"function": {"name": "set_esp32", "arguments": "{\"level\": \"2\"}"}}]}},
+   "expect": {"source": "llm", "severity": 2, "has": ["set_esp32"]}},
+
+  {"name": "llama_style_keys", "ctx": "phone",
+   "raw": "{\"severity\": 1, \"actions\": [{\"name\": \"speak\", \"parameters\": {\"text\": \"Atenție la drum.\"}}], \"reason\": \"telefon\"}",
+   "expect": {"source": "llm", "severity": 1, "has": ["speak"]}},
+
+  {"name": "truncated_json", "ctx": "drowsy",
+   "raw": "{\"severity\": 2, \"actions\": [{\"tool\": \"play_al",
+   "expect": {"source": "rules", "severity": 2}},
+
+  {"name": "empty", "ctx": "calm", "raw": "",
+   "expect": {"source": "rules", "severity": 0}},
+
+  {"name": "prose_only", "ctx": "drowsy", "raw": "Șoferul pare obosit, recomand o pauză.",
+   "expect": {"source": "rules", "severity": 2}},
+
+  {"name": "top_level_list", "ctx": "calm", "raw": "[1, 2, 3]",
+   "expect": {"source": "rules"}},
+
+  {"name": "only_unknown_tool", "ctx": "drowsy",
+   "raw": "{\"severity\": 2, \"actions\": [{\"tool\": \"open_window\", \"args\": {}}], \"reason\": \"aer proaspăt\"}",
+   "expect": {"source": "rules", "severity": 2}},
+
+  {"name": "unknown_tool_mixed", "ctx": "phone",
+   "raw": "{\"severity\": 1, \"actions\": [{\"tool\": \"speak\", \"args\": {\"text\": \"Priviți drumul.\"}}, {\"tool\": \"honk\", \"args\": {}}], \"reason\": \"telefon\"}",
+   "expect": {"source": "llm", "severity": 1, "has": ["speak"], "lacks": ["honk"], "warnings": true}},
+
+  {"name": "severity_out_of_range", "ctx": "drowsy",
+   "raw": "{\"severity\": 5, \"actions\": [], \"reason\": \"foarte grav\"}",
+   "expect": {"source": "rules"}},
+
+  {"name": "severity_as_string", "ctx": "drowsy",
+   "raw": "{\"severity\": \"2\", \"actions\": [{\"tool\": \"suggest_break\", \"args\": {}}], \"reason\": \"obosit\"}",
+   "expect": {"source": "llm", "severity": 2}},
+
+  {"name": "bad_arg_type", "ctx": "drowsy",
+   "raw": "{\"severity\": 2, \"actions\": [{\"tool\": \"play_alarm\", \"args\": {\"level\": \"loud\"}}, {\"tool\": \"suggest_break\", \"args\": {}}], \"reason\": \"obosit\"}",
+   "expect": {"source": "llm", "severity": 2, "has": ["suggest_break"], "lacks": ["play_alarm"], "warnings": true}},
+
+  {"name": "false_112_on_phone", "ctx": "phone",
+   "raw": "{\"severity\": 1, \"actions\": [{\"tool\": \"call_112\", \"args\": {\"report\": \"șofer la telefon\"}}, {\"tool\": \"speak\", \"args\": {\"text\": \"Lăsați telefonul.\"}}], \"reason\": \"telefon\"}",
+   "expect": {"source": "llm", "severity": 1, "has": ["speak"], "lacks": ["call_112"], "safety": true}},
+
+  {"name": "premature_112_on_chest", "ctx": "chest",
+   "raw": "{\"severity\": 3, \"actions\": [{\"tool\": \"call_112\", \"args\": {\"report\": \"posibil infarct\"}}], \"reason\": \"mână pe piept\"}",
+   "expect": {"source": "llm", "severity": 3, "has": ["ask_driver", "play_alarm", "set_esp32"], "lacks": ["call_112"], "safety": true}},
+
+  {"name": "under_reaction_chest", "ctx": "chest",
+   "raw": "{\"severity\": 1, \"actions\": [{\"tool\": \"speak\", \"args\": {\"text\": \"Totul bine?\"}}], \"reason\": \"pare ok\"}",
+   "expect": {"source": "llm", "severity": 3, "has": ["play_alarm", "set_esp32"], "safety": true}},
+
+  {"name": "under_reaction_collapse", "ctx": "collapse_no_answer",
+   "raw": "{\"severity\": 2, \"actions\": [{\"tool\": \"play_alarm\", \"args\": {\"level\": 2}}], \"reason\": \"obosit\"}",
+   "expect": {"source": "llm", "severity": 3, "has": ["play_alarm", "set_esp32", "call_112"], "safety": true}},
+
+  {"name": "correct_collapse_112", "ctx": "collapse_no_answer",
+   "raw": "{\"severity\": 3, \"actions\": [{\"tool\": \"play_alarm\", \"args\": {\"level\": 3}}, {\"tool\": \"set_esp32\", \"args\": {\"level\": 3}}, {\"tool\": \"call_112\", \"args\": {\"report\": \"Șofer inconștient: cap căzut, ochi închiși 6 s, nu răspunde.\"}}], \"reason\": \"cap căzut + fără răspuns\"}",
+   "expect": {"source": "llm", "severity": 3, "has": ["call_112"]}},
+
+  {"name": "contextual_downgrade_allowed", "ctx": "phone",
+   "raw": "{\"severity\": 0, \"actions\": [], \"reason\": \"telefonul e în suport, șoferul privește drumul\"}",
+   "expect": {"source": "llm", "severity": 0, "lacks": ["speak", "play_alarm"]}},
+
+  {"name": "alarm_too_loud_for_severity", "ctx": "phone",
+   "raw": "{\"severity\": 1, \"actions\": [{\"tool\": \"play_alarm\", \"args\": {\"level\": 3}}], \"reason\": \"telefon\"}",
+   "expect": {"source": "llm", "severity": 1, "levels": {"play_alarm": 1}, "safety": true}},
+
+  {"name": "esp32_on_severity_0", "ctx": "calm",
+   "raw": "{\"severity\": 0, \"actions\": [{\"tool\": \"set_esp32\", \"args\": {\"level\": 2}}], \"reason\": \"test\"}",
+   "expect": {"source": "llm", "severity": 0, "lacks": ["set_esp32"], "safety": true}},
+
+  {"name": "very_long_speak", "ctx": "phone",
+   "raw": "{\"severity\": 1, \"actions\": [{\"tool\": \"speak\", \"args\": {\"text\": \"Vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog vă rog.\"}}], \"reason\": \"telefon\"}",
+   "expect": {"source": "llm", "severity": 1, "max_speak_len": 200}},
+
+  {"name": "duplicate_actions", "ctx": "phone",
+   "raw": "{\"severity\": 1, \"actions\": [{\"tool\": \"speak\", \"args\": {\"text\": \"A\"}}, {\"tool\": \"speak\", \"args\": {\"text\": \"B\"}}], \"reason\": \"telefon\"}",
+   "expect": {"source": "llm", "severity": 1, "count": {"speak": 1}, "warnings": true}},
+
+  {"name": "missing_reason", "ctx": "phone",
+   "raw": "{\"severity\": 1, \"actions\": [{\"tool\": \"speak\", \"args\": {\"text\": \"Priviți drumul.\"}}]}",
+   "expect": {"source": "llm", "severity": 1, "warnings": true}},
+
+  {"name": "missing_severity_inferred", "ctx": "drowsy",
+   "raw": "{\"actions\": [{\"tool\": \"play_alarm\", \"args\": {\"level\": 2}}], \"reason\": \"obosit\"}",
+   "expect": {"source": "llm", "severity": 2, "warnings": true}}
+]

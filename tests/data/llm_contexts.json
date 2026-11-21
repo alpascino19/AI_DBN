@@ -1,0 +1,33 @@
+{
+  "calm": {
+    "fusion": {"a": 0.98, "confidence": 0.6, "critical": false, "camera_on": true},
+    "vision": {"ear": 0.30, "perclos": 0.05, "blink_rate": 16, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []},
+    "driver_response": null
+  },
+  "phone": {
+    "fusion": {"a": 0.65, "confidence": 0.6, "critical": false, "camera_on": true},
+    "vision": {"ear": 0.29, "perclos": 0.07, "blink_rate": 15, "gaze_on_road": false, "head_drop": false, "phone": 0.9,
+               "events": [{"event": "phone_in_hand", "duration_sec": 6, "confidence": 0.85}]},
+    "driver_response": null
+  },
+  "drowsy": {
+    "fusion": {"a": 0.42, "confidence": 0.6, "critical": false, "camera_on": true},
+    "vision": {"ear": 0.19, "perclos": 0.45, "blink_rate": 6, "gaze_on_road": true, "head_drop": false, "phone": 0.01,
+               "events": [{"event": "microsleep", "duration_sec": 1.2, "confidence": 0.75}]},
+    "driver_response": null
+  },
+  "chest": {
+    "fusion": {"a": 0.57, "confidence": 0.6, "critical": false, "camera_on": true},
+    "vision": {"ear": 0.29, "perclos": 0.08, "blink_rate": 18, "gaze_on_road": true, "head_drop": false, "phone": 0.02,
+               "events": [{"event": "hand_on_chest", "duration_sec": 5, "confidence": 0.8, "breathing": "heavy"},
+                          {"event": "heavy_breathing", "duration_sec": 5, "confidence": 0.75}]},
+    "driver_response": null
+  },
+  "collapse_no_answer": {
+    "fusion": {"a": 0.17, "confidence": 0.8, "critical": true, "camera_on": true},
+    "vision": {"ear": 0.08, "perclos": 0.95, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.01,
+               "events": [{"event": "head_drop", "duration_sec": 6, "confidence": 0.9},
+                          {"event": "eyes_closed", "duration_sec": 6, "confidence": 0.9}]},
+    "driver_response": {"answered": false, "latency_sec": null, "text": null}
+  }
+}
