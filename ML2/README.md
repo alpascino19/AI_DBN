@@ -220,6 +220,23 @@ Nu sună și nu trimite nimic în afara laptopului. Ce face:
 
 Dashboard-ul poate afișa raportul din `vigil/decision`, care conține deja acțiunea `call_112` cu textul.
 
+#### Notificarea persoanei de contact — `emergency_notify.py` (opțional, separat)
+Executorul de mai sus rămâne simulat. Un program separat ascultă tot `vigil/decision` și, **doar la `call_112`**,
+anunță persoana de contact din `ML2/.env` (un coleg, **niciodată 112**):
+- mesaj Telegram cu raportul, prin CallMeBot (destinatarul dă o dată `/start` la `@CallMeBot_txtbot`);
+- opțional, apel GSM de pe un telefon Android legat prin USB (`adb`, depanare USB pornită).
+
+O singură notificare pe urgență (blocare 5 min), cel mult 3 încercări la 70 s dacă CallMeBot refuză (`FLOOD`).
+Dacă internetul sau telefonul nu merg, executorul (alarmă, voce, ESP32) nu e afectat.
+
+```bash
+copy .env.example .env                    # completezi VIGIL_NOTIFY_TELEGRAM / VIGIL_CALL_PHONE
+python emergency_notify.py --test         # o notificare de test, acum
+python emergency_notify.py --dry-run      # ascultă și doar afișează
+python emergency_notify.py                # pe bune; în alt terminal: python fake_llm.py fara_raspuns
+```
+`ML2/.env` nu se urcă pe git (repo-ul e public).
+
 #### `suggest_break()` — propune o pauză
 Rostește una din 3 fraze, aleasă la întâmplare, ca să nu sune repetitiv.
 

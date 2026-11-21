@@ -37,3 +37,6 @@ Vision/models/*
 
 # Integrare: loguri locale
 logs/
+
+# ML2: contactul de urgență (username Telegram, număr de telefon) — NU se urcă, repo-ul e public
+ML2/.env
