@@ -9,6 +9,52 @@ def test_route():
     assert ia.route("Cum e traficul spre centru?") == {"traffic"}
     assert ia.route("E aglomerat pe Calea Florești?") == {"traffic"}
     assert ia.route("Cine a câștigat meciul aseară?") == {"search"}
+    assert ia.route("Cât fac până la Gara Cluj?") == {"eta"}
+    assert ia.route("Cât durează drumul spre aeroport?") == {"traffic", "eta"}
+
+
+def test_destination():
+    assert ia.destination("Cât fac până la Gara Cluj?") == "Gara Cluj"
+    assert ia.destination("În cât timp ajung spre Iulius Mall") == "Iulius Mall"
+    assert ia.destination("Cât fac?") is None
+    assert ia.destination("Cât fac pînă la gară") == "gară"
+    assert ia.destination("Cum ajung la Iulius Mall?") == "Iulius Mall"
+    assert ia.destination("Merg la Vivo, cât durează?") == "Vivo"
+    assert ia.destination("Cât fac până la str. Memorandumului 28.") == "str. Memorandumului 28"
+    assert ia.route("În cât timp ajung la aeroport") == {"eta"}
+    assert ia.route("Cum ajung la gară?") == {"eta"}
+    assert ia.route("Cum e traficul spre centru?") == {"traffic"}   # „spre” singur nu cere durata
+
+
+def test_summarize_route():
+    d = {"routes": [{"duration": "1080s", "staticDuration": "720s", "distanceMeters": 6420}]}
+    assert ia.summarize_route("gară", d) == ("Google Maps: din centrul orașului Cluj-Napoca până la gară sunt "
+                                             "6.4 kilometri, 18 minute cu traficul de acum, "
+                                             "cu 6 minute în plus din cauza traficului.")
+    assert "fără întârzieri" in ia.summarize_route("gară", {"routes": [{"duration": "600s", "staticDuration": "590s"}]})
+    assert "nu am găsit" in ia.summarize_route("Marte", {})
+    assert ia.summarize_route("gară", d, "strada Observatorului").startswith(
+        "Google Maps: de la strada Observatorului până la gară")
+
+
+def test_here_falls_back_to_none():
+    ia._here = (0.0, None)
+    real = ia.subprocess.run
+    ia.subprocess.run = lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError("powershell"))
+    try:
+        assert ia.here() is None   # fără localizare: eta_google pleacă din centrul orașului
+    finally:
+        ia.subprocess.run, ia._here = real, (0.0, None)
+
+
+def test_origin():
+    q = "Care este distanța de ina strada observatolului până în piața gării din Cluj-Napoca."
+    assert ia.route(q) == {"eta"}
+    assert ia.origin(q) == "strada observatolului"
+    assert ia.destination(q) == "piața gării din Cluj-Napoca"
+    assert ia.origin("Cât fac de la Iulius Mall până la gară?") == "Iulius Mall"
+    assert ia.origin("Cât de departe e până la gară?") is None
+    assert ia.origin("Cât fac până la gară?") is None
 
 
 def test_strip_wake():

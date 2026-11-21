@@ -1,6 +1,7 @@
 """Virgil — asistentul vocal de informare, separat de executorul ML 2 (siguranța).
 
-„Hei Virgil, <întrebare>” -> date live (vreme: Open-Meteo; trafic: Waze; știri: RSS; orice altceva: căutare
+„Hei Virgil, <întrebare>” -> date live (vreme: Open-Meteo; trafic: Waze; durata până la o destinație:
+Google Maps Routes; știri: RSS; orice altceva: căutare
 Tavily prin OmniRoute) -> model prin OmniRoute -> voce. După răspuns ascultă și întrebările următoare.
 Tace imediat ce ML 2 are o alertă (vigil/decision cu severitate >= 1): siguranța are mereu prioritate.
 
@@ -12,6 +13,7 @@ import logging
 import os
 import queue
 import re
+import subprocess
 import threading
 import time
 import unicodedata
@@ -24,11 +26,11 @@ import actions
 from executor import BROKER
 
 OMNIROUTE = "http://localhost:20128"
-# Direct, nu combo-ul „claude-code”: acela are strategia lkgp (rămâne pe ultimul furnizor care a mers, de obicei
-# nemotron, 12-34 s) și e folosit și de Claude Code. gemini-2.5-flash: ~6 s, răspunsuri corecte.
-MODEL = os.environ.get("VIRGIL_MODEL", "gemini/gemini-2.5-flash")
-# planul gratuit Gemini dă 429 după câteva cereri pe minut: atunci încercăm următorul model
-MODELS = [MODEL] + [m for m in ("auto/best-fast", "claude-code") if m != MODEL]
+# Doar Groq (~2-3 s pe răspuns): Gemini gratuit dă des 429 și atunci fiecare întrebare aștepta eroarea.
+# qwen3.8-27b scrie cea mai curată română de citit cu voce tare; gpt-oss rămân de rezervă (pun „°C”, „%”).
+MODEL = os.environ.get("VIRGIL_MODEL", "groq/qwen/qwen3.8-27b")
+# dacă primul model e indisponibil (429, cădere), încercăm următorul
+MODELS = [MODEL] + [m for m in ("groq/openai/gpt-oss-120b", "groq/openai/gpt-oss-20b") if m != MODEL]
 CITY, LAT, LON = "Cluj-Napoca", 46.77, 23.59
 NEWS_FEEDS = ("https://hotnews.ro/feed", "https://www.digi24.ro/rss")
 QUIET_SEC = 60  # după o alertă de siguranță Virgil nu mai vorbește atâta timp
@@ -78,7 +80,27 @@ def route(question):
         topics.add("news")
     if re.search(r"trafic|aglomer|accident|coloan|coada|drum|blocat|ambuteiaj|lucrari", q):
         topics.add("traffic")
+    if re.search(r"cat fac|cat (mai )?dureaza|cat mai am|in cat timp|cat de departe|cate minute|cati (km|kilometri)"
+                 r"|cat (imi )?ia|distanta|departe|pana la|pina la|pana in|ajung|merg la|drumul la", q) \
+            and destination(question):
+        topics.add("eta")
     return topics or {"search"}
+
+
+def destination(question):
+    """„Cât fac până la Gara Cluj?” -> „Gara Cluj” (textul după până la / spre / către / ajung la)."""
+    # Whisper scrie uneori „pînă” (ortografia veche); „ajung la” / „merg la” = aceeași întrebare
+    m = re.search(r"\b(?:p[âîai]n[ăa]\s+(?:la|în|in)|spre|c[ăa]tre|ajung(?:e|em)?\s+la|merg(?:em)?\s+la|drumul\s+la)\s+"
+                  r"([^,?!]+?)\s*(?:[,?!]|\.?\s*$)", question, re.I)
+    return m.group(1).strip() if m else None
+
+
+def origin(question):
+    """„... de la strada Observatorului până la gară” -> „strada Observatorului”; None = plecăm din centru.
+    Whisper strică uneori „de la” („de ina strada ...”): atunci recunoaștem plecarea după cuvântul strada/calea/..."""
+    m = re.search(r"\bde\s+(?:la\s+(.+?)|\S+\s+((?:strada|str\.|bulevardul|calea|pia[țt]a|aleea)\s.+?))"
+                  r"\s+(?:p[âîai]n[ăa]|spre|c[ăa]tre)\b", question, re.I)
+    return (m.group(1) or m.group(2)).strip() if m else None
 
 
 def weather():
@@ -147,6 +169,60 @@ def summarize_waze(alerts, jams, limit=8):
     return f"Waze, {len(alerts)} alerte și {len(jams)} ambuteiaje în jurul {CITY}: " + "; ".join(lines)
 
 
+# Serviciul de localizare Windows (după rețelele Wi-Fi, ~100 m), fără cheie; InvariantCulture = punct zecimal
+HERE_PS = ("Add-Type -AssemblyName System.Device; $w = New-Object System.Device.Location.GeoCoordinateWatcher(1); "
+           "$w.Start(); $t = 0; while ($w.Status -ne 'Ready' -and $w.Permission -ne 'Denied' -and $t -lt 50) "
+           "{ Start-Sleep -Milliseconds 100; $t++ }; $c = $w.Position.Location; if (-not $c.IsUnknown) "
+           "{ [string]::Format([cultureinfo]::InvariantCulture, '{0};{1}', $c.Latitude, $c.Longitude) }")
+_here = (0.0, None)
+
+
+def here(max_age=60):
+    """(lat, lon) curente de la Windows, păstrate `max_age` s; None dacă localizarea e oprită sau lipsește."""
+    global _here
+    if time.time() - _here[0] < max_age:
+        return _here[1]
+    try:
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", HERE_PS], capture_output=True, text=True,
+                             timeout=15).stdout.strip()
+        pos = tuple(map(float, out.split(";")))
+    except Exception as e:
+        log.warning("localizarea Windows: %r (plecăm din centrul orașului)", e)
+        pos = None
+    _here = (time.time(), pos)
+    return pos
+
+
+def eta_google(question):
+    """Durata cu traficul de acum până la destinația din întrebare (Google Maps Routes API, GOOGLE_MAPS_API_KEY).
+    Plecarea: „de la ...” din întrebare, altfel poziția curentă (Windows), altfel centrul orașului."""
+    key, dest, start = os.environ.get("GOOGLE_MAPS_API_KEY"), destination(question), origin(question)
+    if not key or not dest:
+        return None
+    pos = None if start else here()
+    lat, lon = pos or (LAT, LON)
+    d = http_json("https://routes.googleapis.com/directions/v2:computeRoutes", {
+        "origin": {"address": f"{start}, {CITY}, România"} if start
+        else {"location": {"latLng": {"latitude": lat, "longitude": lon}}},
+        "destination": {"address": f"{dest}, {CITY}, România"},
+        "travelMode": "DRIVE", "routingPreference": "TRAFFIC_AWARE", "languageCode": "ro",
+    }, {"X-Goog-Api-Key": key, "X-Goog-FieldMask": "routes.duration,routes.staticDuration,routes.distanceMeters"})
+    return summarize_route(dest, d, start or ("locul în care sunteți acum" if pos else None))
+
+
+def summarize_route(dest, d, start=None):
+    routes = d.get("routes") or []
+    if not routes:
+        return f"Google Maps: nu am găsit un traseu până la {dest}."
+    r = routes[0]
+    minutes = lambda key: round(int(str(r.get(key, "0s")).rstrip("s")) / 60)
+    now, free = minutes("duration"), minutes("staticDuration") or minutes("duration")
+    delay = f", cu {now - free} minute în plus din cauza traficului" if now - free >= 2 else ", fără întârzieri de trafic"
+    frm = f"de la {start}" if start else f"din centrul orașului {CITY}"
+    return (f"Google Maps: {frm} până la {dest} sunt {round(r.get('distanceMeters', 0) / 1000, 1)} kilometri, "
+            f"{now} minute cu traficul de acum{delay}.")
+
+
 def search_omniroute(query, limit=5):
     """Căutare web prin OmniRoute cu Tavily (cheia Tavily stă în OmniRoute; ~1000 de căutări gratuite/lună)."""
     r = http_json(f"{OMNIROUTE}/api/v1/search", {"query": query, "provider": "tavily", "max_results": limit},
@@ -187,9 +263,10 @@ def gather(question):
         "news": news,
         # Waze = starea live; știrile adaugă accidentele mari de pe drumurile din jur
         "traffic": lambda: "\n".join(filter(None, (safe(traffic_waze), safe(lambda: search(f"trafic {CITY}"))))),
+        "eta": lambda: eta_google(question),
         "search": lambda: search(dated(question)),
     }
-    texts = (safe(sources[name]) for name in ("weather", "news", "traffic", "search") if name in topics)
+    texts = (safe(sources[name]) for name in ("weather", "news", "traffic", "eta", "search") if name in topics)
     return "\n".join(t for t in texts if t)
 
 
@@ -295,7 +372,8 @@ def connect_mqtt(safety):
 
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    for name, what in (("OMNIROUTE_API_KEY", "modelul și căutarea Tavily"), ("OPENWEBNINJA_API_KEY", "traficul Waze")):
+    for name, what in (("OMNIROUTE_API_KEY", "modelul și căutarea Tavily"), ("OPENWEBNINJA_API_KEY", "traficul Waze"),
+                      ("GOOGLE_MAPS_API_KEY", "durata până la o destinație")):
         if not os.environ.get(name):
             log.warning("lipsește %s (%s): deschideți un terminal nou după ce ați setat-o", name, what)
     safety = Safety()
