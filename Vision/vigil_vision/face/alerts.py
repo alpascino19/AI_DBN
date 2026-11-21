@@ -56,6 +56,12 @@ class Signals:
 
 
 def default_rules() -> list[Rule]:
+    """Toate regulile (față + corp), pentru monitorul combinat."""
+    return face_rules() + body_rules()
+
+
+def face_rules() -> list[Rule]:
+    """Regulile care folosesc doar fața (CV1)."""
     return [
         # --- ochi ---
         Rule("eyes_closed_critical", 3, "ALERTĂ: ochii sunt închiși de prea mult timp! Opriți în siguranță!",
@@ -97,6 +103,13 @@ def default_rules() -> list[Rule]:
         Rule("head_drop", 2, "Capul a căzut și ochii sunt închiși. Sunteți bine?",
              lambda s: s.det("head_drop") and not s.det("phone_use"), repeat_sec=5.0,
              hides=("look_down", "eyes_closed")),
+    ]
+
+
+def body_rules() -> list[Rule]:
+    """Regulile care folosesc corpul (CV2). Fără față, "telefon + privire" nu se poate
+    evalua, deci rămâne doar "telefon în mână"."""
+    return [
         # --- corp (detecții CV2 din pipeline: body/chest, breathing, phone, slump) ---
         Rule("chest_and_breathing", 3, "URGENȚĂ: mâna pe piept și respirație grea! Sunteți bine?",
              lambda s: s.det("hand_on_chest") and s.det("heavy_breathing"),

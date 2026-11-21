@@ -173,12 +173,14 @@ def _draw_camera(cam, snap, ctx, level) -> None:
     cv2.rectangle(cam, (0, 0), (w - 1, h - 1), COLORS[level], 4)
 
 
-def _draw_panel(panel, snap, calib, ctx, level, t) -> int:
-    """Coloana din dreapta. Întoarce înălțimea folosită."""
-    eyes, head, yawn = snap.eyes, snap.head, snap.yawn
+def _draw_panel(panel, snap, calib, ctx, level, t, title: str = "VIGIL - SOFER",
+                body: bool = True) -> int:
+    """Coloana din dreapta. snap=None -> fără secțiunile feței; body=False -> fără CORP.
+    Întoarce înălțimea folosită."""
     p = Panel(panel, 0, PANEL_W)
-    text(panel, "VIGIL - SOFER", p.x0, 30, 0.6, TEXT, 2)
-    if not calib.done:
+    text(panel, title, p.x0, 30, 0.6, TEXT, 2)
+    calibrating = calib is not None and not calib.done
+    if calibrating:
         badge, bcol = f"CALIBRARE {calib.progress(t) * 100:.0f}%", ORANGE
     elif level == 0:
         badge, bcol = "OK", GREEN
@@ -188,10 +190,19 @@ def _draw_panel(panel, snap, calib, ctx, level, t) -> int:
     cv2.rectangle(panel, (p.x1 - bw - 12, 12), (p.x1, 38), bcol, -1)
     text(panel, badge, p.x1 - 6, 31, 0.5, TEXT, 2, right=True)
     p.y = 40
-    if not calib.done:
+    if calibrating:
         bar(panel, p.x0, p.y + 10, p.x1 - p.x0, calib.progress(t), ORANGE)
         p.y += 10
 
+    if snap is not None:
+        _face_sections(p, snap)
+    if body:
+        _body_section(p, ctx)
+    return p.y
+
+
+def _face_sections(p: "Panel", snap) -> None:
+    eyes, head, yawn = snap.eyes, snap.head, snap.yawn
     f = lambda v, fmt=".2f": "-" if v is None else format(v, fmt)
 
     # ----- ochi -----
@@ -238,11 +249,13 @@ def _draw_panel(panel, snap, calib, ctx, level, t) -> int:
     p.row("Cascate (5 min)", f"{yawn.yawns_recent}   (total {yawn.yawn_count})",
           RED if yawn.yawns_recent >= 3 else TEXT)
 
-    # ----- corp (CV2) -----
+
+
+def _body_section(p: "Panel", ctx) -> None:
     p.section("CORP")
     if ctx is None:
         p.row("Corp", "dezactivat (--no-body)", MUTED)
-        return p.y
+        return
     if ctx.pose is None:
         p.row("Corp", "nu se vede", ORANGE)
 
@@ -283,18 +296,20 @@ def _draw_panel(panel, snap, calib, ctx, level, t) -> int:
     if sl and not sl.get("calibrated", True):
         label += " (calib.)"
     p.row("Postura", label, col or TEXT)
-    return p.y
 
 
-def render(frame_img, snap, calib, am, t, ctx=None, fps: float = 0.0):
-    """Imaginea finală: camera + coloana cu detalii + banda de avertizări."""
+def render(frame_img, snap, calib, am, t, ctx=None, fps: float = 0.0,
+           title: str = "VIGIL - SOFER", body: bool = True):
+    """Imaginea finală: camera + coloana cu detalii + banda de avertizări.
+    Doar față: ctx=None, body=False. Doar corp: snap=None, calib=None."""
     cam = frame_img.copy()
     h, w = cam.shape[:2]
-    level = am.level if calib.done else 0
+    calib_done = calib is None or calib.done
+    level = am.level if calib_done else 0
     _draw_camera(cam, snap, ctx, level)
 
     panel = np.full((900, PANEL_W, 3), BG, np.uint8)
-    used = _draw_panel(panel, snap, calib, ctx, level, t)
+    used = _draw_panel(panel, snap, calib, ctx, level, t, title, body)
     H = max(h, used + 16)
 
     canvas = np.full((H + ALERTS_H, w + PANEL_W, 3), BG, np.uint8)
@@ -309,7 +324,7 @@ def render(frame_img, snap, calib, am, t, ctx=None, fps: float = 0.0):
     text(canvas, "AVERTIZARI", 16, y0 + 26, 0.5, MUTED, 2)
     if fps:
         text(canvas, f"{fps:.0f} fps", W - 16, y0 + 26, 0.45, MUTED, 1, right=True)
-    if not calib.done:
+    if not calib_done:
         text(canvas, "Calibrare: priviti drept inainte, stati normal, respirati linistit.", 16, y0 + 60, 0.55)
     elif not am.active:
         text(canvas, "Nicio avertizare - totul in regula.", 16, y0 + 60, 0.55, GREEN, 2)
