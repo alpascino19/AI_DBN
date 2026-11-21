@@ -19,6 +19,7 @@ hold_sec (un om inconștient nu pleacă din scaun).
 """
 from __future__ import annotations
 
+import math
 from collections import deque
 from typing import Optional
 
@@ -47,16 +48,20 @@ class SlumpAnalyzer:
         self.still_min = c["still_min_sec"]
         self.hold_sec = c["hold_sec"]
         self.lean_cfg = c["lean"]
+        # pragul pentru starea "leaning" (afișare / linia portocalie), separat de alarmă
+        self.leaning_deg = c["leaning_deg"]
+        self.leaning_drop = c["leaning_drop"]
         self.min_vis = cfg["chest"]["min_visibility"]
         self.cfg = cfg
 
         self._gap = Ema(0.3)
-        self._calib: list[tuple[float, float, float, float, float]] = []  # gap, umeri_y, unit, față, trunchi
+        self._calib: list[tuple[float, ...]] = []  # gap, umeri_y, unit, față, trunchi, unghi
         self._t0: Optional[float] = None
         self.base_gap: Optional[float] = None
         self.base_sy: Optional[float] = None
         self.base_unit: Optional[float] = None
         self.base_fwd = 0.0
+        self.base_angle = 0.0
         self.base_torso: Optional[float] = None
         self._motion: deque[tuple[float, np.ndarray]] = deque()  # (t, puncte cheie)
         self._still_since: Optional[float] = None
@@ -112,6 +117,12 @@ class SlumpAnalyzer:
         head_missing = head is None
         gap = self._gap((sy - head[1]) / unit, ctx.t) if not head_missing else None
         fwd = g.forward(head[0]) if not head_missing else None          # capul în fața umerilor
+        # unghiul liniei cap -> umeri față de verticală (0° = capul drept deasupra umerilor);
+        # din lateral/45° se măsoară spre față, de față spre orice parte
+        angle = None
+        if not head_missing:
+            dx = (head[0] - g.sx) * g.facing if g.facing else abs(head[0] - g.sx)
+            angle = math.degrees(math.atan2(dx, max(sy - head[1], 1e-6)))
         torso = g.torso_angle
 
         # calibrare: poziția normală (dreaptă) a șoferului
@@ -119,12 +130,14 @@ class SlumpAnalyzer:
             if self._t0 is None:
                 self._t0 = ctx.t
             if gap is not None:
-                self._calib.append((gap, sy, unit, fwd or 0.0, np.nan if torso is None else torso))
+                self._calib.append((gap, sy, unit, fwd or 0.0, np.nan if torso is None else torso,
+                                    angle or 0.0))
             if ctx.t - self._t0 >= self.calib_sec and len(self._calib) >= 10:
                 arr = np.array(self._calib)
                 self.base_gap = max(float(np.median(arr[:, 0])), 0.2)
                 self.base_sy, self.base_unit = float(np.median(arr[:, 1])), float(np.median(arr[:, 2]))
                 self.base_fwd = float(np.median(arr[:, 3]))
+                self.base_angle = float(np.median(arr[:, 5]))
                 tor = arr[:, 4][np.isfinite(arr[:, 4])]
                 self.base_torso = float(np.median(tor)) if tor.size else None
         base_gap = self.base_gap or self.default_gap
@@ -149,6 +162,9 @@ class SlumpAnalyzer:
         still_sec = self._stillness(ctx, unit)
 
         posture = score >= (self.exit if self._slumped else self.enter)
+        # aplecat (doar stare/afișare): unghiul a crescut sau capul a coborât puțin
+        leaning = head_missing or drop >= self.leaning_drop or \
+            (angle is not None and angle - self.base_angle >= self.leaning_deg)
         active = posture and still_sec >= self.still_min
         if self._slumped and posture:                   # odată prăbușit, mici mișcări nu-l scot
             active = True
@@ -157,10 +173,11 @@ class SlumpAnalyzer:
             self._last_slumped_t = ctx.t
 
         res = {
-            "state": "slumped" if active else ("leaning" if posture else "upright"),
+            "state": "slumped" if active else ("leaning" if posture or leaning else "upright"),
             "score": round(score, 2),
             "drop": round(max(drop, 0.0), 2),
             "lean": round(lean, 2),
+            "angle": None if angle is None else round(angle - self.base_angle, 1),   # față de normal
             "still_sec": round(still_sec, 1),
             "face_visible": None if face_detected is None else bool(face_detected and not head_missing),
             "calibrated": self.base_gap is not None,

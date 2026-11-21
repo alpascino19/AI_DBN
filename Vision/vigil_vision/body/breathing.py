@@ -95,7 +95,8 @@ class _Signal:
             self.axis = (round(float(ax[0]), 2), round(float(ax[1]), 2))
         power = np.abs(np.fft.rfft(yu * np.hanning(len(yu)))) ** 2
         pk = int(np.argmax(np.where(m, power, 0)))
-        period = float(power[max(pk - 1, 0):pk + 2].sum() / (power[m].sum() + 1e-12))
+        pm = np.where(m, power, 0.0)                               # doar banda respirației
+        period = float(pm[max(pk - 1, 0):pk + 2].sum() / (pm.sum() + 1e-12))
         filt = np.fft.irfft(np.where(m, np.fft.rfft(yu), 0), n=len(yu)) / scale
         n_recent = int(RECENT_SEC * FS)
         amp = float(np.std(filt))
@@ -125,6 +126,7 @@ class BreathingAnalyzer:
         self.enter, self.exit = b["score_enter"], b["score_exit"]
         self.enter_n, self.exit_n = b["enter_evals"], b["exit_evals"]
         self.flow_width = b["flow_width"]
+
         self.min_texture = b["min_texture_frac"]
         self.min_vis = max(cfg["chest"]["min_visibility"], 0.7)
 
@@ -228,6 +230,18 @@ class BreathingAnalyzer:
         if chest is not None and chest.active and res.get("state") in ("heavy", "normal"):
             chest.attrs["breathing"] = res["state"]
 
+    def _rule_score(self, feat: dict) -> float:
+        """Scorul 0..1 din reguli (ponderi fixe)."""
+        s_amp = _ramp(feat["ratio"], self.r_lo, self.r_hi)
+        parts = [(0.50, s_amp), (0.20, _ramp(feat["rate_bpm"], self.rate_lo, self.rate_hi)),
+                 (0.15, _ramp(feat["periodicity"], 0.2, 0.6))]
+        if feat.get("jaw_open") is not None:
+            parts.append((0.15, _ramp(feat["jaw_open"], 0.15, 0.5)))
+        raw = sum(w * s for w, s in parts) / sum(w for w, _ in parts)
+        if s_amp == 0.0:                        # fără amplitudine mare nu e respirație grea
+            raw = min(raw, self.exit - 0.05)
+        return raw
+
     def _evaluate(self, ctx: FrameContext) -> dict:
         f_flow = self.flow.analyze(ctx.t, self.min_window) if self.flow.fresh(ctx.t) else None
         f_lmk = self.lmk.analyze(ctx.t, self.min_window) if self.lmk.fresh(ctx.t) else None
@@ -246,17 +260,10 @@ class BreathingAnalyzer:
             return {"state": "unknown"}
 
         ratio = f["amp_recent"] / src.baseline
-        s_amp = _ramp(ratio, self.r_lo, self.r_hi)
-        s_rate = _ramp(f["rate_bpm"], self.rate_lo, self.rate_hi)
-        s_per = _ramp(f["periodicity"], 0.2, 0.6)
         jaw = ctx.signal("jaw_open")
-        parts = [(0.50, s_amp), (0.20, s_rate), (0.15, s_per)]
-        if jaw is not None:
-            parts.append((0.15, _ramp(jaw, 0.15, 0.5)))
-        raw = sum(w * s for w, s in parts) / sum(w for w, _ in parts)
-        if s_amp == 0.0:                        # fără amplitudine mare nu e respirație grea
-            raw = min(raw, self.exit - 0.05)
-        score = self._score(raw, ctx.t)
+        feat = {"ratio": ratio, "rate_bpm": f["rate_bpm"], "periodicity": f["periodicity"],
+                "jaw_open": jaw}
+        score = self._score(self._rule_score(feat), ctx.t)
 
         want = score >= self.enter if not self._heavy else score >= self.exit
         if want == self._heavy:

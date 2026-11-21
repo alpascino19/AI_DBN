@@ -80,13 +80,15 @@ breathing:
 slump:                        # capul pe volan / prăbușit în față
   calib_sec: 30               # învață poziția dreaptă a șoferului
   default_gap: 0.55           # umeri -> cap (× unitatea corpului), până la calibrare
-  drop_low: 0.4               # cât a coborât capul (0 = drept, 1 = la nivelul umerilor)
-  drop_high: 0.8
-  score_enter: 0.55
-  score_exit: 0.40
+  drop_low: 0.25               # cât a coborât capul (0 = drept, 1 = la nivelul umerilor)
+  drop_high: 0.6
+  score_enter: 0.50
+  score_exit: 0.38
   still_thr: 0.015            # mișcare sub atât (× lățimea umerilor, pe 1 s) = nemișcat
   still_min_sec: 2.0          # trebuie să stea nemișcat atât, altfel nu raportăm
   hold_sec: 15                # Pose pierde persoana după prăbușire -> păstrăm starea
+  leaning_deg: 12             # GRADE: peste atât față de poziția normală -> "aplecat" (linia portocalie)
+  leaning_drop: 0.2           # sau dacă capul a coborât 20% față de normal
   lean:                       # aplecarea în față: [de unde începe să conteze, unde contează maxim]
     torso_deg: [10, 35]       # GRADE de înclinare a trunchiului față de poziția normală
     head_forward: [0.2, 0.6]  # cât iese capul în fața umerilor (× unitatea corpului)

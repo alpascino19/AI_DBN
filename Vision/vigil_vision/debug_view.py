@@ -13,6 +13,7 @@ def draw(ctx: FrameContext, fps: float = 0.0) -> np.ndarray:
 
     if ctx.pose:
         g = ctx.geom
+        _draw_posture_line(img, ctx, px)
         if g is not None:                               # umărul apropiat de cameră + direcția corpului
             near = ctx.pose[g.near]
             cv2.circle(img, px(near.x, near.y), 7, (0, 255, 0), 2)
@@ -46,7 +47,7 @@ def draw(ctx: FrameContext, fps: float = 0.0) -> np.ndarray:
         f"breathing {b.get('state')}  scor {b.get('score', '-')}  [{b.get('source', '-')}]",
         f"  {b.get('rate_bpm', '-')} resp/min  x{b.get('amp_ratio', '-')} normal  "
         f"ritmic {b.get('periodicity', '-')}{'' if b.get('calibrated') else '  (calibrare...)'}",
-        f"postura {sl.get('state', '-')}  scor {sl.get('score', '-')}  cadere {sl.get('drop', '-')}  "
+        f"postura {sl.get('state', '-')}  unghi {sl.get('angle', '-')}deg  scor {sl.get('score', '-')}  cadere {sl.get('drop', '-')}  "
         f"nemiscat {sl.get('still_sec', '-')}s{'' if sl.get('calibrated', True) else '  (calibrare...)'}",
     ] + [f"EVENT {e.event} {e.duration_sec:.1f}s conf {e.confidence:.2f}" for e in ctx.events]
     for i, txt in enumerate(lines):
@@ -68,3 +69,23 @@ def _draw_trace(img: np.ndarray, trace: list, heavy: bool) -> None:
                     for i, v in enumerate(trace)], np.int32)
     cv2.polylines(img, [pts], False, (0, 0, 255) if heavy else (0, 255, 0), 1)
     cv2.putText(img, "respiratie", (x0 + 4, y0 + 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (200, 200, 200), 1)
+
+
+POSTURE_COLORS = {"upright": (200, 200, 200), "leaning": (0, 165, 255), "slumped": (0, 0, 255)}
+
+
+def _draw_posture_line(img: np.ndarray, ctx: FrameContext, px) -> None:
+    """Linia cap -> mijlocul umerilor: arată dacă șoferul stă drept sau e aplecat.
+    gri = drept, portocaliu = aplecat, roșu = prăbușit (capul pe volan)."""
+    g = ctx.geom
+    if g is None:
+        return
+    head = [(ctx.pose[i].x, ctx.pose[i].y) for i in (P.NOSE, 2, 5, 7, 8) if ctx.pose[i].visibility >= 0.5]
+    if not head:
+        return
+    hx = sum(x for x, _ in head) / len(head)
+    hy = sum(y for _, y in head) / len(head)
+    state = (ctx.signals.get("slump") or {}).get("state", "upright")
+    col = POSTURE_COLORS.get(state, POSTURE_COLORS["upright"])
+    cv2.line(img, px(hx, hy), px(g.sx, g.sy), col, 3)
+    cv2.circle(img, px(hx, hy), 5, col, -1)
