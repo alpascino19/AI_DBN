@@ -8,6 +8,13 @@ camera:
   fps: 30
   mirror: true
 
+# Camere separate (run_face / run_body). Ce lipsește se ia din "camera" de mai sus.
+# Monitorul combinat (face.monitor) folosește doar "camera".
+face_camera:
+  index: 0                    # camera din fața șoferului (fața)
+body_camera:
+  index: 1                    # a doua cameră (corpul: piept, mâini, telefon, postură)
+
 mqtt:
   enabled: true
   host: localhost

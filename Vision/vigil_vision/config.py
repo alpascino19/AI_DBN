@@ -19,6 +19,9 @@ DEFAULT_PATH = ROOT / "config.yaml"
 
 DEFAULTS: dict[str, Any] = {
     "camera": {"index": 0, "width": 640, "height": 480, "fps": 30, "mirror": True},
+    # camere separate (opționale): ce lipsește se ia din "camera"
+    "face_camera": {"index": 0},
+    "body_camera": {"index": 1},
     "mqtt": {"enabled": True, "host": "localhost", "port": 1883,
              "topic": "vigil/vision", "print_fallback": True},
     "publish_hz": 10,
@@ -71,6 +74,15 @@ def load_config(path: str | Path | None = None) -> dict[str, Any]:
     if p.exists():
         data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     return _merge(DEFAULTS, data)
+
+
+def camera_cfg(cfg: dict, role: str | None = None) -> dict[str, Any]:
+    """Setările camerei pentru un rol: role="face" / "body" -> cfg["camera"] suprascris
+    cu cfg["face_camera"] / cfg["body_camera"]; role=None -> cfg["camera"] (o singură cameră)."""
+    base = dict(cfg["camera"])
+    if role:
+        base.update(cfg.get(f"{role}_camera") or {})
+    return base
 
 
 def model_path(cfg: dict, key: str) -> Path:
