@@ -1,0 +1,17 @@
+# ML 2 — executorul de acțiuni Vigil. Testat pe Windows 11, Python 3.14.6.
+# Instalare (din rădăcina repo-ului): .venv\Scripts\pip install -r ML2\requirements.txt
+# Programe externe necesare (nu se instalează cu pip): vezi README.md, secțiunea „Instalare”.
+
+paho-mqtt==2.2.0        # MQTT: primește vigil/decision, publică vigil/alert și vigil/driver_response
+numpy==2.5.5            # audio (alarme, volum, buffer microfon)
+sounddevice==0.5.6      # microfon și difuzor
+faster-whisper==1.2.1   # recunoaștere vocală (STT) + Silero VAD pentru detectarea vorbirii
+edge-tts==7.3.1         # voce neurală Microsoft (cere internet; are nevoie de ffmpeg)
+piper-tts==1.8.0        # voce locală de rezervă, fără internet
+pyttsx3==2.99           # a doua rezervă de voce (vocea Windows)
+pyserial==3.5           # esp32_test.py citește confirmările plăcii pe portul serial
+
+# Opțional — doar pentru controlul vehiculului cu fuzzy logic (încă neimplementat):
+# scikit-fuzzy==0.5.0
+# scipy==1.18.1
+# highway-env==1.12.1
