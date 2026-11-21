@@ -1,0 +1,693 @@
+{"ts": 0.0, "camera_on": true, "ear": 0.298, "perclos": 0.028, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 0.2, "camera_on": true, "ear": 0.298, "perclos": 0.015, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 0.4, "camera_on": true, "ear": 0.297, "perclos": 0.031, "blink_rate": 16.5, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": []}
+{"ts": 0.6, "camera_on": true, "ear": 0.31, "perclos": 0.031, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.0, "events": []}
+{"ts": 0.8, "camera_on": true, "ear": 0.304, "perclos": 0.043, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 1.0, "camera_on": true, "ear": 0.308, "perclos": 0.015, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 1.2, "camera_on": true, "ear": 0.313, "perclos": 0.028, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": []}
+{"ts": 1.4, "camera_on": true, "ear": 0.312, "perclos": 0.019, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 1.6, "camera_on": true, "ear": 0.261, "perclos": 0.024, "blink_rate": 14.2, "gaze_on_road": true, "head_drop": false, "phone": 0.038, "events": []}
+{"ts": 1.8, "camera_on": true, "ear": 0.31, "perclos": 0.018, "blink_rate": 17.7, "gaze_on_road": true, "head_drop": false, "phone": 0.0, "events": []}
+{"ts": 2.0, "camera_on": true, "ear": 0.299, "perclos": 0.027, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 2.2, "camera_on": true, "ear": 0.31, "perclos": 0.033, "blink_rate": 17.3, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 2.4, "camera_on": true, "ear": 0.291, "perclos": 0.023, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 2.6, "camera_on": true, "ear": 0.296, "perclos": 0.053, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 2.8, "camera_on": true, "ear": 0.312, "perclos": 0.044, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 3.0, "camera_on": true, "ear": 0.321, "perclos": 0.029, "blink_rate": 13.2, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 3.2, "camera_on": true, "ear": 0.314, "perclos": 0.016, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": []}
+{"ts": 3.4, "camera_on": true, "ear": 0.295, "perclos": 0.037, "blink_rate": 17.2, "gaze_on_road": true, "head_drop": false, "phone": 0.066, "events": []}
+{"ts": 3.6, "camera_on": true, "ear": 0.309, "perclos": 0.024, "blink_rate": 14.9, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 3.8, "camera_on": true, "ear": 0.314, "perclos": 0.024, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 4.0, "camera_on": true, "ear": 0.289, "perclos": 0.027, "blink_rate": 12.3, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 4.2, "camera_on": true, "ear": 0.291, "perclos": 0.034, "blink_rate": 18.4, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 4.4, "camera_on": true, "ear": 0.304, "perclos": 0.032, "blink_rate": 18.2, "gaze_on_road": true, "head_drop": false, "phone": 0.038, "events": []}
+{"ts": 4.6, "camera_on": true, "ear": 0.304, "perclos": 0.02, "blink_rate": 17.8, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": []}
+{"ts": 4.8, "camera_on": true, "ear": 0.318, "perclos": 0.03, "blink_rate": 19.9, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 5.0, "camera_on": true, "ear": 0.324, "perclos": 0.031, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 5.2, "camera_on": true, "ear": 0.298, "perclos": 0.044, "blink_rate": 17.6, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 5.4, "camera_on": true, "ear": 0.264, "perclos": 0.037, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 5.6, "camera_on": true, "ear": 0.291, "perclos": 0.03, "blink_rate": 19.4, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 5.8, "camera_on": true, "ear": 0.294, "perclos": 0.044, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 6.0, "camera_on": true, "ear": 0.301, "perclos": 0.018, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 6.2, "camera_on": true, "ear": 0.313, "perclos": 0.03, "blink_rate": 20.6, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 6.4, "camera_on": true, "ear": 0.32, "perclos": 0.017, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 6.6, "camera_on": true, "ear": 0.326, "perclos": 0.013, "blink_rate": 18.0, "gaze_on_road": true, "head_drop": false, "phone": 0.032, "events": []}
+{"ts": 6.8, "camera_on": true, "ear": 0.323, "perclos": 0.037, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 7.0, "camera_on": true, "ear": 0.281, "perclos": 0.032, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.06, "events": []}
+{"ts": 7.2, "camera_on": true, "ear": 0.291, "perclos": 0.033, "blink_rate": 12.9, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 7.4, "camera_on": true, "ear": 0.304, "perclos": 0.038, "blink_rate": 18.9, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": []}
+{"ts": 7.6, "camera_on": true, "ear": 0.283, "perclos": 0.035, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 7.8, "camera_on": true, "ear": 0.289, "perclos": 0.041, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 8.0, "camera_on": true, "ear": 0.319, "perclos": 0.036, "blink_rate": 16.6, "gaze_on_road": true, "head_drop": false, "phone": 0.063, "events": []}
+{"ts": 8.2, "camera_on": true, "ear": 0.304, "perclos": 0.027, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.05, "events": []}
+{"ts": 8.4, "camera_on": true, "ear": 0.302, "perclos": 0.035, "blink_rate": 18.4, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 8.6, "camera_on": true, "ear": 0.274, "perclos": 0.033, "blink_rate": 16.5, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": []}
+{"ts": 8.8, "camera_on": true, "ear": 0.313, "perclos": 0.036, "blink_rate": 14.0, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 9.0, "camera_on": true, "ear": 0.297, "perclos": 0.015, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": []}
+{"ts": 9.2, "camera_on": true, "ear": 0.289, "perclos": 0.035, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": []}
+{"ts": 9.4, "camera_on": true, "ear": 0.306, "perclos": 0.04, "blink_rate": 14.6, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": []}
+{"ts": 9.6, "camera_on": true, "ear": 0.3, "perclos": 0.053, "blink_rate": 12.3, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 9.8, "camera_on": true, "ear": 0.295, "perclos": 0.029, "blink_rate": 19.8, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 10.0, "camera_on": true, "ear": 0.321, "perclos": 0.038, "blink_rate": 12.6, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 10.2, "camera_on": true, "ear": 0.292, "perclos": 0.017, "blink_rate": 12.5, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 10.4, "camera_on": true, "ear": 0.309, "perclos": 0.034, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 10.6, "camera_on": true, "ear": 0.285, "perclos": 0.024, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 10.8, "camera_on": true, "ear": 0.3, "perclos": 0.021, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 11.0, "camera_on": true, "ear": 0.3, "perclos": 0.035, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.029, "events": []}
+{"ts": 11.2, "camera_on": true, "ear": 0.275, "perclos": 0.026, "blink_rate": 16.6, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": []}
+{"ts": 11.4, "camera_on": true, "ear": 0.276, "perclos": 0.032, "blink_rate": 18.4, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 11.6, "camera_on": true, "ear": 0.299, "perclos": 0.035, "blink_rate": 16.5, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": []}
+{"ts": 11.8, "camera_on": true, "ear": 0.301, "perclos": 0.032, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 12.0, "camera_on": true, "ear": 0.319, "perclos": 0.028, "blink_rate": 15.7, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 12.2, "camera_on": true, "ear": 0.312, "perclos": 0.021, "blink_rate": 17.8, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 12.4, "camera_on": true, "ear": 0.284, "perclos": 0.032, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 12.6, "camera_on": true, "ear": 0.316, "perclos": 0.026, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 12.8, "camera_on": true, "ear": 0.319, "perclos": 0.036, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 13.0, "camera_on": true, "ear": 0.288, "perclos": 0.027, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 13.2, "camera_on": true, "ear": 0.302, "perclos": 0.016, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": []}
+{"ts": 13.4, "camera_on": true, "ear": 0.284, "perclos": 0.028, "blink_rate": 12.3, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 13.6, "camera_on": true, "ear": 0.313, "perclos": 0.029, "blink_rate": 14.0, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 13.8, "camera_on": true, "ear": 0.298, "perclos": 0.006, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": []}
+{"ts": 14.0, "camera_on": true, "ear": 0.295, "perclos": 0.025, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 14.2, "camera_on": true, "ear": 0.316, "perclos": 0.03, "blink_rate": 14.6, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 14.4, "camera_on": true, "ear": 0.303, "perclos": 0.046, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 14.6, "camera_on": true, "ear": 0.287, "perclos": 0.009, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 14.8, "camera_on": true, "ear": 0.281, "perclos": 0.01, "blink_rate": 13.8, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 15.0, "camera_on": true, "ear": 0.303, "perclos": 0.027, "blink_rate": 16.9, "gaze_on_road": false, "head_drop": false, "phone": 0.94, "events": [{"event": "phone_in_hand", "duration_sec": 0.0, "confidence": 0.85}]}
+{"ts": 15.2, "camera_on": true, "ear": 0.298, "perclos": 0.035, "blink_rate": 14.8, "gaze_on_road": false, "head_drop": false, "phone": 0.89, "events": [{"event": "phone_in_hand", "duration_sec": 0.2, "confidence": 0.85}]}
+{"ts": 15.4, "camera_on": true, "ear": 0.294, "perclos": 0.03, "blink_rate": 18.1, "gaze_on_road": false, "head_drop": false, "phone": 0.88, "events": [{"event": "phone_in_hand", "duration_sec": 0.4, "confidence": 0.85}]}
+{"ts": 15.6, "camera_on": true, "ear": 0.332, "perclos": 0.044, "blink_rate": 17.3, "gaze_on_road": false, "head_drop": false, "phone": 0.84, "events": [{"event": "phone_in_hand", "duration_sec": 0.6, "confidence": 0.85}]}
+{"ts": 15.8, "camera_on": true, "ear": 0.294, "perclos": 0.023, "blink_rate": 19.3, "gaze_on_road": false, "head_drop": false, "phone": 0.95, "events": [{"event": "phone_in_hand", "duration_sec": 0.8, "confidence": 0.85}]}
+{"ts": 16.0, "camera_on": true, "ear": 0.308, "perclos": 0.027, "blink_rate": 13.6, "gaze_on_road": false, "head_drop": false, "phone": 0.9, "events": [{"event": "phone_in_hand", "duration_sec": 1.0, "confidence": 0.85}]}
+{"ts": 16.2, "camera_on": true, "ear": 0.292, "perclos": 0.037, "blink_rate": 14.1, "gaze_on_road": false, "head_drop": false, "phone": 0.81, "events": [{"event": "phone_in_hand", "duration_sec": 1.2, "confidence": 0.85}]}
+{"ts": 16.4, "camera_on": true, "ear": 0.291, "perclos": 0.053, "blink_rate": 17.0, "gaze_on_road": false, "head_drop": false, "phone": 0.9, "events": [{"event": "phone_in_hand", "duration_sec": 1.4, "confidence": 0.85}]}
+{"ts": 16.6, "camera_on": true, "ear": 0.282, "perclos": 0.054, "blink_rate": 14.0, "gaze_on_road": false, "head_drop": false, "phone": 0.85, "events": [{"event": "phone_in_hand", "duration_sec": 1.6, "confidence": 0.85}]}
+{"ts": 16.8, "camera_on": true, "ear": 0.285, "perclos": 0.027, "blink_rate": 16.7, "gaze_on_road": false, "head_drop": false, "phone": 0.9, "events": [{"event": "phone_in_hand", "duration_sec": 1.8, "confidence": 0.85}]}
+{"ts": 17.0, "camera_on": true, "ear": 0.301, "perclos": 0.023, "blink_rate": 11.6, "gaze_on_road": false, "head_drop": false, "phone": 0.89, "events": [{"event": "phone_in_hand", "duration_sec": 2.0, "confidence": 0.85}]}
+{"ts": 17.2, "camera_on": true, "ear": 0.329, "perclos": 0.049, "blink_rate": 14.9, "gaze_on_road": false, "head_drop": false, "phone": 0.9, "events": [{"event": "phone_in_hand", "duration_sec": 2.2, "confidence": 0.85}]}
+{"ts": 17.4, "camera_on": true, "ear": 0.294, "perclos": 0.029, "blink_rate": 20.4, "gaze_on_road": true, "head_drop": false, "phone": 0.88, "events": [{"event": "phone_in_hand", "duration_sec": 2.4, "confidence": 0.85}]}
+{"ts": 17.6, "camera_on": true, "ear": 0.309, "perclos": 0.02, "blink_rate": 15.5, "gaze_on_road": false, "head_drop": false, "phone": 0.82, "events": [{"event": "phone_in_hand", "duration_sec": 2.6, "confidence": 0.85}]}
+{"ts": 17.8, "camera_on": true, "ear": 0.311, "perclos": 0.029, "blink_rate": 14.1, "gaze_on_road": false, "head_drop": false, "phone": 0.93, "events": [{"event": "phone_in_hand", "duration_sec": 2.8, "confidence": 0.85}]}
+{"ts": 18.0, "camera_on": true, "ear": 0.322, "perclos": 0.016, "blink_rate": 15.4, "gaze_on_road": false, "head_drop": false, "phone": 0.88, "events": [{"event": "phone_in_hand", "duration_sec": 3.0, "confidence": 0.85}]}
+{"ts": 18.2, "camera_on": true, "ear": 0.272, "perclos": 0.029, "blink_rate": 15.7, "gaze_on_road": false, "head_drop": false, "phone": 0.94, "events": [{"event": "phone_in_hand", "duration_sec": 3.2, "confidence": 0.85}]}
+{"ts": 18.4, "camera_on": true, "ear": 0.292, "perclos": 0.03, "blink_rate": 14.2, "gaze_on_road": false, "head_drop": false, "phone": 0.95, "events": [{"event": "phone_in_hand", "duration_sec": 3.4, "confidence": 0.85}]}
+{"ts": 18.6, "camera_on": true, "ear": 0.287, "perclos": 0.032, "blink_rate": 17.2, "gaze_on_road": false, "head_drop": false, "phone": 0.88, "events": [{"event": "phone_in_hand", "duration_sec": 3.6, "confidence": 0.85}]}
+{"ts": 18.8, "camera_on": true, "ear": 0.301, "perclos": 0.027, "blink_rate": 15.9, "gaze_on_road": false, "head_drop": false, "phone": 0.84, "events": [{"event": "phone_in_hand", "duration_sec": 3.8, "confidence": 0.85}]}
+{"ts": 19.0, "camera_on": true, "ear": 0.286, "perclos": 0.014, "blink_rate": 18.3, "gaze_on_road": false, "head_drop": false, "phone": 0.86, "events": [{"event": "phone_in_hand", "duration_sec": 4.0, "confidence": 0.85}]}
+{"ts": 19.2, "camera_on": true, "ear": 0.274, "perclos": 0.019, "blink_rate": 17.5, "gaze_on_road": true, "head_drop": false, "phone": 0.88, "events": [{"event": "phone_in_hand", "duration_sec": 4.2, "confidence": 0.85}]}
+{"ts": 19.4, "camera_on": true, "ear": 0.297, "perclos": 0.02, "blink_rate": 15.3, "gaze_on_road": false, "head_drop": false, "phone": 0.87, "events": [{"event": "phone_in_hand", "duration_sec": 4.4, "confidence": 0.85}]}
+{"ts": 19.6, "camera_on": true, "ear": 0.288, "perclos": 0.043, "blink_rate": 13.7, "gaze_on_road": false, "head_drop": false, "phone": 0.95, "events": [{"event": "phone_in_hand", "duration_sec": 4.6, "confidence": 0.85}]}
+{"ts": 19.8, "camera_on": true, "ear": 0.29, "perclos": 0.036, "blink_rate": 15.3, "gaze_on_road": false, "head_drop": false, "phone": 0.93, "events": [{"event": "phone_in_hand", "duration_sec": 4.8, "confidence": 0.85}]}
+{"ts": 20.0, "camera_on": true, "ear": 0.319, "perclos": 0.036, "blink_rate": 22.1, "gaze_on_road": false, "head_drop": false, "phone": 0.81, "events": [{"event": "phone_in_hand", "duration_sec": 5.0, "confidence": 0.85}]}
+{"ts": 20.2, "camera_on": true, "ear": 0.317, "perclos": 0.038, "blink_rate": 17.5, "gaze_on_road": false, "head_drop": false, "phone": 0.87, "events": [{"event": "phone_in_hand", "duration_sec": 5.2, "confidence": 0.85}]}
+{"ts": 20.4, "camera_on": true, "ear": 0.326, "perclos": 0.035, "blink_rate": 15.5, "gaze_on_road": false, "head_drop": false, "phone": 0.94, "events": [{"event": "phone_in_hand", "duration_sec": 5.4, "confidence": 0.85}]}
+{"ts": 20.6, "camera_on": true, "ear": 0.276, "perclos": 0.023, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.88, "events": [{"event": "phone_in_hand", "duration_sec": 5.6, "confidence": 0.85}]}
+{"ts": 20.8, "camera_on": true, "ear": 0.302, "perclos": 0.052, "blink_rate": 17.4, "gaze_on_road": false, "head_drop": false, "phone": 0.89, "events": [{"event": "phone_in_hand", "duration_sec": 5.8, "confidence": 0.85}]}
+{"ts": 21.0, "camera_on": true, "ear": 0.327, "perclos": 0.031, "blink_rate": 18.4, "gaze_on_road": false, "head_drop": false, "phone": 0.84, "events": [{"event": "phone_in_hand", "duration_sec": 6.0, "confidence": 0.85}]}
+{"ts": 21.2, "camera_on": true, "ear": 0.289, "perclos": 0.041, "blink_rate": 14.6, "gaze_on_road": true, "head_drop": false, "phone": 0.87, "events": [{"event": "phone_in_hand", "duration_sec": 6.2, "confidence": 0.85}]}
+{"ts": 21.4, "camera_on": true, "ear": 0.305, "perclos": 0.039, "blink_rate": 14.5, "gaze_on_road": false, "head_drop": false, "phone": 0.93, "events": [{"event": "phone_in_hand", "duration_sec": 6.4, "confidence": 0.85}]}
+{"ts": 21.6, "camera_on": true, "ear": 0.313, "perclos": 0.03, "blink_rate": 18.9, "gaze_on_road": false, "head_drop": false, "phone": 0.89, "events": [{"event": "phone_in_hand", "duration_sec": 6.6, "confidence": 0.85}]}
+{"ts": 21.8, "camera_on": true, "ear": 0.29, "perclos": 0.015, "blink_rate": 18.6, "gaze_on_road": false, "head_drop": false, "phone": 0.88, "events": [{"event": "phone_in_hand", "duration_sec": 6.8, "confidence": 0.85}]}
+{"ts": 22.0, "camera_on": true, "ear": 0.294, "perclos": 0.047, "blink_rate": 14.5, "gaze_on_road": false, "head_drop": false, "phone": 0.94, "events": [{"event": "phone_in_hand", "duration_sec": 7.0, "confidence": 0.85}]}
+{"ts": 22.2, "camera_on": true, "ear": 0.289, "perclos": 0.016, "blink_rate": 13.9, "gaze_on_road": false, "head_drop": false, "phone": 0.89, "events": [{"event": "phone_in_hand", "duration_sec": 7.2, "confidence": 0.85}]}
+{"ts": 22.4, "camera_on": true, "ear": 0.292, "perclos": 0.023, "blink_rate": 13.5, "gaze_on_road": false, "head_drop": false, "phone": 0.94, "events": [{"event": "phone_in_hand", "duration_sec": 7.4, "confidence": 0.85}]}
+{"ts": 22.6, "camera_on": true, "ear": 0.293, "perclos": 0.046, "blink_rate": 16.5, "gaze_on_road": false, "head_drop": false, "phone": 0.81, "events": [{"event": "phone_in_hand", "duration_sec": 7.6, "confidence": 0.85}]}
+{"ts": 22.8, "camera_on": true, "ear": 0.267, "perclos": 0.026, "blink_rate": 16.7, "gaze_on_road": false, "head_drop": false, "phone": 0.95, "events": [{"event": "phone_in_hand", "duration_sec": 7.8, "confidence": 0.85}]}
+{"ts": 23.0, "camera_on": true, "ear": 0.308, "perclos": 0.02, "blink_rate": 17.2, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 23.2, "camera_on": true, "ear": 0.296, "perclos": 0.034, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 23.4, "camera_on": true, "ear": 0.329, "perclos": 0.026, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 23.6, "camera_on": true, "ear": 0.327, "perclos": 0.026, "blink_rate": 13.6, "gaze_on_road": true, "head_drop": false, "phone": 0.046, "events": []}
+{"ts": 23.8, "camera_on": true, "ear": 0.319, "perclos": 0.031, "blink_rate": 13.1, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": []}
+{"ts": 24.0, "camera_on": true, "ear": 0.291, "perclos": 0.018, "blink_rate": 18.1, "gaze_on_road": true, "head_drop": false, "phone": 0.023, "events": []}
+{"ts": 24.2, "camera_on": true, "ear": 0.309, "perclos": 0.035, "blink_rate": 20.1, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 24.4, "camera_on": true, "ear": 0.269, "perclos": 0.022, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 24.6, "camera_on": true, "ear": 0.315, "perclos": 0.01, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": []}
+{"ts": 24.8, "camera_on": true, "ear": 0.323, "perclos": 0.049, "blink_rate": 15.2, "gaze_on_road": true, "head_drop": false, "phone": 0.042, "events": []}
+{"ts": 25.0, "camera_on": true, "ear": 0.326, "perclos": 0.042, "blink_rate": 17.4, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 25.2, "camera_on": true, "ear": 0.288, "perclos": 0.016, "blink_rate": 18.0, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 25.4, "camera_on": true, "ear": 0.3, "perclos": 0.024, "blink_rate": 15.2, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": []}
+{"ts": 25.6, "camera_on": true, "ear": 0.285, "perclos": 0.031, "blink_rate": 16.5, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 25.8, "camera_on": true, "ear": 0.289, "perclos": 0.038, "blink_rate": 19.7, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": []}
+{"ts": 26.0, "camera_on": true, "ear": 0.319, "perclos": 0.039, "blink_rate": 10.7, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 26.2, "camera_on": true, "ear": 0.29, "perclos": 0.038, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.029, "events": []}
+{"ts": 26.4, "camera_on": true, "ear": 0.31, "perclos": 0.021, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 26.6, "camera_on": true, "ear": 0.297, "perclos": 0.029, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 26.8, "camera_on": true, "ear": 0.314, "perclos": 0.039, "blink_rate": 19.1, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 27.0, "camera_on": true, "ear": 0.303, "perclos": 0.037, "blink_rate": 17.2, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 27.2, "camera_on": true, "ear": 0.319, "perclos": 0.047, "blink_rate": 20.0, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 27.4, "camera_on": true, "ear": 0.305, "perclos": 0.034, "blink_rate": 16.0, "gaze_on_road": true, "head_drop": false, "phone": 0.032, "events": []}
+{"ts": 27.6, "camera_on": true, "ear": 0.298, "perclos": 0.028, "blink_rate": 19.5, "gaze_on_road": true, "head_drop": false, "phone": 0.023, "events": []}
+{"ts": 27.8, "camera_on": true, "ear": 0.301, "perclos": 0.039, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 28.0, "camera_on": true, "ear": 0.299, "perclos": 0.018, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 28.2, "camera_on": true, "ear": 0.303, "perclos": 0.018, "blink_rate": 17.8, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 28.4, "camera_on": true, "ear": 0.304, "perclos": 0.029, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": []}
+{"ts": 28.6, "camera_on": true, "ear": 0.284, "perclos": 0.029, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 28.8, "camera_on": true, "ear": 0.285, "perclos": 0.031, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 29.0, "camera_on": true, "ear": 0.305, "perclos": 0.028, "blink_rate": 18.4, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": []}
+{"ts": 29.2, "camera_on": true, "ear": 0.311, "perclos": 0.033, "blink_rate": 14.3, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 29.4, "camera_on": true, "ear": 0.278, "perclos": 0.059, "blink_rate": 13.8, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 29.6, "camera_on": true, "ear": 0.295, "perclos": 0.027, "blink_rate": 14.8, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 29.8, "camera_on": true, "ear": 0.285, "perclos": 0.016, "blink_rate": 15.7, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": []}
+{"ts": 30.0, "camera_on": true, "ear": 0.29, "perclos": 0.032, "blink_rate": 14.8, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": []}
+{"ts": 30.2, "camera_on": true, "ear": 0.294, "perclos": 0.032, "blink_rate": 13.3, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": []}
+{"ts": 30.4, "camera_on": true, "ear": 0.294, "perclos": 0.034, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 30.6, "camera_on": true, "ear": 0.303, "perclos": 0.026, "blink_rate": 18.7, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": []}
+{"ts": 30.8, "camera_on": true, "ear": 0.307, "perclos": 0.018, "blink_rate": 13.8, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 31.0, "camera_on": true, "ear": 0.296, "perclos": 0.034, "blink_rate": 14.2, "gaze_on_road": true, "head_drop": false, "phone": 0.044, "events": []}
+{"ts": 31.2, "camera_on": true, "ear": 0.3, "perclos": 0.01, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.032, "events": []}
+{"ts": 31.4, "camera_on": true, "ear": 0.289, "perclos": 0.025, "blink_rate": 14.8, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 31.6, "camera_on": true, "ear": 0.294, "perclos": 0.024, "blink_rate": 19.0, "gaze_on_road": true, "head_drop": false, "phone": 0.044, "events": []}
+{"ts": 31.8, "camera_on": true, "ear": 0.283, "perclos": 0.043, "blink_rate": 12.8, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 32.0, "camera_on": true, "ear": 0.323, "perclos": 0.008, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 32.2, "camera_on": true, "ear": 0.298, "perclos": 0.028, "blink_rate": 19.4, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 32.4, "camera_on": true, "ear": 0.299, "perclos": 0.036, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 32.6, "camera_on": true, "ear": 0.299, "perclos": 0.031, "blink_rate": 17.8, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 32.8, "camera_on": true, "ear": 0.293, "perclos": 0.033, "blink_rate": 15.7, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 33.0, "camera_on": true, "ear": 0.3, "perclos": 0.023, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.029, "events": []}
+{"ts": 33.2, "camera_on": true, "ear": 0.284, "perclos": 0.042, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": []}
+{"ts": 33.4, "camera_on": true, "ear": 0.304, "perclos": 0.032, "blink_rate": 17.5, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": []}
+{"ts": 33.6, "camera_on": true, "ear": 0.295, "perclos": 0.023, "blink_rate": 14.8, "gaze_on_road": true, "head_drop": false, "phone": 0.0, "events": []}
+{"ts": 33.8, "camera_on": true, "ear": 0.289, "perclos": 0.033, "blink_rate": 16.0, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 34.0, "camera_on": true, "ear": 0.289, "perclos": 0.033, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 34.2, "camera_on": true, "ear": 0.298, "perclos": 0.027, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 34.4, "camera_on": true, "ear": 0.313, "perclos": 0.03, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 34.6, "camera_on": true, "ear": 0.3, "perclos": 0.039, "blink_rate": 19.3, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 34.8, "camera_on": true, "ear": 0.307, "perclos": 0.039, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 35.0, "camera_on": true, "ear": 0.314, "perclos": 0.014, "blink_rate": 19.6, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 35.2, "camera_on": true, "ear": 0.303, "perclos": 0.031, "blink_rate": 19.5, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 35.4, "camera_on": true, "ear": 0.283, "perclos": 0.024, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.0, "events": []}
+{"ts": 35.6, "camera_on": true, "ear": 0.302, "perclos": 0.031, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.052, "events": []}
+{"ts": 35.8, "camera_on": true, "ear": 0.279, "perclos": 0.017, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 36.0, "camera_on": true, "ear": 0.306, "perclos": 0.024, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 36.2, "camera_on": true, "ear": 0.29, "perclos": 0.035, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 36.4, "camera_on": true, "ear": 0.309, "perclos": 0.04, "blink_rate": 17.8, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 36.6, "camera_on": true, "ear": 0.312, "perclos": 0.025, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 36.8, "camera_on": true, "ear": 0.304, "perclos": 0.023, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 37.0, "camera_on": true, "ear": 0.28, "perclos": 0.02, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 37.2, "camera_on": true, "ear": 0.303, "perclos": 0.018, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": []}
+{"ts": 37.4, "camera_on": true, "ear": 0.268, "perclos": 0.037, "blink_rate": 13.4, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 37.6, "camera_on": true, "ear": 0.279, "perclos": 0.016, "blink_rate": 15.2, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 37.8, "camera_on": true, "ear": 0.315, "perclos": 0.034, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 38.0, "camera_on": true, "ear": 0.311, "perclos": 0.03, "blink_rate": 16.0, "gaze_on_road": true, "head_drop": false, "phone": 0.055, "events": []}
+{"ts": 38.2, "camera_on": true, "ear": 0.306, "perclos": 0.032, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 38.4, "camera_on": true, "ear": 0.287, "perclos": 0.034, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 38.6, "camera_on": true, "ear": 0.291, "perclos": 0.036, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.04, "events": []}
+{"ts": 38.8, "camera_on": true, "ear": 0.299, "perclos": 0.038, "blink_rate": 15.7, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 39.0, "camera_on": true, "ear": 0.309, "perclos": 0.04, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.041, "events": []}
+{"ts": 39.2, "camera_on": true, "ear": 0.284, "perclos": 0.042, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 39.4, "camera_on": true, "ear": 0.304, "perclos": 0.044, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": []}
+{"ts": 39.6, "camera_on": true, "ear": 0.298, "perclos": 0.046, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 39.8, "camera_on": true, "ear": 0.278, "perclos": 0.048, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": []}
+{"ts": 40.0, "camera_on": true, "ear": 0.298, "perclos": 0.05, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 40.2, "camera_on": true, "ear": 0.3, "perclos": 0.052, "blink_rate": 15.2, "gaze_on_road": true, "head_drop": false, "phone": 0.045, "events": []}
+{"ts": 40.4, "camera_on": true, "ear": 0.296, "perclos": 0.054, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 40.6, "camera_on": true, "ear": 0.278, "perclos": 0.056, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 40.8, "camera_on": true, "ear": 0.292, "perclos": 0.058, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 41.0, "camera_on": true, "ear": 0.293, "perclos": 0.06, "blink_rate": 14.9, "gaze_on_road": true, "head_drop": false, "phone": 0.04, "events": []}
+{"ts": 41.2, "camera_on": true, "ear": 0.298, "perclos": 0.062, "blink_rate": 14.8, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 41.4, "camera_on": true, "ear": 0.281, "perclos": 0.064, "blink_rate": 14.8, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 41.6, "camera_on": true, "ear": 0.288, "perclos": 0.066, "blink_rate": 14.7, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 41.8, "camera_on": true, "ear": 0.278, "perclos": 0.068, "blink_rate": 14.6, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 42.0, "camera_on": true, "ear": 0.276, "perclos": 0.07, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 42.2, "camera_on": true, "ear": 0.275, "perclos": 0.072, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 42.4, "camera_on": true, "ear": 0.273, "perclos": 0.074, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.023, "events": []}
+{"ts": 42.6, "camera_on": true, "ear": 0.276, "perclos": 0.076, "blink_rate": 14.3, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 42.8, "camera_on": true, "ear": 0.296, "perclos": 0.078, "blink_rate": 14.2, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 43.0, "camera_on": true, "ear": 0.272, "perclos": 0.08, "blink_rate": 14.2, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": []}
+{"ts": 43.2, "camera_on": true, "ear": 0.281, "perclos": 0.082, "blink_rate": 14.1, "gaze_on_road": true, "head_drop": false, "phone": 0.042, "events": []}
+{"ts": 43.4, "camera_on": true, "ear": 0.282, "perclos": 0.084, "blink_rate": 14.0, "gaze_on_road": true, "head_drop": false, "phone": 0.023, "events": []}
+{"ts": 43.6, "camera_on": true, "ear": 0.295, "perclos": 0.086, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 43.8, "camera_on": true, "ear": 0.283, "perclos": 0.088, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.044, "events": []}
+{"ts": 44.0, "camera_on": true, "ear": 0.275, "perclos": 0.09, "blink_rate": 13.8, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": []}
+{"ts": 44.2, "camera_on": true, "ear": 0.264, "perclos": 0.092, "blink_rate": 13.7, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 44.4, "camera_on": true, "ear": 0.273, "perclos": 0.094, "blink_rate": 13.7, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 44.6, "camera_on": true, "ear": 0.275, "perclos": 0.096, "blink_rate": 13.6, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 44.8, "camera_on": true, "ear": 0.273, "perclos": 0.098, "blink_rate": 13.5, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 45.0, "camera_on": true, "ear": 0.282, "perclos": 0.1, "blink_rate": 13.4, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": []}
+{"ts": 45.2, "camera_on": true, "ear": 0.259, "perclos": 0.102, "blink_rate": 13.4, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 45.4, "camera_on": true, "ear": 0.278, "perclos": 0.104, "blink_rate": 13.3, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 45.6, "camera_on": true, "ear": 0.272, "perclos": 0.106, "blink_rate": 13.2, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 45.8, "camera_on": true, "ear": 0.253, "perclos": 0.108, "blink_rate": 13.1, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 46.0, "camera_on": true, "ear": 0.276, "perclos": 0.11, "blink_rate": 13.1, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 46.2, "camera_on": true, "ear": 0.254, "perclos": 0.112, "blink_rate": 13.0, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 46.4, "camera_on": true, "ear": 0.273, "perclos": 0.114, "blink_rate": 12.9, "gaze_on_road": true, "head_drop": false, "phone": 0.04, "events": []}
+{"ts": 46.6, "camera_on": true, "ear": 0.263, "perclos": 0.116, "blink_rate": 12.8, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 46.8, "camera_on": true, "ear": 0.254, "perclos": 0.118, "blink_rate": 12.8, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 47.0, "camera_on": true, "ear": 0.271, "perclos": 0.12, "blink_rate": 12.7, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": []}
+{"ts": 47.2, "camera_on": true, "ear": 0.275, "perclos": 0.122, "blink_rate": 12.6, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 47.4, "camera_on": true, "ear": 0.26, "perclos": 0.124, "blink_rate": 12.6, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 47.6, "camera_on": true, "ear": 0.253, "perclos": 0.126, "blink_rate": 12.5, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 47.8, "camera_on": true, "ear": 0.274, "perclos": 0.128, "blink_rate": 12.4, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": []}
+{"ts": 48.0, "camera_on": true, "ear": 0.266, "perclos": 0.13, "blink_rate": 12.3, "gaze_on_road": true, "head_drop": false, "phone": 0.068, "events": [{"event": "yawn", "duration_sec": 0.0, "confidence": 0.8}]}
+{"ts": 48.2, "camera_on": true, "ear": 0.256, "perclos": 0.132, "blink_rate": 12.3, "gaze_on_road": true, "head_drop": false, "phone": 0.047, "events": [{"event": "yawn", "duration_sec": 0.2, "confidence": 0.8}]}
+{"ts": 48.4, "camera_on": true, "ear": 0.248, "perclos": 0.134, "blink_rate": 12.2, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": [{"event": "yawn", "duration_sec": 0.4, "confidence": 0.8}]}
+{"ts": 48.6, "camera_on": true, "ear": 0.255, "perclos": 0.136, "blink_rate": 12.1, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": [{"event": "yawn", "duration_sec": 0.6, "confidence": 0.8}]}
+{"ts": 48.8, "camera_on": true, "ear": 0.244, "perclos": 0.138, "blink_rate": 12.0, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": [{"event": "yawn", "duration_sec": 0.8, "confidence": 0.8}]}
+{"ts": 49.0, "camera_on": true, "ear": 0.268, "perclos": 0.14, "blink_rate": 12.0, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": [{"event": "yawn", "duration_sec": 1.0, "confidence": 0.8}]}
+{"ts": 49.2, "camera_on": true, "ear": 0.255, "perclos": 0.142, "blink_rate": 11.9, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": [{"event": "yawn", "duration_sec": 1.2, "confidence": 0.8}]}
+{"ts": 49.4, "camera_on": true, "ear": 0.263, "perclos": 0.144, "blink_rate": 11.8, "gaze_on_road": true, "head_drop": false, "phone": 0.042, "events": [{"event": "yawn", "duration_sec": 1.4, "confidence": 0.8}]}
+{"ts": 49.6, "camera_on": true, "ear": 0.249, "perclos": 0.146, "blink_rate": 11.7, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": [{"event": "yawn", "duration_sec": 1.6, "confidence": 0.8}]}
+{"ts": 49.8, "camera_on": true, "ear": 0.244, "perclos": 0.148, "blink_rate": 11.7, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": [{"event": "yawn", "duration_sec": 1.8, "confidence": 0.8}]}
+{"ts": 50.0, "camera_on": true, "ear": 0.257, "perclos": 0.15, "blink_rate": 11.6, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": [{"event": "yawn", "duration_sec": 2.0, "confidence": 0.8}]}
+{"ts": 50.2, "camera_on": true, "ear": 0.246, "perclos": 0.152, "blink_rate": 11.5, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": [{"event": "yawn", "duration_sec": 2.2, "confidence": 0.8}]}
+{"ts": 50.4, "camera_on": true, "ear": 0.254, "perclos": 0.154, "blink_rate": 11.5, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": [{"event": "yawn", "duration_sec": 2.4, "confidence": 0.8}]}
+{"ts": 50.6, "camera_on": true, "ear": 0.263, "perclos": 0.156, "blink_rate": 11.4, "gaze_on_road": true, "head_drop": false, "phone": 0.046, "events": [{"event": "yawn", "duration_sec": 2.6, "confidence": 0.8}]}
+{"ts": 50.8, "camera_on": true, "ear": 0.236, "perclos": 0.158, "blink_rate": 11.3, "gaze_on_road": true, "head_drop": false, "phone": 0.052, "events": [{"event": "yawn", "duration_sec": 2.8, "confidence": 0.8}]}
+{"ts": 51.0, "camera_on": true, "ear": 0.248, "perclos": 0.16, "blink_rate": 11.2, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": [{"event": "yawn", "duration_sec": 3.0, "confidence": 0.8}]}
+{"ts": 51.2, "camera_on": true, "ear": 0.261, "perclos": 0.162, "blink_rate": 11.2, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": [{"event": "yawn", "duration_sec": 3.2, "confidence": 0.8}]}
+{"ts": 51.4, "camera_on": true, "ear": 0.263, "perclos": 0.164, "blink_rate": 11.1, "gaze_on_road": true, "head_drop": false, "phone": 0.067, "events": [{"event": "yawn", "duration_sec": 3.4, "confidence": 0.8}]}
+{"ts": 51.6, "camera_on": true, "ear": 0.226, "perclos": 0.166, "blink_rate": 11.0, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": [{"event": "yawn", "duration_sec": 3.6, "confidence": 0.8}]}
+{"ts": 51.8, "camera_on": true, "ear": 0.25, "perclos": 0.168, "blink_rate": 10.9, "gaze_on_road": true, "head_drop": false, "phone": 0.059, "events": [{"event": "yawn", "duration_sec": 3.8, "confidence": 0.8}]}
+{"ts": 52.0, "camera_on": true, "ear": 0.259, "perclos": 0.17, "blink_rate": 10.9, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 52.2, "camera_on": true, "ear": 0.242, "perclos": 0.172, "blink_rate": 10.8, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 52.4, "camera_on": true, "ear": 0.248, "perclos": 0.174, "blink_rate": 10.7, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 52.6, "camera_on": true, "ear": 0.23, "perclos": 0.176, "blink_rate": 10.6, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 52.8, "camera_on": true, "ear": 0.233, "perclos": 0.178, "blink_rate": 10.6, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 53.0, "camera_on": true, "ear": 0.247, "perclos": 0.18, "blink_rate": 10.5, "gaze_on_road": true, "head_drop": false, "phone": 0.069, "events": []}
+{"ts": 53.2, "camera_on": true, "ear": 0.221, "perclos": 0.182, "blink_rate": 10.4, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 53.4, "camera_on": true, "ear": 0.24, "perclos": 0.184, "blink_rate": 10.4, "gaze_on_road": true, "head_drop": false, "phone": 0.046, "events": []}
+{"ts": 53.6, "camera_on": true, "ear": 0.232, "perclos": 0.186, "blink_rate": 10.3, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 53.8, "camera_on": true, "ear": 0.236, "perclos": 0.188, "blink_rate": 10.2, "gaze_on_road": true, "head_drop": false, "phone": 0.04, "events": []}
+{"ts": 54.0, "driver_response": {"answered": true, "latency_sec": 2.0, "text": "da, opresc la prima parcare"}}
+{"ts": 54.0, "camera_on": true, "ear": 0.235, "perclos": 0.19, "blink_rate": 10.1, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 54.2, "camera_on": true, "ear": 0.244, "perclos": 0.192, "blink_rate": 10.1, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 54.4, "camera_on": true, "ear": 0.227, "perclos": 0.194, "blink_rate": 10.0, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 54.6, "camera_on": true, "ear": 0.233, "perclos": 0.196, "blink_rate": 9.9, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 54.8, "camera_on": true, "ear": 0.24, "perclos": 0.198, "blink_rate": 9.8, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 55.0, "camera_on": true, "ear": 0.233, "perclos": 0.2, "blink_rate": 9.8, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 55.2, "camera_on": true, "ear": 0.212, "perclos": 0.202, "blink_rate": 9.7, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 55.4, "camera_on": true, "ear": 0.238, "perclos": 0.204, "blink_rate": 9.6, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 55.6, "camera_on": true, "ear": 0.213, "perclos": 0.206, "blink_rate": 9.5, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 55.8, "camera_on": true, "ear": 0.224, "perclos": 0.208, "blink_rate": 9.5, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 56.0, "camera_on": true, "ear": 0.244, "perclos": 0.21, "blink_rate": 9.4, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": []}
+{"ts": 56.2, "camera_on": true, "ear": 0.227, "perclos": 0.212, "blink_rate": 9.3, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 56.4, "camera_on": true, "ear": 0.217, "perclos": 0.214, "blink_rate": 9.3, "gaze_on_road": true, "head_drop": false, "phone": 0.052, "events": []}
+{"ts": 56.6, "camera_on": true, "ear": 0.252, "perclos": 0.216, "blink_rate": 9.2, "gaze_on_road": true, "head_drop": false, "phone": 0.052, "events": []}
+{"ts": 56.8, "camera_on": true, "ear": 0.209, "perclos": 0.218, "blink_rate": 9.1, "gaze_on_road": true, "head_drop": false, "phone": 0.0, "events": []}
+{"ts": 57.0, "camera_on": true, "ear": 0.235, "perclos": 0.22, "blink_rate": 9.0, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 57.2, "camera_on": true, "ear": 0.222, "perclos": 0.222, "blink_rate": 9.0, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 57.4, "camera_on": true, "ear": 0.205, "perclos": 0.224, "blink_rate": 8.9, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": []}
+{"ts": 57.6, "camera_on": true, "ear": 0.212, "perclos": 0.226, "blink_rate": 8.8, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 57.8, "camera_on": true, "ear": 0.219, "perclos": 0.228, "blink_rate": 8.7, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 58.0, "camera_on": true, "ear": 0.229, "perclos": 0.23, "blink_rate": 8.7, "gaze_on_road": true, "head_drop": false, "phone": 0.056, "events": []}
+{"ts": 58.2, "camera_on": true, "ear": 0.209, "perclos": 0.232, "blink_rate": 8.6, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 58.4, "camera_on": true, "ear": 0.212, "perclos": 0.234, "blink_rate": 8.5, "gaze_on_road": true, "head_drop": false, "phone": 0.04, "events": []}
+{"ts": 58.6, "camera_on": true, "ear": 0.237, "perclos": 0.236, "blink_rate": 8.4, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 58.8, "camera_on": true, "ear": 0.207, "perclos": 0.238, "blink_rate": 8.4, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 59.0, "camera_on": true, "ear": 0.229, "perclos": 0.24, "blink_rate": 8.3, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 59.2, "camera_on": true, "ear": 0.219, "perclos": 0.242, "blink_rate": 8.2, "gaze_on_road": true, "head_drop": false, "phone": 0.053, "events": []}
+{"ts": 59.4, "camera_on": true, "ear": 0.207, "perclos": 0.244, "blink_rate": 8.2, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 59.6, "camera_on": true, "ear": 0.232, "perclos": 0.246, "blink_rate": 8.1, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 59.8, "camera_on": true, "ear": 0.221, "perclos": 0.248, "blink_rate": 8.0, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": []}
+{"ts": 60.0, "camera_on": true, "ear": 0.205, "perclos": 0.25, "blink_rate": 7.9, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 60.2, "camera_on": true, "ear": 0.206, "perclos": 0.252, "blink_rate": 7.9, "gaze_on_road": true, "head_drop": false, "phone": 0.05, "events": []}
+{"ts": 60.4, "camera_on": true, "ear": 0.196, "perclos": 0.254, "blink_rate": 7.8, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 60.6, "camera_on": true, "ear": 0.205, "perclos": 0.256, "blink_rate": 7.7, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": []}
+{"ts": 60.8, "camera_on": true, "ear": 0.189, "perclos": 0.258, "blink_rate": 7.6, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 61.0, "camera_on": true, "ear": 0.232, "perclos": 0.26, "blink_rate": 7.6, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 61.2, "camera_on": true, "ear": 0.196, "perclos": 0.262, "blink_rate": 7.5, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 61.4, "camera_on": true, "ear": 0.203, "perclos": 0.264, "blink_rate": 7.4, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 61.6, "camera_on": true, "ear": 0.196, "perclos": 0.266, "blink_rate": 7.3, "gaze_on_road": true, "head_drop": false, "phone": 0.057, "events": []}
+{"ts": 61.8, "camera_on": true, "ear": 0.196, "perclos": 0.268, "blink_rate": 7.3, "gaze_on_road": true, "head_drop": false, "phone": 0.056, "events": []}
+{"ts": 62.0, "camera_on": true, "ear": 0.198, "perclos": 0.27, "blink_rate": 7.2, "gaze_on_road": true, "head_drop": false, "phone": 0.056, "events": [{"event": "microsleep", "duration_sec": 0.0, "confidence": 0.75}]}
+{"ts": 62.2, "camera_on": true, "ear": 0.196, "perclos": 0.272, "blink_rate": 7.1, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": [{"event": "microsleep", "duration_sec": 0.2, "confidence": 0.75}]}
+{"ts": 62.4, "camera_on": true, "ear": 0.195, "perclos": 0.274, "blink_rate": 7.1, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": [{"event": "microsleep", "duration_sec": 0.4, "confidence": 0.75}]}
+{"ts": 62.6, "camera_on": true, "ear": 0.189, "perclos": 0.276, "blink_rate": 7.0, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": [{"event": "microsleep", "duration_sec": 0.6, "confidence": 0.75}]}
+{"ts": 62.8, "camera_on": true, "ear": 0.206, "perclos": 0.278, "blink_rate": 6.9, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": [{"event": "microsleep", "duration_sec": 0.8, "confidence": 0.75}]}
+{"ts": 63.0, "camera_on": true, "ear": 0.205, "perclos": 0.28, "blink_rate": 6.8, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": [{"event": "microsleep", "duration_sec": 1.0, "confidence": 0.75}]}
+{"ts": 63.2, "camera_on": true, "ear": 0.2, "perclos": 0.282, "blink_rate": 6.8, "gaze_on_road": true, "head_drop": false, "phone": 0.049, "events": [{"event": "microsleep", "duration_sec": 1.2, "confidence": 0.75}]}
+{"ts": 63.4, "camera_on": true, "ear": 0.199, "perclos": 0.284, "blink_rate": 6.7, "gaze_on_road": true, "head_drop": false, "phone": 0.032, "events": [{"event": "microsleep", "duration_sec": 1.4, "confidence": 0.75}]}
+{"ts": 63.6, "camera_on": true, "ear": 0.188, "perclos": 0.286, "blink_rate": 6.6, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 63.8, "camera_on": true, "ear": 0.201, "perclos": 0.288, "blink_rate": 6.5, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 64.0, "camera_on": true, "ear": 0.2, "perclos": 0.29, "blink_rate": 6.5, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 64.2, "camera_on": true, "ear": 0.202, "perclos": 0.292, "blink_rate": 6.4, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 64.4, "camera_on": true, "ear": 0.195, "perclos": 0.294, "blink_rate": 6.3, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 64.6, "camera_on": true, "ear": 0.199, "perclos": 0.296, "blink_rate": 6.2, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 64.8, "camera_on": true, "ear": 0.18, "perclos": 0.298, "blink_rate": 6.2, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 65.0, "camera_on": true, "ear": 0.191, "perclos": 0.3, "blink_rate": 6.1, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 65.2, "camera_on": true, "ear": 0.195, "perclos": 0.302, "blink_rate": 6.0, "gaze_on_road": true, "head_drop": false, "phone": 0.041, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 65.4, "camera_on": true, "ear": 0.194, "perclos": 0.304, "blink_rate": 6.0, "gaze_on_road": true, "head_drop": false, "phone": 0.042, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 65.6, "camera_on": true, "ear": 0.189, "perclos": 0.306, "blink_rate": 5.9, "gaze_on_road": true, "head_drop": false, "phone": 0.079, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 65.8, "camera_on": true, "ear": 0.201, "perclos": 0.308, "blink_rate": 5.8, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 66.0, "camera_on": true, "ear": 0.174, "perclos": 0.31, "blink_rate": 5.7, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 66.2, "camera_on": true, "ear": 0.179, "perclos": 0.312, "blink_rate": 5.7, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 66.4, "camera_on": true, "ear": 0.176, "perclos": 0.314, "blink_rate": 5.6, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 66.6, "camera_on": true, "ear": 0.178, "perclos": 0.316, "blink_rate": 5.5, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 66.8, "camera_on": true, "ear": 0.185, "perclos": 0.318, "blink_rate": 5.4, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 67.0, "camera_on": true, "ear": 0.173, "perclos": 0.32, "blink_rate": 5.4, "gaze_on_road": true, "head_drop": false, "phone": 0.038, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 67.2, "camera_on": true, "ear": 0.179, "perclos": 0.322, "blink_rate": 5.3, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 67.4, "camera_on": true, "ear": 0.173, "perclos": 0.324, "blink_rate": 5.2, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 67.6, "camera_on": true, "ear": 0.184, "perclos": 0.326, "blink_rate": 5.1, "gaze_on_road": true, "head_drop": false, "phone": 0.051, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 67.8, "camera_on": true, "ear": 0.186, "perclos": 0.328, "blink_rate": 5.1, "gaze_on_road": true, "head_drop": false, "phone": 0.059, "events": [{"event": "microsleep", "duration_sec": 1.5, "confidence": 0.75}]}
+{"ts": 68.0, "camera_on": true, "ear": 0.317, "perclos": 0.034, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.056, "events": []}
+{"ts": 68.2, "camera_on": true, "ear": 0.298, "perclos": 0.021, "blink_rate": 13.6, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 68.4, "camera_on": true, "ear": 0.295, "perclos": 0.038, "blink_rate": 17.8, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": []}
+{"ts": 68.6, "camera_on": true, "ear": 0.302, "perclos": 0.038, "blink_rate": 20.5, "gaze_on_road": true, "head_drop": false, "phone": 0.038, "events": []}
+{"ts": 68.8, "camera_on": true, "ear": 0.324, "perclos": 0.015, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 69.0, "camera_on": true, "ear": 0.26, "perclos": 0.031, "blink_rate": 18.8, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 69.2, "camera_on": true, "ear": 0.303, "perclos": 0.021, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 69.4, "camera_on": true, "ear": 0.282, "perclos": 0.042, "blink_rate": 12.2, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 69.6, "camera_on": true, "ear": 0.293, "perclos": 0.045, "blink_rate": 17.5, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 69.8, "camera_on": true, "ear": 0.264, "perclos": 0.02, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 70.0, "camera_on": true, "ear": 0.3, "perclos": 0.037, "blink_rate": 13.3, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 70.2, "camera_on": true, "ear": 0.304, "perclos": 0.026, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 70.4, "camera_on": true, "ear": 0.297, "perclos": 0.045, "blink_rate": 12.8, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 70.6, "camera_on": true, "ear": 0.31, "perclos": 0.046, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 70.8, "camera_on": true, "ear": 0.27, "perclos": 0.033, "blink_rate": 13.5, "gaze_on_road": true, "head_drop": false, "phone": 0.064, "events": []}
+{"ts": 71.0, "camera_on": true, "ear": 0.335, "perclos": 0.032, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 71.2, "camera_on": true, "ear": 0.317, "perclos": 0.03, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.047, "events": []}
+{"ts": 71.4, "camera_on": true, "ear": 0.309, "perclos": 0.051, "blink_rate": 12.7, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 71.6, "camera_on": true, "ear": 0.286, "perclos": 0.038, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.032, "events": []}
+{"ts": 71.8, "camera_on": true, "ear": 0.282, "perclos": 0.029, "blink_rate": 20.6, "gaze_on_road": true, "head_drop": false, "phone": 0.053, "events": []}
+{"ts": 72.0, "camera_on": true, "ear": 0.272, "perclos": 0.034, "blink_rate": 17.7, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 72.2, "camera_on": true, "ear": 0.283, "perclos": 0.037, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 72.4, "camera_on": true, "ear": 0.298, "perclos": 0.053, "blink_rate": 14.2, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 72.6, "camera_on": true, "ear": 0.308, "perclos": 0.037, "blink_rate": 13.2, "gaze_on_road": true, "head_drop": false, "phone": 0.046, "events": []}
+{"ts": 72.8, "camera_on": true, "ear": 0.278, "perclos": 0.03, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": []}
+{"ts": 73.0, "camera_on": true, "ear": 0.317, "perclos": 0.007, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 73.2, "camera_on": true, "ear": 0.313, "perclos": 0.046, "blink_rate": 17.6, "gaze_on_road": true, "head_drop": false, "phone": 0.048, "events": []}
+{"ts": 73.4, "camera_on": true, "ear": 0.267, "perclos": 0.032, "blink_rate": 13.2, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 73.6, "camera_on": true, "ear": 0.304, "perclos": 0.031, "blink_rate": 18.8, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 73.8, "camera_on": true, "ear": 0.287, "perclos": 0.015, "blink_rate": 12.7, "gaze_on_road": true, "head_drop": false, "phone": 0.04, "events": []}
+{"ts": 74.0, "camera_on": true, "ear": 0.303, "perclos": 0.046, "blink_rate": 18.4, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 74.2, "camera_on": true, "ear": 0.285, "perclos": 0.04, "blink_rate": 14.6, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 74.4, "camera_on": true, "ear": 0.283, "perclos": 0.031, "blink_rate": 18.5, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 74.6, "camera_on": true, "ear": 0.318, "perclos": 0.031, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.074, "events": []}
+{"ts": 74.8, "camera_on": true, "ear": 0.327, "perclos": 0.032, "blink_rate": 14.3, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 75.0, "camera_on": true, "ear": 0.306, "perclos": 0.027, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 75.2, "camera_on": true, "ear": 0.307, "perclos": 0.041, "blink_rate": 16.6, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": []}
+{"ts": 75.4, "camera_on": true, "ear": 0.288, "perclos": 0.036, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 75.6, "camera_on": true, "ear": 0.311, "perclos": 0.03, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 75.8, "camera_on": true, "ear": 0.283, "perclos": 0.014, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 76.0, "camera_on": true, "ear": 0.286, "perclos": 0.039, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 76.2, "camera_on": true, "ear": 0.308, "perclos": 0.04, "blink_rate": 12.8, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 76.4, "camera_on": true, "ear": 0.273, "perclos": 0.022, "blink_rate": 18.0, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 76.6, "camera_on": true, "ear": 0.31, "perclos": 0.032, "blink_rate": 18.8, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 76.8, "camera_on": true, "ear": 0.295, "perclos": 0.03, "blink_rate": 20.1, "gaze_on_road": true, "head_drop": false, "phone": 0.041, "events": []}
+{"ts": 77.0, "camera_on": true, "ear": 0.316, "perclos": 0.022, "blink_rate": 20.5, "gaze_on_road": true, "head_drop": false, "phone": 0.029, "events": []}
+{"ts": 77.2, "camera_on": true, "ear": 0.285, "perclos": 0.053, "blink_rate": 13.1, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 77.4, "camera_on": true, "ear": 0.296, "perclos": 0.02, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 77.6, "camera_on": true, "ear": 0.302, "perclos": 0.049, "blink_rate": 12.7, "gaze_on_road": true, "head_drop": false, "phone": 0.047, "events": []}
+{"ts": 77.8, "camera_on": true, "ear": 0.288, "perclos": 0.045, "blink_rate": 19.8, "gaze_on_road": true, "head_drop": false, "phone": 0.066, "events": []}
+{"ts": 78.0, "camera_on": true, "ear": 0.297, "perclos": 0.018, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": []}
+{"ts": 78.2, "camera_on": true, "ear": 0.274, "perclos": 0.037, "blink_rate": 14.2, "gaze_on_road": true, "head_drop": false, "phone": 0.049, "events": []}
+{"ts": 78.4, "camera_on": true, "ear": 0.314, "perclos": 0.027, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 78.6, "camera_on": true, "ear": 0.293, "perclos": 0.061, "blink_rate": 14.1, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 78.8, "camera_on": true, "ear": 0.315, "perclos": 0.026, "blink_rate": 14.7, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 79.0, "camera_on": true, "ear": 0.318, "perclos": 0.037, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 79.2, "camera_on": true, "ear": 0.308, "perclos": 0.033, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": []}
+{"ts": 79.4, "camera_on": true, "ear": 0.299, "perclos": 0.021, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 79.6, "camera_on": true, "ear": 0.295, "perclos": 0.039, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 79.8, "camera_on": true, "ear": 0.306, "perclos": 0.04, "blink_rate": 14.1, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 80.0, "camera_on": true, "ear": 0.314, "perclos": 0.032, "blink_rate": 18.3, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 80.2, "camera_on": true, "ear": 0.293, "perclos": 0.039, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": []}
+{"ts": 80.4, "camera_on": true, "ear": 0.328, "perclos": 0.041, "blink_rate": 20.6, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 80.6, "camera_on": true, "ear": 0.292, "perclos": 0.027, "blink_rate": 15.2, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 80.8, "camera_on": true, "ear": 0.294, "perclos": 0.041, "blink_rate": 18.0, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": []}
+{"ts": 81.0, "camera_on": true, "ear": 0.285, "perclos": 0.035, "blink_rate": 17.3, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 81.2, "camera_on": true, "ear": 0.3, "perclos": 0.044, "blink_rate": 14.9, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 81.4, "camera_on": true, "ear": 0.31, "perclos": 0.035, "blink_rate": 17.7, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": []}
+{"ts": 81.6, "camera_on": true, "ear": 0.28, "perclos": 0.018, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 81.8, "camera_on": true, "ear": 0.312, "perclos": 0.012, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 82.0, "camera_on": true, "ear": 0.284, "perclos": 0.052, "blink_rate": 16.5, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 82.2, "camera_on": true, "ear": 0.339, "perclos": 0.024, "blink_rate": 15.2, "gaze_on_road": true, "head_drop": false, "phone": 0.05, "events": []}
+{"ts": 82.4, "camera_on": true, "ear": 0.28, "perclos": 0.031, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": []}
+{"ts": 82.6, "camera_on": true, "ear": 0.306, "perclos": 0.021, "blink_rate": 17.9, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 82.8, "camera_on": true, "ear": 0.284, "perclos": 0.023, "blink_rate": 14.9, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 83.0, "camera_on": true, "ear": 0.316, "perclos": 0.027, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 83.2, "camera_on": true, "ear": 0.294, "perclos": 0.045, "blink_rate": 17.5, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 83.4, "camera_on": true, "ear": 0.285, "perclos": 0.036, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 83.6, "camera_on": true, "ear": 0.287, "perclos": 0.017, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 83.8, "camera_on": true, "ear": 0.317, "perclos": 0.029, "blink_rate": 14.1, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 84.0, "camera_on": true, "ear": 0.32, "perclos": 0.023, "blink_rate": 12.6, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 84.2, "camera_on": true, "ear": 0.28, "perclos": 0.046, "blink_rate": 13.2, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 84.4, "camera_on": true, "ear": 0.322, "perclos": 0.039, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 84.6, "camera_on": true, "ear": 0.297, "perclos": 0.028, "blink_rate": 19.0, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 84.8, "camera_on": true, "ear": 0.28, "perclos": 0.04, "blink_rate": 18.1, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 85.0, "camera_on": true, "ear": 0.312, "perclos": 0.031, "blink_rate": 13.6, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 85.2, "camera_on": true, "ear": 0.283, "perclos": 0.024, "blink_rate": 14.1, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 85.4, "camera_on": true, "ear": 0.303, "perclos": 0.017, "blink_rate": 14.2, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 85.6, "camera_on": true, "ear": 0.307, "perclos": 0.031, "blink_rate": 11.6, "gaze_on_road": true, "head_drop": false, "phone": 0.046, "events": []}
+{"ts": 85.8, "camera_on": true, "ear": 0.327, "perclos": 0.046, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": []}
+{"ts": 86.0, "camera_on": true, "ear": 0.29, "perclos": 0.032, "blink_rate": 13.7, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 86.2, "camera_on": true, "ear": 0.279, "perclos": 0.036, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 86.4, "camera_on": true, "ear": 0.303, "perclos": 0.025, "blink_rate": 17.7, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 86.6, "camera_on": true, "ear": 0.296, "perclos": 0.025, "blink_rate": 17.5, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 86.8, "camera_on": true, "ear": 0.304, "perclos": 0.035, "blink_rate": 11.3, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 87.0, "camera_on": true, "ear": 0.302, "perclos": 0.04, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.046, "events": []}
+{"ts": 87.2, "camera_on": true, "ear": 0.297, "perclos": 0.031, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": []}
+{"ts": 87.4, "camera_on": true, "ear": 0.288, "perclos": 0.025, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 87.6, "camera_on": true, "ear": 0.3, "perclos": 0.012, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 87.8, "camera_on": true, "ear": 0.307, "perclos": 0.025, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.04, "events": []}
+{"ts": 88.0, "camera_on": true, "ear": 0.298, "perclos": 0.05, "blink_rate": 13.2, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 88.2, "camera_on": true, "ear": 0.283, "perclos": 0.022, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 88.4, "camera_on": true, "ear": 0.312, "perclos": 0.019, "blink_rate": 17.2, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 88.6, "camera_on": true, "ear": 0.294, "perclos": 0.043, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": []}
+{"ts": 88.8, "camera_on": true, "ear": 0.309, "perclos": 0.036, "blink_rate": 17.3, "gaze_on_road": true, "head_drop": false, "phone": 0.048, "events": []}
+{"ts": 89.0, "camera_on": true, "ear": 0.284, "perclos": 0.029, "blink_rate": 17.3, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 89.2, "camera_on": true, "ear": 0.308, "perclos": 0.043, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 89.4, "camera_on": true, "ear": 0.319, "perclos": 0.03, "blink_rate": 14.9, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 89.6, "camera_on": true, "ear": 0.294, "perclos": 0.04, "blink_rate": 17.8, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 89.8, "camera_on": true, "ear": 0.308, "perclos": 0.03, "blink_rate": 18.1, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 90.0, "camera_on": true, "ear": 0.282, "perclos": 0.03, "blink_rate": 15.2, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 90.2, "camera_on": true, "ear": 0.309, "perclos": 0.02, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 90.4, "camera_on": true, "ear": 0.301, "perclos": 0.022, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.045, "events": []}
+{"ts": 90.6, "camera_on": true, "ear": 0.308, "perclos": 0.04, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": []}
+{"ts": 90.8, "camera_on": true, "ear": 0.293, "perclos": 0.028, "blink_rate": 18.6, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": []}
+{"ts": 91.0, "camera_on": true, "ear": 0.306, "perclos": 0.021, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": [{"event": "hand_on_chest", "duration_sec": 0.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 0.0, "confidence": 0.75}]}
+{"ts": 91.2, "camera_on": true, "ear": 0.296, "perclos": 0.018, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": [{"event": "hand_on_chest", "duration_sec": 0.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 0.2, "confidence": 0.75}]}
+{"ts": 91.4, "camera_on": true, "ear": 0.312, "perclos": 0.015, "blink_rate": 13.7, "gaze_on_road": true, "head_drop": false, "phone": 0.093, "events": [{"event": "hand_on_chest", "duration_sec": 0.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 0.4, "confidence": 0.75}]}
+{"ts": 91.6, "camera_on": true, "ear": 0.287, "perclos": 0.033, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.0, "events": [{"event": "hand_on_chest", "duration_sec": 0.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 0.6, "confidence": 0.75}]}
+{"ts": 91.8, "camera_on": true, "ear": 0.326, "perclos": 0.029, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.056, "events": [{"event": "hand_on_chest", "duration_sec": 0.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 0.8, "confidence": 0.75}]}
+{"ts": 92.0, "camera_on": true, "ear": 0.288, "perclos": 0.025, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": [{"event": "hand_on_chest", "duration_sec": 1.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 1.0, "confidence": 0.75}]}
+{"ts": 92.2, "camera_on": true, "ear": 0.304, "perclos": 0.035, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": [{"event": "hand_on_chest", "duration_sec": 1.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 1.2, "confidence": 0.75}]}
+{"ts": 92.4, "camera_on": true, "ear": 0.313, "perclos": 0.033, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.044, "events": [{"event": "hand_on_chest", "duration_sec": 1.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 1.4, "confidence": 0.75}]}
+{"ts": 92.6, "camera_on": true, "ear": 0.29, "perclos": 0.044, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": [{"event": "hand_on_chest", "duration_sec": 1.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 1.6, "confidence": 0.75}]}
+{"ts": 92.8, "camera_on": true, "ear": 0.327, "perclos": 0.007, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": [{"event": "hand_on_chest", "duration_sec": 1.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 1.8, "confidence": 0.75}]}
+{"ts": 93.0, "camera_on": true, "ear": 0.326, "perclos": 0.026, "blink_rate": 21.5, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": [{"event": "hand_on_chest", "duration_sec": 2.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 2.0, "confidence": 0.75}]}
+{"ts": 93.2, "camera_on": true, "ear": 0.305, "perclos": 0.026, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": [{"event": "hand_on_chest", "duration_sec": 2.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 2.2, "confidence": 0.75}]}
+{"ts": 93.4, "camera_on": true, "ear": 0.293, "perclos": 0.012, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": [{"event": "hand_on_chest", "duration_sec": 2.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 2.4, "confidence": 0.75}]}
+{"ts": 93.6, "camera_on": true, "ear": 0.28, "perclos": 0.031, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.041, "events": [{"event": "hand_on_chest", "duration_sec": 2.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 2.6, "confidence": 0.75}]}
+{"ts": 93.8, "camera_on": true, "ear": 0.28, "perclos": 0.034, "blink_rate": 16.6, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": [{"event": "hand_on_chest", "duration_sec": 2.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 2.8, "confidence": 0.75}]}
+{"ts": 94.0, "camera_on": true, "ear": 0.288, "perclos": 0.029, "blink_rate": 17.8, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": [{"event": "hand_on_chest", "duration_sec": 3.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 3.0, "confidence": 0.75}]}
+{"ts": 94.2, "camera_on": true, "ear": 0.313, "perclos": 0.027, "blink_rate": 19.4, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": [{"event": "hand_on_chest", "duration_sec": 3.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 3.2, "confidence": 0.75}]}
+{"ts": 94.4, "camera_on": true, "ear": 0.297, "perclos": 0.014, "blink_rate": 13.1, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": [{"event": "hand_on_chest", "duration_sec": 3.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 3.4, "confidence": 0.75}]}
+{"ts": 94.6, "camera_on": true, "ear": 0.297, "perclos": 0.033, "blink_rate": 14.6, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": [{"event": "hand_on_chest", "duration_sec": 3.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 3.6, "confidence": 0.75}]}
+{"ts": 94.8, "camera_on": true, "ear": 0.291, "perclos": 0.033, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.057, "events": [{"event": "hand_on_chest", "duration_sec": 3.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 3.8, "confidence": 0.75}]}
+{"ts": 95.0, "camera_on": true, "ear": 0.29, "perclos": 0.041, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": [{"event": "hand_on_chest", "duration_sec": 4.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 4.0, "confidence": 0.75}]}
+{"ts": 95.2, "camera_on": true, "ear": 0.287, "perclos": 0.043, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.023, "events": [{"event": "hand_on_chest", "duration_sec": 4.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 4.2, "confidence": 0.75}]}
+{"ts": 95.4, "camera_on": true, "ear": 0.304, "perclos": 0.019, "blink_rate": 18.8, "gaze_on_road": true, "head_drop": false, "phone": 0.048, "events": [{"event": "hand_on_chest", "duration_sec": 4.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 4.4, "confidence": 0.75}]}
+{"ts": 95.6, "camera_on": true, "ear": 0.299, "perclos": 0.03, "blink_rate": 17.3, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": [{"event": "hand_on_chest", "duration_sec": 4.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 4.6, "confidence": 0.75}]}
+{"ts": 95.8, "camera_on": true, "ear": 0.297, "perclos": 0.025, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": [{"event": "hand_on_chest", "duration_sec": 4.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 4.8, "confidence": 0.75}]}
+{"ts": 96.0, "camera_on": true, "ear": 0.311, "perclos": 0.027, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": [{"event": "hand_on_chest", "duration_sec": 5.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 5.0, "confidence": 0.75}]}
+{"ts": 96.2, "camera_on": true, "ear": 0.278, "perclos": 0.046, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": [{"event": "hand_on_chest", "duration_sec": 5.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 5.2, "confidence": 0.75}]}
+{"ts": 96.4, "camera_on": true, "ear": 0.292, "perclos": 0.045, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.049, "events": [{"event": "hand_on_chest", "duration_sec": 5.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 5.4, "confidence": 0.75}]}
+{"ts": 96.6, "camera_on": true, "ear": 0.3, "perclos": 0.03, "blink_rate": 14.9, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": [{"event": "hand_on_chest", "duration_sec": 5.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 5.6, "confidence": 0.75}]}
+{"ts": 96.8, "camera_on": true, "ear": 0.303, "perclos": 0.045, "blink_rate": 19.1, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": [{"event": "hand_on_chest", "duration_sec": 5.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 5.8, "confidence": 0.75}]}
+{"ts": 97.0, "camera_on": true, "ear": 0.318, "perclos": 0.003, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": [{"event": "hand_on_chest", "duration_sec": 6.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 6.0, "confidence": 0.75}]}
+{"ts": 97.2, "camera_on": true, "ear": 0.313, "perclos": 0.034, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.011, "events": [{"event": "hand_on_chest", "duration_sec": 6.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 6.2, "confidence": 0.75}]}
+{"ts": 97.4, "camera_on": true, "ear": 0.288, "perclos": 0.049, "blink_rate": 18.2, "gaze_on_road": true, "head_drop": false, "phone": 0.046, "events": [{"event": "hand_on_chest", "duration_sec": 6.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 6.4, "confidence": 0.75}]}
+{"ts": 97.6, "camera_on": true, "ear": 0.3, "perclos": 0.025, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": [{"event": "hand_on_chest", "duration_sec": 6.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 6.6, "confidence": 0.75}]}
+{"ts": 97.8, "camera_on": true, "ear": 0.298, "perclos": 0.03, "blink_rate": 14.7, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": [{"event": "hand_on_chest", "duration_sec": 6.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 6.8, "confidence": 0.75}]}
+{"ts": 98.0, "camera_on": true, "ear": 0.296, "perclos": 0.016, "blink_rate": 17.2, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": [{"event": "hand_on_chest", "duration_sec": 7.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 7.0, "confidence": 0.75}]}
+{"ts": 98.2, "camera_on": true, "ear": 0.288, "perclos": 0.012, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": [{"event": "hand_on_chest", "duration_sec": 7.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 7.2, "confidence": 0.75}]}
+{"ts": 98.4, "camera_on": true, "ear": 0.3, "perclos": 0.017, "blink_rate": 12.2, "gaze_on_road": true, "head_drop": false, "phone": 0.054, "events": [{"event": "hand_on_chest", "duration_sec": 7.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 7.4, "confidence": 0.75}]}
+{"ts": 98.6, "camera_on": true, "ear": 0.297, "perclos": 0.035, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": [{"event": "hand_on_chest", "duration_sec": 7.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 7.6, "confidence": 0.75}]}
+{"ts": 98.8, "camera_on": true, "ear": 0.281, "perclos": 0.026, "blink_rate": 13.3, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": [{"event": "hand_on_chest", "duration_sec": 7.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 7.8, "confidence": 0.75}]}
+{"ts": 99.0, "camera_on": true, "ear": 0.289, "perclos": 0.012, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": [{"event": "hand_on_chest", "duration_sec": 8.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 8.0, "confidence": 0.75}]}
+{"ts": 99.2, "camera_on": true, "ear": 0.282, "perclos": 0.029, "blink_rate": 16.0, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": [{"event": "hand_on_chest", "duration_sec": 8.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 8.2, "confidence": 0.75}]}
+{"ts": 99.4, "camera_on": true, "ear": 0.33, "perclos": 0.037, "blink_rate": 18.2, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": [{"event": "hand_on_chest", "duration_sec": 8.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 8.4, "confidence": 0.75}]}
+{"ts": 99.6, "camera_on": true, "ear": 0.313, "perclos": 0.038, "blink_rate": 14.0, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": [{"event": "hand_on_chest", "duration_sec": 8.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 8.6, "confidence": 0.75}]}
+{"ts": 99.8, "camera_on": true, "ear": 0.344, "perclos": 0.026, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": [{"event": "hand_on_chest", "duration_sec": 8.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 8.8, "confidence": 0.75}]}
+{"ts": 100.0, "driver_response": {"answered": true, "latency_sec": 5.5, "text": "nu mă simt bine"}}
+{"ts": 100.0, "camera_on": true, "ear": 0.312, "perclos": 0.02, "blink_rate": 14.0, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": [{"event": "hand_on_chest", "duration_sec": 9.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 9.0, "confidence": 0.75}]}
+{"ts": 100.2, "camera_on": true, "ear": 0.303, "perclos": 0.005, "blink_rate": 16.0, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": [{"event": "hand_on_chest", "duration_sec": 9.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 9.2, "confidence": 0.75}]}
+{"ts": 100.4, "camera_on": true, "ear": 0.311, "perclos": 0.033, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": [{"event": "hand_on_chest", "duration_sec": 9.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 9.4, "confidence": 0.75}]}
+{"ts": 100.6, "camera_on": true, "ear": 0.304, "perclos": 0.018, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": [{"event": "hand_on_chest", "duration_sec": 9.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 9.6, "confidence": 0.75}]}
+{"ts": 100.8, "camera_on": true, "ear": 0.28, "perclos": 0.038, "blink_rate": 18.2, "gaze_on_road": true, "head_drop": false, "phone": 0.032, "events": [{"event": "hand_on_chest", "duration_sec": 9.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 9.8, "confidence": 0.75}]}
+{"ts": 101.0, "camera_on": true, "ear": 0.291, "perclos": 0.025, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.042, "events": [{"event": "hand_on_chest", "duration_sec": 10.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 10.0, "confidence": 0.75}]}
+{"ts": 101.2, "camera_on": true, "ear": 0.308, "perclos": 0.047, "blink_rate": 14.1, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": [{"event": "hand_on_chest", "duration_sec": 10.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 10.2, "confidence": 0.75}]}
+{"ts": 101.4, "camera_on": true, "ear": 0.281, "perclos": 0.016, "blink_rate": 15.7, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": [{"event": "hand_on_chest", "duration_sec": 10.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 10.4, "confidence": 0.75}]}
+{"ts": 101.6, "camera_on": true, "ear": 0.292, "perclos": 0.015, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": [{"event": "hand_on_chest", "duration_sec": 10.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 10.6, "confidence": 0.75}]}
+{"ts": 101.8, "camera_on": true, "ear": 0.314, "perclos": 0.036, "blink_rate": 13.4, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": [{"event": "hand_on_chest", "duration_sec": 10.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 10.8, "confidence": 0.75}]}
+{"ts": 102.0, "camera_on": true, "ear": 0.291, "perclos": 0.045, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": [{"event": "hand_on_chest", "duration_sec": 11.0, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 11.0, "confidence": 0.75}]}
+{"ts": 102.2, "camera_on": true, "ear": 0.294, "perclos": 0.015, "blink_rate": 18.5, "gaze_on_road": true, "head_drop": false, "phone": 0.062, "events": [{"event": "hand_on_chest", "duration_sec": 11.2, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 11.2, "confidence": 0.75}]}
+{"ts": 102.4, "camera_on": true, "ear": 0.274, "perclos": 0.027, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": [{"event": "hand_on_chest", "duration_sec": 11.4, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 11.4, "confidence": 0.75}]}
+{"ts": 102.6, "camera_on": true, "ear": 0.318, "perclos": 0.042, "blink_rate": 15.5, "gaze_on_road": true, "head_drop": false, "phone": 0.061, "events": [{"event": "hand_on_chest", "duration_sec": 11.6, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 11.6, "confidence": 0.75}]}
+{"ts": 102.8, "camera_on": true, "ear": 0.3, "perclos": 0.028, "blink_rate": 16.6, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": [{"event": "hand_on_chest", "duration_sec": 11.8, "confidence": 0.8, "breathing": "heavy"}, {"event": "heavy_breathing", "duration_sec": 11.8, "confidence": 0.75}]}
+{"ts": 103.0, "camera_on": true, "ear": 0.322, "perclos": 0.036, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 103.2, "camera_on": true, "ear": 0.286, "perclos": 0.033, "blink_rate": 13.4, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 103.4, "camera_on": true, "ear": 0.292, "perclos": 0.036, "blink_rate": 18.1, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 103.6, "camera_on": true, "ear": 0.298, "perclos": 0.023, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 103.8, "camera_on": true, "ear": 0.307, "perclos": 0.024, "blink_rate": 14.1, "gaze_on_road": true, "head_drop": false, "phone": 0.023, "events": []}
+{"ts": 104.0, "camera_on": true, "ear": 0.32, "perclos": 0.049, "blink_rate": 17.6, "gaze_on_road": true, "head_drop": false, "phone": 0.0, "events": []}
+{"ts": 104.2, "camera_on": true, "ear": 0.321, "perclos": 0.022, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.029, "events": []}
+{"ts": 104.4, "camera_on": true, "ear": 0.279, "perclos": 0.038, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": []}
+{"ts": 104.6, "camera_on": true, "ear": 0.288, "perclos": 0.038, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 104.8, "camera_on": true, "ear": 0.314, "perclos": 0.003, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 105.0, "camera_on": true, "ear": 0.288, "perclos": 0.032, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 105.2, "camera_on": true, "ear": 0.298, "perclos": 0.03, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.045, "events": []}
+{"ts": 105.4, "camera_on": true, "ear": 0.293, "perclos": 0.043, "blink_rate": 13.4, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 105.6, "camera_on": true, "ear": 0.274, "perclos": 0.031, "blink_rate": 17.4, "gaze_on_road": true, "head_drop": false, "phone": 0.06, "events": []}
+{"ts": 105.8, "camera_on": true, "ear": 0.301, "perclos": 0.023, "blink_rate": 18.1, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 106.0, "camera_on": true, "ear": 0.301, "perclos": 0.039, "blink_rate": 18.2, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 106.2, "camera_on": true, "ear": 0.301, "perclos": 0.03, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 106.4, "camera_on": true, "ear": 0.299, "perclos": 0.025, "blink_rate": 14.6, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 106.6, "camera_on": true, "ear": 0.295, "perclos": 0.03, "blink_rate": 19.2, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": []}
+{"ts": 106.8, "camera_on": true, "ear": 0.328, "perclos": 0.042, "blink_rate": 17.9, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 107.0, "camera_on": true, "ear": 0.296, "perclos": 0.021, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": []}
+{"ts": 107.2, "camera_on": true, "ear": 0.307, "perclos": 0.033, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 107.4, "camera_on": true, "ear": 0.285, "perclos": 0.026, "blink_rate": 17.4, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": []}
+{"ts": 107.6, "camera_on": true, "ear": 0.299, "perclos": 0.039, "blink_rate": 17.0, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 107.8, "camera_on": true, "ear": 0.299, "perclos": 0.021, "blink_rate": 15.9, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": []}
+{"ts": 108.0, "camera_on": true, "ear": 0.308, "perclos": 0.047, "blink_rate": 15.0, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": []}
+{"ts": 108.2, "camera_on": true, "ear": 0.309, "perclos": 0.04, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 108.4, "camera_on": true, "ear": 0.31, "perclos": 0.028, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 108.6, "camera_on": true, "ear": 0.306, "perclos": 0.034, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.014, "events": []}
+{"ts": 108.8, "camera_on": true, "ear": 0.299, "perclos": 0.027, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 109.0, "camera_on": true, "ear": 0.31, "perclos": 0.034, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": []}
+{"ts": 109.2, "camera_on": true, "ear": 0.295, "perclos": 0.023, "blink_rate": 16.5, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 109.4, "camera_on": true, "ear": 0.286, "perclos": 0.036, "blink_rate": 16.0, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 109.6, "camera_on": true, "ear": 0.274, "perclos": 0.034, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.022, "events": []}
+{"ts": 109.8, "camera_on": true, "ear": 0.321, "perclos": 0.005, "blink_rate": 18.5, "gaze_on_road": true, "head_drop": false, "phone": 0.047, "events": []}
+{"ts": 110.0, "camera_on": true, "ear": 0.285, "perclos": 0.04, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 110.2, "camera_on": true, "ear": 0.298, "perclos": 0.048, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.021, "events": []}
+{"ts": 110.4, "camera_on": true, "ear": 0.313, "perclos": 0.024, "blink_rate": 19.0, "gaze_on_road": true, "head_drop": false, "phone": 0.051, "events": []}
+{"ts": 110.6, "camera_on": true, "ear": 0.306, "perclos": 0.022, "blink_rate": 18.1, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 110.8, "camera_on": true, "ear": 0.31, "perclos": 0.041, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 111.0, "camera_on": true, "ear": 0.322, "perclos": 0.033, "blink_rate": 16.6, "gaze_on_road": true, "head_drop": false, "phone": 0.032, "events": []}
+{"ts": 111.2, "camera_on": true, "ear": 0.305, "perclos": 0.037, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 111.4, "camera_on": true, "ear": 0.292, "perclos": 0.025, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.04, "events": []}
+{"ts": 111.6, "camera_on": true, "ear": 0.295, "perclos": 0.029, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": []}
+{"ts": 111.8, "camera_on": true, "ear": 0.31, "perclos": 0.05, "blink_rate": 13.2, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 112.0, "camera_on": true, "ear": 0.309, "perclos": 0.013, "blink_rate": 19.5, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 112.2, "camera_on": true, "ear": 0.288, "perclos": 0.04, "blink_rate": 11.6, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 112.4, "camera_on": true, "ear": 0.285, "perclos": 0.03, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 112.6, "camera_on": true, "ear": 0.306, "perclos": 0.051, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 112.8, "camera_on": true, "ear": 0.318, "perclos": 0.029, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.059, "events": []}
+{"ts": 113.0, "camera_on": true, "ear": 0.307, "perclos": 0.029, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 113.2, "camera_on": true, "ear": 0.314, "perclos": 0.01, "blink_rate": 22.3, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": []}
+{"ts": 113.4, "camera_on": true, "ear": 0.306, "perclos": 0.049, "blink_rate": 16.5, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 113.6, "camera_on": true, "ear": 0.315, "perclos": 0.014, "blink_rate": 17.2, "gaze_on_road": true, "head_drop": false, "phone": 0.044, "events": []}
+{"ts": 113.8, "camera_on": true, "ear": 0.308, "perclos": 0.015, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 114.0, "camera_on": true, "ear": 0.289, "perclos": 0.007, "blink_rate": 13.6, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": []}
+{"ts": 114.2, "camera_on": true, "ear": 0.317, "perclos": 0.058, "blink_rate": 17.7, "gaze_on_road": true, "head_drop": false, "phone": 0.004, "events": []}
+{"ts": 114.4, "camera_on": true, "ear": 0.294, "perclos": 0.041, "blink_rate": 17.2, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": []}
+{"ts": 114.6, "camera_on": true, "ear": 0.304, "perclos": 0.042, "blink_rate": 20.5, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": []}
+{"ts": 114.8, "camera_on": true, "ear": 0.302, "perclos": 0.035, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 115.0, "camera_on": true, "ear": 0.307, "perclos": 0.023, "blink_rate": 18.6, "gaze_on_road": true, "head_drop": false, "phone": 0.024, "events": []}
+{"ts": 115.2, "camera_on": true, "ear": 0.322, "perclos": 0.021, "blink_rate": 18.3, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 115.4, "camera_on": true, "ear": 0.314, "perclos": 0.028, "blink_rate": 17.9, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 115.6, "camera_on": true, "ear": 0.31, "perclos": 0.035, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.029, "events": []}
+{"ts": 115.8, "camera_on": true, "ear": 0.325, "perclos": 0.024, "blink_rate": 18.8, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 116.0, "camera_on": true, "ear": 0.318, "perclos": 0.053, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.023, "events": []}
+{"ts": 116.2, "camera_on": true, "ear": 0.302, "perclos": 0.023, "blink_rate": 14.9, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 116.4, "camera_on": true, "ear": 0.292, "perclos": 0.044, "blink_rate": 18.3, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": []}
+{"ts": 116.6, "camera_on": true, "ear": 0.335, "perclos": 0.022, "blink_rate": 11.0, "gaze_on_road": true, "head_drop": false, "phone": 0.06, "events": []}
+{"ts": 116.8, "camera_on": true, "ear": 0.304, "perclos": 0.029, "blink_rate": 12.4, "gaze_on_road": true, "head_drop": false, "phone": 0.007, "events": []}
+{"ts": 117.0, "camera_on": true, "ear": 0.31, "perclos": 0.029, "blink_rate": 11.7, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 117.2, "camera_on": true, "ear": 0.316, "perclos": 0.043, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.077, "events": []}
+{"ts": 117.4, "camera_on": true, "ear": 0.315, "perclos": 0.048, "blink_rate": 18.7, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 117.6, "camera_on": true, "ear": 0.28, "perclos": 0.014, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.025, "events": []}
+{"ts": 117.8, "camera_on": true, "ear": 0.3, "perclos": 0.034, "blink_rate": 16.0, "gaze_on_road": true, "head_drop": false, "phone": 0.03, "events": []}
+{"ts": 118.0, "camera_on": true, "ear": 0.315, "perclos": 0.03, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.032, "events": []}
+{"ts": 118.2, "camera_on": true, "ear": 0.313, "perclos": 0.022, "blink_rate": 14.2, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 118.4, "camera_on": true, "ear": 0.314, "perclos": 0.037, "blink_rate": 17.9, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 118.6, "camera_on": true, "ear": 0.297, "perclos": 0.024, "blink_rate": 19.5, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": []}
+{"ts": 118.8, "camera_on": true, "ear": 0.296, "perclos": 0.038, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": []}
+{"ts": 119.0, "camera_on": true, "ear": 0.307, "perclos": 0.039, "blink_rate": 15.7, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 119.2, "camera_on": true, "ear": 0.305, "perclos": 0.027, "blink_rate": 13.7, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": []}
+{"ts": 119.4, "camera_on": true, "ear": 0.296, "perclos": 0.03, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": []}
+{"ts": 119.6, "camera_on": true, "ear": 0.307, "perclos": 0.026, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.028, "events": []}
+{"ts": 119.8, "camera_on": true, "ear": 0.309, "perclos": 0.044, "blink_rate": 15.4, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": []}
+{"ts": 120.0, "camera_on": true, "ear": 0.299, "perclos": 0.038, "blink_rate": 16.0, "gaze_on_road": true, "head_drop": false, "phone": 0.026, "events": []}
+{"ts": 120.2, "camera_on": true, "ear": 0.274, "perclos": 0.022, "blink_rate": 17.1, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 120.4, "camera_on": true, "ear": 0.289, "perclos": 0.034, "blink_rate": 14.6, "gaze_on_road": true, "head_drop": false, "phone": 0.003, "events": []}
+{"ts": 120.6, "camera_on": true, "ear": 0.301, "perclos": 0.032, "blink_rate": 16.8, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": []}
+{"ts": 120.8, "camera_on": true, "ear": 0.325, "perclos": 0.039, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": []}
+{"ts": 121.0, "camera_on": true, "ear": 0.278, "perclos": 0.031, "blink_rate": 18.1, "gaze_on_road": true, "head_drop": false, "phone": 0.034, "events": []}
+{"ts": 121.2, "camera_on": true, "ear": 0.312, "perclos": 0.049, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 121.4, "camera_on": true, "ear": 0.299, "perclos": 0.041, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.036, "events": []}
+{"ts": 121.6, "camera_on": true, "ear": 0.323, "perclos": 0.036, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": []}
+{"ts": 121.8, "camera_on": true, "ear": 0.29, "perclos": 0.04, "blink_rate": 18.6, "gaze_on_road": true, "head_drop": false, "phone": 0.015, "events": []}
+{"ts": 122.0, "camera_on": true, "ear": 0.273, "perclos": 0.024, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": []}
+{"ts": 122.2, "camera_on": true, "ear": 0.271, "perclos": 0.026, "blink_rate": 11.9, "gaze_on_road": true, "head_drop": false, "phone": 0.027, "events": []}
+{"ts": 122.4, "camera_on": true, "ear": 0.294, "perclos": 0.031, "blink_rate": 18.6, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": []}
+{"ts": 122.6, "camera_on": true, "ear": 0.268, "perclos": 0.03, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.009, "events": []}
+{"ts": 122.8, "camera_on": true, "ear": 0.294, "perclos": 0.027, "blink_rate": 16.1, "gaze_on_road": true, "head_drop": false, "phone": 0.008, "events": []}
+{"ts": 123.0, "camera_on": true, "ear": 0.34, "perclos": 0.027, "blink_rate": 16.4, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": [{"event": "hand_on_chest", "duration_sec": 0.0, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 123.2, "camera_on": true, "ear": 0.26, "perclos": 0.044, "blink_rate": 9.7, "gaze_on_road": true, "head_drop": false, "phone": 0.047, "events": [{"event": "hand_on_chest", "duration_sec": 0.2, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 123.4, "camera_on": true, "ear": 0.28, "perclos": 0.016, "blink_rate": 15.8, "gaze_on_road": true, "head_drop": false, "phone": 0.064, "events": [{"event": "hand_on_chest", "duration_sec": 0.4, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 123.6, "camera_on": true, "ear": 0.305, "perclos": 0.028, "blink_rate": 14.5, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": [{"event": "hand_on_chest", "duration_sec": 0.6, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 123.8, "camera_on": true, "ear": 0.294, "perclos": 0.037, "blink_rate": 12.1, "gaze_on_road": true, "head_drop": false, "phone": 0.031, "events": [{"event": "hand_on_chest", "duration_sec": 0.8, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 124.0, "camera_on": true, "ear": 0.305, "perclos": 0.016, "blink_rate": 13.9, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": [{"event": "hand_on_chest", "duration_sec": 1.0, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 124.2, "camera_on": true, "ear": 0.293, "perclos": 0.033, "blink_rate": 13.1, "gaze_on_road": true, "head_drop": false, "phone": 0.002, "events": [{"event": "hand_on_chest", "duration_sec": 1.2, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 124.4, "camera_on": true, "ear": 0.332, "perclos": 0.022, "blink_rate": 15.1, "gaze_on_road": true, "head_drop": false, "phone": 0.016, "events": [{"event": "hand_on_chest", "duration_sec": 1.4, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 124.6, "camera_on": true, "ear": 0.296, "perclos": 0.042, "blink_rate": 14.9, "gaze_on_road": true, "head_drop": false, "phone": 0.037, "events": [{"event": "hand_on_chest", "duration_sec": 1.6, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 124.8, "camera_on": true, "ear": 0.287, "perclos": 0.038, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.017, "events": [{"event": "hand_on_chest", "duration_sec": 1.8, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 125.0, "camera_on": true, "ear": 0.299, "perclos": 0.036, "blink_rate": 13.6, "gaze_on_road": true, "head_drop": false, "phone": 0.001, "events": [{"event": "hand_on_chest", "duration_sec": 2.0, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 125.2, "camera_on": true, "ear": 0.331, "perclos": 0.035, "blink_rate": 15.3, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": [{"event": "hand_on_chest", "duration_sec": 2.2, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 125.4, "camera_on": true, "ear": 0.299, "perclos": 0.007, "blink_rate": 16.3, "gaze_on_road": true, "head_drop": false, "phone": 0.018, "events": [{"event": "hand_on_chest", "duration_sec": 2.4, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 125.6, "camera_on": true, "ear": 0.305, "perclos": 0.022, "blink_rate": 15.6, "gaze_on_road": true, "head_drop": false, "phone": 0.043, "events": [{"event": "hand_on_chest", "duration_sec": 2.6, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 125.8, "camera_on": true, "ear": 0.298, "perclos": 0.026, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.012, "events": [{"event": "hand_on_chest", "duration_sec": 2.8, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 126.0, "camera_on": true, "ear": 0.316, "perclos": 0.028, "blink_rate": 16.7, "gaze_on_road": true, "head_drop": false, "phone": 0.006, "events": [{"event": "hand_on_chest", "duration_sec": 3.0, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 126.2, "camera_on": true, "ear": 0.281, "perclos": 0.037, "blink_rate": 16.5, "gaze_on_road": true, "head_drop": false, "phone": 0.033, "events": [{"event": "hand_on_chest", "duration_sec": 3.2, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 126.4, "camera_on": true, "ear": 0.311, "perclos": 0.015, "blink_rate": 16.2, "gaze_on_road": true, "head_drop": false, "phone": 0.02, "events": [{"event": "hand_on_chest", "duration_sec": 3.4, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 126.6, "camera_on": true, "ear": 0.308, "perclos": 0.019, "blink_rate": 16.9, "gaze_on_road": true, "head_drop": false, "phone": 0.035, "events": [{"event": "hand_on_chest", "duration_sec": 3.6, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 126.8, "camera_on": true, "ear": 0.292, "perclos": 0.03, "blink_rate": 18.4, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": [{"event": "hand_on_chest", "duration_sec": 3.8, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 127.0, "camera_on": true, "ear": 0.31, "perclos": 0.031, "blink_rate": 17.9, "gaze_on_road": true, "head_drop": false, "phone": 0.013, "events": [{"event": "hand_on_chest", "duration_sec": 4.0, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 127.2, "camera_on": true, "ear": 0.3, "perclos": 0.041, "blink_rate": 18.7, "gaze_on_road": true, "head_drop": false, "phone": 0.005, "events": [{"event": "hand_on_chest", "duration_sec": 4.2, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 127.4, "camera_on": true, "ear": 0.296, "perclos": 0.048, "blink_rate": 13.2, "gaze_on_road": true, "head_drop": false, "phone": 0.019, "events": [{"event": "hand_on_chest", "duration_sec": 4.4, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 127.6, "camera_on": true, "ear": 0.303, "perclos": 0.032, "blink_rate": 14.1, "gaze_on_road": true, "head_drop": false, "phone": 0.039, "events": [{"event": "hand_on_chest", "duration_sec": 4.6, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 127.8, "camera_on": true, "ear": 0.313, "perclos": 0.048, "blink_rate": 14.4, "gaze_on_road": true, "head_drop": false, "phone": 0.01, "events": [{"event": "hand_on_chest", "duration_sec": 4.8, "confidence": 0.8, "breathing": "heavy"}]}
+{"ts": 128.0, "camera_on": true, "ear": 0.08, "perclos": 0.04, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.011, "events": [{"event": "head_drop", "duration_sec": 0.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 0.0, "confidence": 0.9}]}
+{"ts": 128.2, "camera_on": true, "ear": 0.08, "perclos": 0.043, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.042, "events": [{"event": "head_drop", "duration_sec": 0.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 0.2, "confidence": 0.9}]}
+{"ts": 128.4, "camera_on": true, "ear": 0.08, "perclos": 0.047, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.004, "events": [{"event": "head_drop", "duration_sec": 0.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 0.4, "confidence": 0.9}]}
+{"ts": 128.6, "camera_on": true, "ear": 0.08, "perclos": 0.05, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.024, "events": [{"event": "head_drop", "duration_sec": 0.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 0.6, "confidence": 0.9}]}
+{"ts": 128.8, "camera_on": true, "ear": 0.08, "perclos": 0.053, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.005, "events": [{"event": "head_drop", "duration_sec": 0.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 0.8, "confidence": 0.9}]}
+{"ts": 129.0, "camera_on": true, "ear": 0.08, "perclos": 0.057, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.056, "events": [{"event": "head_drop", "duration_sec": 1.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 1.0, "confidence": 0.9}]}
+{"ts": 129.2, "camera_on": true, "ear": 0.08, "perclos": 0.06, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.004, "events": [{"event": "head_drop", "duration_sec": 1.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 1.2, "confidence": 0.9}]}
+{"ts": 129.4, "camera_on": true, "ear": 0.08, "perclos": 0.063, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.042, "events": [{"event": "head_drop", "duration_sec": 1.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 1.4, "confidence": 0.9}]}
+{"ts": 129.6, "camera_on": true, "ear": 0.08, "perclos": 0.067, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.026, "events": [{"event": "head_drop", "duration_sec": 1.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 1.6, "confidence": 0.9}]}
+{"ts": 129.8, "camera_on": true, "ear": 0.08, "perclos": 0.07, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.004, "events": [{"event": "head_drop", "duration_sec": 1.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 1.8, "confidence": 0.9}]}
+{"ts": 130.0, "camera_on": true, "ear": 0.08, "perclos": 0.073, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.029, "events": [{"event": "head_drop", "duration_sec": 2.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 2.0, "confidence": 0.9}]}
+{"ts": 130.2, "camera_on": true, "ear": 0.08, "perclos": 0.077, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.011, "events": [{"event": "head_drop", "duration_sec": 2.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 2.2, "confidence": 0.9}]}
+{"ts": 130.4, "camera_on": true, "ear": 0.08, "perclos": 0.08, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.009, "events": [{"event": "head_drop", "duration_sec": 2.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 2.4, "confidence": 0.9}]}
+{"ts": 130.6, "camera_on": true, "ear": 0.08, "perclos": 0.083, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.001, "events": [{"event": "head_drop", "duration_sec": 2.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 2.6, "confidence": 0.9}]}
+{"ts": 130.8, "camera_on": true, "ear": 0.08, "perclos": 0.087, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.006, "events": [{"event": "head_drop", "duration_sec": 2.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 2.8, "confidence": 0.9}]}
+{"ts": 131.0, "camera_on": true, "ear": 0.08, "perclos": 0.09, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.02, "events": [{"event": "head_drop", "duration_sec": 3.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 3.0, "confidence": 0.9}]}
+{"ts": 131.2, "camera_on": true, "ear": 0.08, "perclos": 0.093, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.027, "events": [{"event": "head_drop", "duration_sec": 3.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 3.2, "confidence": 0.9}]}
+{"ts": 131.4, "camera_on": true, "ear": 0.08, "perclos": 0.097, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.006, "events": [{"event": "head_drop", "duration_sec": 3.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 3.4, "confidence": 0.9}]}
+{"ts": 131.6, "camera_on": true, "ear": 0.08, "perclos": 0.1, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.003, "events": [{"event": "head_drop", "duration_sec": 3.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 3.6, "confidence": 0.9}]}
+{"ts": 131.8, "camera_on": true, "ear": 0.08, "perclos": 0.103, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.014, "events": [{"event": "head_drop", "duration_sec": 3.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 3.8, "confidence": 0.9}]}
+{"ts": 132.0, "camera_on": true, "ear": 0.08, "perclos": 0.107, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.031, "events": [{"event": "head_drop", "duration_sec": 4.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 4.0, "confidence": 0.9}]}
+{"ts": 132.2, "camera_on": true, "ear": 0.08, "perclos": 0.11, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.048, "events": [{"event": "head_drop", "duration_sec": 4.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 4.2, "confidence": 0.9}]}
+{"ts": 132.4, "camera_on": true, "ear": 0.08, "perclos": 0.113, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.046, "events": [{"event": "head_drop", "duration_sec": 4.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 4.4, "confidence": 0.9}]}
+{"ts": 132.6, "camera_on": true, "ear": 0.08, "perclos": 0.117, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.034, "events": [{"event": "head_drop", "duration_sec": 4.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 4.6, "confidence": 0.9}]}
+{"ts": 132.8, "camera_on": true, "ear": 0.08, "perclos": 0.12, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.027, "events": [{"event": "head_drop", "duration_sec": 4.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 4.8, "confidence": 0.9}]}
+{"ts": 133.0, "driver_response": {"answered": false, "latency_sec": null, "text": null}}
+{"ts": 133.0, "camera_on": true, "ear": 0.08, "perclos": 0.123, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.038, "events": [{"event": "head_drop", "duration_sec": 5.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 5.0, "confidence": 0.9}]}
+{"ts": 133.2, "camera_on": true, "ear": 0.08, "perclos": 0.127, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.031, "events": [{"event": "head_drop", "duration_sec": 5.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 5.2, "confidence": 0.9}]}
+{"ts": 133.4, "camera_on": true, "ear": 0.08, "perclos": 0.13, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.03, "events": [{"event": "head_drop", "duration_sec": 5.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 5.4, "confidence": 0.9}]}
+{"ts": 133.6, "camera_on": true, "ear": 0.08, "perclos": 0.133, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.008, "events": [{"event": "head_drop", "duration_sec": 5.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 5.6, "confidence": 0.9}]}
+{"ts": 133.8, "camera_on": true, "ear": 0.08, "perclos": 0.137, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.003, "events": [{"event": "head_drop", "duration_sec": 5.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 5.8, "confidence": 0.9}]}
+{"ts": 134.0, "camera_on": true, "ear": 0.08, "perclos": 0.14, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.019, "events": [{"event": "head_drop", "duration_sec": 6.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 6.0, "confidence": 0.9}]}
+{"ts": 134.2, "camera_on": true, "ear": 0.08, "perclos": 0.143, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.05, "events": [{"event": "head_drop", "duration_sec": 6.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 6.2, "confidence": 0.9}]}
+{"ts": 134.4, "camera_on": true, "ear": 0.08, "perclos": 0.147, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.035, "events": [{"event": "head_drop", "duration_sec": 6.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 6.4, "confidence": 0.9}]}
+{"ts": 134.6, "camera_on": true, "ear": 0.08, "perclos": 0.15, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.016, "events": [{"event": "head_drop", "duration_sec": 6.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 6.6, "confidence": 0.9}]}
+{"ts": 134.8, "camera_on": true, "ear": 0.08, "perclos": 0.153, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.022, "events": [{"event": "head_drop", "duration_sec": 6.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 6.8, "confidence": 0.9}]}
+{"ts": 135.0, "camera_on": true, "ear": 0.08, "perclos": 0.157, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.048, "events": [{"event": "head_drop", "duration_sec": 7.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 7.0, "confidence": 0.9}]}
+{"ts": 135.2, "camera_on": true, "ear": 0.08, "perclos": 0.16, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.003, "events": [{"event": "head_drop", "duration_sec": 7.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 7.2, "confidence": 0.9}]}
+{"ts": 135.4, "camera_on": true, "ear": 0.08, "perclos": 0.163, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.014, "events": [{"event": "head_drop", "duration_sec": 7.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 7.4, "confidence": 0.9}]}
+{"ts": 135.6, "camera_on": true, "ear": 0.08, "perclos": 0.167, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.051, "events": [{"event": "head_drop", "duration_sec": 7.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 7.6, "confidence": 0.9}]}
+{"ts": 135.8, "camera_on": true, "ear": 0.08, "perclos": 0.17, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.023, "events": [{"event": "head_drop", "duration_sec": 7.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 7.8, "confidence": 0.9}]}
+{"ts": 136.0, "camera_on": true, "ear": 0.08, "perclos": 0.173, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.03, "events": [{"event": "head_drop", "duration_sec": 8.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 8.0, "confidence": 0.9}]}
+{"ts": 136.2, "camera_on": true, "ear": 0.08, "perclos": 0.177, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.028, "events": [{"event": "head_drop", "duration_sec": 8.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 8.2, "confidence": 0.9}]}
+{"ts": 136.4, "camera_on": true, "ear": 0.08, "perclos": 0.18, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.007, "events": [{"event": "head_drop", "duration_sec": 8.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 8.4, "confidence": 0.9}]}
+{"ts": 136.6, "camera_on": true, "ear": 0.08, "perclos": 0.183, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.016, "events": [{"event": "head_drop", "duration_sec": 8.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 8.6, "confidence": 0.9}]}
+{"ts": 136.8, "camera_on": true, "ear": 0.08, "perclos": 0.187, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.019, "events": [{"event": "head_drop", "duration_sec": 8.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 8.8, "confidence": 0.9}]}
+{"ts": 137.0, "camera_on": true, "ear": 0.08, "perclos": 0.19, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.017, "events": [{"event": "head_drop", "duration_sec": 9.0, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 9.0, "confidence": 0.9}]}
+{"ts": 137.2, "camera_on": true, "ear": 0.08, "perclos": 0.193, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.037, "events": [{"event": "head_drop", "duration_sec": 9.2, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 9.2, "confidence": 0.9}]}
+{"ts": 137.4, "camera_on": true, "ear": 0.08, "perclos": 0.197, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.007, "events": [{"event": "head_drop", "duration_sec": 9.4, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 9.4, "confidence": 0.9}]}
+{"ts": 137.6, "camera_on": true, "ear": 0.08, "perclos": 0.2, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.006, "events": [{"event": "head_drop", "duration_sec": 9.6, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 9.6, "confidence": 0.9}]}
+{"ts": 137.8, "camera_on": true, "ear": 0.08, "perclos": 0.203, "blink_rate": 0, "gaze_on_road": false, "head_drop": true, "phone": 0.012, "events": [{"event": "head_drop", "duration_sec": 9.8, "confidence": 0.9}, {"event": "eyes_closed", "duration_sec": 9.8, "confidence": 0.9}]}
