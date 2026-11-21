@@ -160,11 +160,10 @@ def _run_body(dets_fn, sec, head_dir=CENTER, face=True):
     return am, codes
 
 
-def test_chest_and_breathing_is_level_3_and_hides_parts():
-    am, codes = _run_body(lambda: {"hand_on_chest": (True, 0.8), "heavy_breathing": (True, 0.7)}, 4)
-    assert "chest_and_breathing" in codes and am.level == 3
-    active = {a.code for a in am.active}
-    assert "hand_on_chest" not in active and "heavy_breathing" not in active
+def test_hand_on_chest_long_is_level_3_and_hides_level_2():
+    am, codes = _run_body(lambda: {"hand_on_chest": (True, 0.8)}, 7)
+    assert "chest_long" in codes and am.level == 3
+    assert "hand_on_chest" not in {a.code for a in am.active}
 
 
 def test_hand_on_chest_alone_is_level_2():
@@ -184,3 +183,29 @@ def test_phone_while_looking_away_is_level_2():
     assert "phone_looking" in active and "phone_use" not in active and "look_down" not in active
     am2, _ = _run_body(lambda: {"phone_use": (True, 0.6)}, 2, head_dir=CENTER)
     assert {a.code for a in am2.active} == {"phone_use"} and am2.level == 1
+
+
+def test_frequent_yawning_shown_at_most_30s():
+    am, e, h = AlertManager(), EyeState(face_visible=True), HeadState(face_visible=True, direction=CENTER,
+                                                                      gaze_on_road=True, off_road_ratio=0.0)
+    dets = {"frequent_yawning": (True, 0.9)}
+    assert any(w.code == "frequent_yawning" for w in am.update(e, h, dets, 0.0))
+    am.update(e, h, dets, 20.0)
+    assert any(w.code == "frequent_yawning" for w in am.active)
+    am.update(e, h, dets, 31.0)
+    assert not any(w.code == "frequent_yawning" for w in am.active)
+    assert not am.update(e, h, dets, 130.0)          # nici sunetul de repetare nu mai vine
+
+
+def test_posture_rules():
+    am, _ = _run_body(lambda: {"slumped_side": (True, 0.8)}, 3, face=False)
+    active = {a.code for a in am.active}
+    assert "slumped_side" in active and "no_face" not in active and am.level == 3
+    am, _ = _run_body(lambda: {"out_of_position": (True, 0.7)}, 4, face=False)
+    assert {a.code for a in am.active} == {"out_of_position"} and am.level == 1
+    am, _ = _run_body(lambda: {"out_of_position": (True, 0.7)}, 11, face=False)
+    assert {a.code for a in am.active} == {"out_of_position_long"} and am.level == 2
+    am, codes = _run_body(lambda: {"bad_posture": (True, 0.6)}, 9)
+    assert "bad_posture" not in codes
+    am, codes = _run_body(lambda: {"bad_posture": (True, 0.6)}, 11)
+    assert "bad_posture" in codes and am.level == 1

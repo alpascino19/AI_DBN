@@ -19,7 +19,7 @@ from dataclasses import asdict, dataclass
 from typing import Callable, Optional
 
 from .eyes import EyeState
-from .head_pose import CENTER, DOWN, LEFT, RIGHT, HeadState
+from .head_pose import CENTER, DOWN, LEFT, RIGHT, UP, HeadState
 
 
 @dataclass
@@ -43,6 +43,7 @@ class Rule:
     repeat_sec: float = 5.0     # cât de des repetăm cât timp e activă
     cooldown_sec: float = 0.0   # după ce se oprește, cât așteptăm înainte de o nouă avertizare
     hides: tuple[str, ...] = () # când e activă, ascunde aceste avertizări (mai puțin grave / redundante)
+    show_sec: float = 0.0       # > 0: afișată cel mult atât (apoi dispare până când condiția se oprește și revine)
 
 
 @dataclass
@@ -80,7 +81,7 @@ def face_rules() -> list[Rule]:
              lambda s: s.det("hyper_blinking"), min_sec=5.0, repeat_sec=30.0, cooldown_sec=30.0),
         # --- căscat (detecții din yawn.py) ---
         Rule("frequent_yawning", 2, "Căscați des. Vă recomandăm o pauză.",
-             lambda s: s.det("frequent_yawning"), repeat_sec=120.0, cooldown_sec=60.0),
+             lambda s: s.det("frequent_yawning"), repeat_sec=20.0, cooldown_sec=60.0, show_sec=30.0),
         Rule("yawn", 1, "Ați căscat: semn de oboseală. Rămâneți atent la drum.",
              lambda s: s.det("yawning"), repeat_sec=600.0, cooldown_sec=10.0),  # o dată pe căscat
         # --- privire ---
@@ -90,6 +91,8 @@ def face_rules() -> list[Rule]:
              lambda s: s.head.direction == RIGHT, min_sec=2.0),
         Rule("look_down", 1, "Priviți în jos (telefon?). Vă rugăm să priviți la drum.",
              lambda s: s.head.direction == DOWN, min_sec=2.0),
+        Rule("look_up", 1, "Priviți în sus de prea mult timp. Vă rugăm să priviți la drum.",
+             lambda s: s.head.direction == UP, min_sec=2.0),
         Rule("distracted", 2, "Sunteți distras: priviți des în afara drumului.",
              lambda s: (s.head.off_road_ratio or 0) >= 0.5, min_sec=2.0, repeat_sec=15.0, cooldown_sec=10.0),
         Rule("no_face", 1, "Nu vă pot vedea fața. Vă rugăm să priviți spre drum.",
@@ -111,19 +114,32 @@ def body_rules() -> list[Rule]:
     evalua, deci rămâne doar "telefon în mână"."""
     return [
         # --- corp (detecții CV2 din pipeline: body/chest, breathing, phone, slump) ---
-        Rule("chest_and_breathing", 3, "URGENȚĂ: mâna pe piept și respirație grea! Sunteți bine?",
-             lambda s: s.det("hand_on_chest") and s.det("heavy_breathing"),
-             min_sec=2.0, repeat_sec=3.0, hides=("hand_on_chest", "heavy_breathing")),
+        # respirația e oprită (breathing.enabled: false) -> urgența vine din mâna ținută mult pe piept
+        Rule("chest_long", 3, "URGENȚĂ: țineți mâna pe piept de mult timp! Sunteți bine?",
+             lambda s: s.det("hand_on_chest"),
+             min_sec=6.0, repeat_sec=3.0, hides=("hand_on_chest", "heavy_breathing")),
         Rule("head_on_wheel", 3, "URGENȚĂ: șoferul pare prăbușit (capul pe volan)! Răspundeți!",
              lambda s: s.det("head_on_wheel"),
-             min_sec=2.0, repeat_sec=3.0, hides=("no_face", "look_down", "eyes_closed", "distracted")),
+             min_sec=2.0, repeat_sec=3.0, hides=("no_face", "look_down", "eyes_closed", "distracted",
+                                                 "bad_posture", "slumped_side")),
+        Rule("slumped_side", 3, "URGENȚĂ: șoferul a căzut într-o parte și nu se mișcă! Răspundeți!",
+             lambda s: s.det("slumped_side"),
+             min_sec=2.0, repeat_sec=3.0, hides=("no_face", "look_left", "look_right", "look_down",
+                                                 "eyes_closed", "distracted", "bad_posture")),
         Rule("hand_on_chest", 2, "Mâna pe piept. Vă simțiți bine?",
              lambda s: s.det("hand_on_chest"), min_sec=2.0, repeat_sec=8.0),
-        Rule("heavy_breathing", 2, "Respirație grea. Vă simțiți bine?",
+        Rule("heavy_breathing", 2, "Respirație grea. Vă simțiți bine?",       # doar cu breathing.enabled: true
              lambda s: s.det("heavy_breathing"), min_sec=3.0, repeat_sec=10.0),
+        Rule("out_of_position_long", 2, "Nu vă mai văd pe scaun! Reveniți în poziția de condus.",
+             lambda s: s.det("out_of_position"), min_sec=10.0, repeat_sec=10.0,
+             hides=("out_of_position", "no_face")),
+        Rule("out_of_position", 1, "Nu sunteți în poziția de condus. Vă rugăm să vă așezați corect.",
+             lambda s: s.det("out_of_position"), min_sec=3.0, repeat_sec=15.0, hides=("no_face",)),
+        Rule("bad_posture", 1, "Stați aplecat de mult timp. Vă rugăm să stați drept.",
+             lambda s: s.det("bad_posture"), min_sec=10.0, repeat_sec=30.0, cooldown_sec=10.0),
         Rule("phone_looking", 2, "Folosiți telefonul și nu priviți drumul! Lăsați telefonul jos.",
              lambda s: s.det("phone_use") and s.head.face_visible and s.head.direction != CENTER,
-             min_sec=1.0, repeat_sec=8.0, hides=("phone_use", "look_down", "look_left", "look_right")),
+             min_sec=1.0, repeat_sec=8.0, hides=("phone_use", "look_down", "look_up", "look_left", "look_right")),
         Rule("phone_use", 1, "Telefon în mână. Vă rugăm să-l lăsați jos.",
              lambda s: s.det("phone_use"), min_sec=1.0, repeat_sec=10.0),
     ]
@@ -156,6 +172,8 @@ class AlertManager:
                 continue
             if t - self._ended.get(r.code, -1e9) < r.cooldown_sec and r.code not in self._last_emit:
                 continue
+            if r.show_sec > 0 and dur - r.min_sec > r.show_sec:
+                continue                              # afișată destul; revine doar după ce condiția se oprește
 
             w = Alert(r.code, r.level, r.message, round(dur, 1))
             self.active.append(w)

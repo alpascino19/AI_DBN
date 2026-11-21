@@ -20,6 +20,7 @@ hold_sec (un om inconștient nu pleacă din scaun).
 from __future__ import annotations
 
 import math
+import warnings
 from collections import deque
 from typing import Optional
 
@@ -31,6 +32,9 @@ from ..smoothing import Ema
 from .geometry import ensure
 
 HEAD_IDX = (P.NOSE, 2, 5, 7, 8)          # nas, ochi stâng/drept, urechi stângă/dreaptă
+SLUMPED_SIDE = "slumped_side"            # căzut într-o parte și nemișcat (urgență)
+BAD_POSTURE = "bad_posture"              # aplecat / cocoșat (alerta vine după bad_posture_sec)
+OUT_OF_POSITION = "out_of_position"      # nu se vede corpul sau e mult mai departe decât normal
 
 
 def _ramp(x: float, lo: float, hi: float) -> float:
@@ -52,6 +56,10 @@ class SlumpAnalyzer:
         self.leaning_deg = c["leaning_deg"]
         self.leaning_drop = c["leaning_drop"]
         self.min_vis = cfg["chest"]["min_visibility"]
+        # căzut într-o parte (grade față de poziția calibrată) + ieșit din poziție
+        self.side_enter = c.get("side_deg", 25.0)
+        self.side_exit = c.get("side_exit_deg", 18.0)
+        self.far_ratio = c.get("far_ratio", 0.65)
         self.cfg = cfg
 
         self._gap = Ema(0.3)
@@ -63,6 +71,10 @@ class SlumpAnalyzer:
         self.base_fwd = 0.0
         self.base_angle = 0.0
         self.base_torso: Optional[float] = None
+        self.base_sh_dy = 0.0                   # diferența de înălțime a umerilor în poziția normală
+        self.base_lat = 0.0                     # înclinarea laterală cap -> umeri (doar camera din față)
+        self._side = False
+        self._last_side_t = -1e9
         self._motion: deque[tuple[float, np.ndarray]] = deque()  # (t, puncte cheie)
         self._still_since: Optional[float] = None
         self._slumped = False
@@ -104,12 +116,19 @@ class SlumpAnalyzer:
             self._motion.clear()
             self._still_since = None
             held = self._slumped and ctx.t - self._last_slumped_t <= self.hold_sec
-            res = {"state": "slumped" if held else "unknown", "pose_lost": True}
+            held_side = self._side and ctx.t - self._last_side_t <= self.hold_sec
+            res = {"state": "slumped" if held or held_side else "unknown", "pose_lost": True}
             if held:
                 res["score"] = self._last.get("score", 0.6)
             else:
                 self._slumped = False
-            self._emit(ctx, res, held, still_sec=self._last.get("still_sec", 0.0))
+            if held_side:
+                res["direction"] = "side"
+            else:
+                self._side = False
+            # nu se vede corpul și nu era prăbușit înainte -> a ieșit din poziție (sau scaun gol)
+            out = None if held or held_side else "lost"
+            self._emit(ctx, res, held, still_sec=self._last.get("still_sec", 0.0), side=held_side, out=out)
             return
 
         unit, sy = g.unit, g.sy
@@ -124,6 +143,13 @@ class SlumpAnalyzer:
             dx = (head[0] - g.sx) * g.facing if g.facing else abs(head[0] - g.sx)
             angle = math.degrees(math.atan2(dx, max(sy - head[1], 1e-6)))
         torso = g.torso_angle
+        # lateral: umerii la înălțimi diferite (merge din orice unghi) și, cu camera din față,
+        # linia cap -> umeri înclinată spre stânga/dreapta
+        ls, rs = pose[P.SHOULDER_L], pose[P.SHOULDER_R]
+        sh_dy = (ls.y - rs.y) / unit if min(ls.visibility, rs.visibility) >= self.min_vis * 0.6 else None
+        lat = None
+        if not head_missing and g.view == "front":
+            lat = math.degrees(math.atan2(head[0] - g.sx, max(sy - head[1], 1e-6)))
 
         # calibrare: poziția normală (dreaptă) a șoferului
         if self.base_gap is None:
@@ -131,9 +157,15 @@ class SlumpAnalyzer:
                 self._t0 = ctx.t
             if gap is not None:
                 self._calib.append((gap, sy, unit, fwd or 0.0, np.nan if torso is None else torso,
-                                    angle or 0.0))
+                                    angle or 0.0, np.nan if sh_dy is None else sh_dy,
+                                    np.nan if lat is None else lat))
             if ctx.t - self._t0 >= self.calib_sec and len(self._calib) >= 10:
                 arr = np.array(self._calib)
+                with warnings.catch_warnings():             # coloană numai NaN (ex. un umăr ascuns)
+                    warnings.simplefilter("ignore", RuntimeWarning)
+                    med = np.nanmedian(arr[:, 6:8], axis=0)
+                self.base_sh_dy = float(med[0]) if np.isfinite(med[0]) else 0.0
+                self.base_lat = float(med[1]) if np.isfinite(med[1]) else 0.0
                 self.base_gap = max(float(np.median(arr[:, 0])), 0.2)
                 self.base_sy, self.base_unit = float(np.median(arr[:, 1])), float(np.median(arr[:, 2]))
                 self.base_fwd = float(np.median(arr[:, 3]))
@@ -172,8 +204,29 @@ class SlumpAnalyzer:
         if active:
             self._last_slumped_t = ctx.t
 
+        # căzut într-o parte: înclinare laterală mare + nemișcat (cineva care ia ceva de pe scaun se mișcă)
+        side_parts = []
+        if sh_dy is not None:
+            side_parts.append(math.degrees(math.atan(abs(sh_dy - self.base_sh_dy))))
+        if lat is not None:
+            side_parts.append(abs(lat - self.base_lat))
+        side_deg = max(side_parts) if side_parts else 0.0
+        side_on = self.base_gap is not None and side_deg >= (self.side_exit if self._side else self.side_enter)
+        side = side_on and (still_sec >= self.still_min or self._side)
+        self._side = side
+        if side:
+            self._last_side_t = ctx.t
+
+        # prea departe de poziția normală (s-a dat înapoi / s-a ridicat de pe scaun)
+        out = None
+        if self.base_unit and unit / self.base_unit < self.far_ratio:
+            out = "far"
+
+        state = "slumped" if active or side else ("leaning" if posture or leaning else "upright")
         res = {
-            "state": "slumped" if active else ("leaning" if posture or leaning else "upright"),
+            "state": state,
+            "direction": "side" if side else ("forward" if active else None),
+            "side_deg": round(side_deg, 1),
             "score": round(score, 2),
             "drop": round(max(drop, 0.0), 2),
             "lean": round(lean, 2),
@@ -182,9 +235,18 @@ class SlumpAnalyzer:
             "face_visible": None if face_detected is None else bool(face_detected and not head_missing),
             "calibrated": self.base_gap is not None,
         }
-        self._emit(ctx, res, active, still_sec)
+        self._emit(ctx, res, active, still_sec, side=side, out=out,
+                   bad_posture=state == "leaning")
 
-    def _emit(self, ctx: FrameContext, res: dict, active: bool, still_sec: float) -> None:
+    def _emit(self, ctx: FrameContext, res: dict, active: bool, still_sec: float, side: bool = False,
+              out: Optional[str] = None, bad_posture: bool = False) -> None:
+        ctx.add(Detection(SLUMPED_SIDE, side, min(1.0, 0.6 + 0.1 * still_sec) if side else 0.0,
+                          {"side_deg": res.get("side_deg"), "still_sec": res.get("still_sec", still_sec)}))
+        ctx.add(Detection(BAD_POSTURE, bad_posture, 0.6 if bad_posture else 0.0,
+                          {"lean": res.get("lean"), "angle": res.get("angle")}))
+        ctx.add(Detection(OUT_OF_POSITION, out is not None, 0.7 if out else 0.0, {"reason": out}))
+        if out:
+            res = {**res, "out": out}
         self._last = {**res, "still_sec": res.get("still_sec", still_sec)}
         ctx.signals["slump"] = self._last
         conf = res.get("score", 0.0) * (0.7 + 0.3 * _ramp(still_sec, self.still_min, 5.0)) if active else 0.0

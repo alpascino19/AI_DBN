@@ -123,7 +123,8 @@ class Pipeline:
 
         # ordinea contează: breathing folosește zona pieptului (flow) și pune
         # "breathing" pe evenimentul hand_on_chest
-        self.analyzers = [BodyGeometry(cfg), ChestAnalyzer(cfg), BreathingAnalyzer(cfg), PhoneAnalyzer(cfg),
+        breathing = [BreathingAnalyzer(cfg)] if cfg.get("breathing", {}).get("enabled", False) else []
+        self.analyzers = [BodyGeometry(cfg), ChestAnalyzer(cfg), *breathing, PhoneAnalyzer(cfg),
                           SlumpAnalyzer(cfg)]
         self.tracker = EventTracker(cfg)
         sm = cfg.get("smoothing", {})

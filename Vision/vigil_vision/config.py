@@ -38,7 +38,7 @@ DEFAULTS: dict[str, Any] = {
               "face_radius": 0.45, "chin_margin": 0.10, "min_inside": 0.6, "tips_above_shoulder": 0.05,
               "move_window_sec": 0.5, "move_thr": 0.25, "depth_max": 0.0,
               "max_hand_scale": 0.35, "pose_scale_factor": 1.8},
-    "breathing": {"source": "auto", "window_sec": 10, "min_window_sec": 5, "calib_sec": 5,
+    "breathing": {"enabled": False, "source": "auto", "window_sec": 10, "min_window_sec": 5, "calib_sec": 5,
                   "baseline_floor": 0.003, "amp_ratio_low": 1.3, "amp_ratio_high": 3.0,
                   "rate_low_bpm": 16, "rate_high_bpm": 30, "score_enter": 0.55,
                   "score_exit": 0.40, "enter_evals": 4, "exit_evals": 6, "jaw_open_thr": 0.35,
@@ -48,13 +48,15 @@ DEFAULTS: dict[str, Any] = {
               "score_enter": 0.50, "score_exit": 0.38, "still_thr": 0.015,
               "still_min_sec": 2.0, "hold_sec": 15,
               "leaning_deg": 12, "leaning_drop": 0.2,
+              "side_deg": 25.0, "side_exit_deg": 18.0, "far_ratio": 0.65,
               "lean": {"torso_deg": [10, 35], "head_forward": [0.2, 0.6],
                        "shoulder_drop": [0.1, 0.5], "closer": [1.1, 1.4]}},
     "smoothing": {"min_cutoff": 1.5, "beta": 0.5},
     "events": {"gap_sec": 1.0,
                "min_duration_sec": {"hand_on_chest": 2.0, "heavy_breathing": 3.0,
                                     "phone_use": 1.0,
-                                    "head_on_wheel": 2.0, "default": 1.0}},
+                                    "head_on_wheel": 2.0, "slumped_side": 2.0,
+                                    "bad_posture": 10.0, "out_of_position": 3.0, "default": 1.0}},
 }
 
 

@@ -50,13 +50,13 @@ class EyeConfig:
     long_closed_sec: float = 1.5    # ochi închiși prelungit / micro-somn
     perclos_window_sec: float = 60.0
     blink_window_sec: float = 60.0
-    blink_rate_low: float = 8.0     # clipiri/min: sub = privit în gol / somnolență
+    blink_rate_low: float = 6.0     # clipiri/min: sub = privit în gol / somnolență
     blink_rate_high: float = 22.0  #clipiri/min: peste = clipit anormal
     min_window_sec: float = 10.0    # până atunci nu raportăm rate (prea puține date)
     # revenire rapidă: oboseala (fereastra de 60 s) se stinge dacă ultimele 15 s arată normal
     recovery_window_sec: float = 15.0
     recovery_perclos_max: float = 0.05   # ochi închiși max 5% din ultimele 15 s
-    recovery_min_blinks: int = 2         # cel puțin atâtea clipiri normale în ultimele 15 s
+    recovery_min_blinks: int = 1         # cel puțin atâtea clipiri normale în ultimele 15 s
     recovery_min_visible: float = 0.8    # fața văzută cel puțin 80% din cele 15 s
 
 

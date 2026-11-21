@@ -31,13 +31,15 @@ CENTER, LEFT, RIGHT, DOWN, UP = "center", "left", "right", "down", "up"
 
 @dataclass
 class HeadConfig:
-    yaw_limit: float = 25.0        # grade față de neutru, stânga/dreapta
+    yaw_limit: float = 23.0        # grade față de neutru, stânga/dreapta
     pitch_down_limit: float = 18.0
     pitch_up_limit: float = 20.0
     iris_x_limit: float = 0.18     # deplasarea irisului în ochi (-0.5..0.5)
     iris_gain_deg: float = 60.0    # cât "adaugă" irisul la yaw-ul efectiv
+    iris_head_max: float = 15.0    # cap întors peste atâtea grade: irisul nu mai e de încredere (ochiul se vede din profil)
     eye_down_limit: float = 0.35   # eyeLookDown (relativ la neutru) peste = privire în jos cu ochii
     eye_down_gain_deg: float = 35.0  # cât "adaugă" privirea în jos la pitch-ul efectiv
+    eye_down_head_up: float = 8.0  # cap ridicat peste atâtea grade: ochii "în jos" doar compensează, nu e telefon
     smoothing: float = 0.35        # EMA: 1 = fără netezire
     window_sec: float = 10.0       # pentru off_road_ratio
 
@@ -153,15 +155,21 @@ class HeadPoseAnalyzer:
         s.eye_down = None if eye_down is None else round(float(down_s - self.down0), 3)
 
         # yaw / pitch efectiv = cap + ochi
-        eff_yaw = s.yaw + (s.iris_x or 0.0) * c.iris_gain_deg
-        eff_pitch = s.pitch + max(0.0, s.eye_down or 0.0) * c.eye_down_gain_deg
-        if eff_pitch > c.pitch_down_limit or (s.eye_down or 0.0) > c.eye_down_limit:
-            s.direction = DOWN
-        elif s.pitch < -c.pitch_up_limit:
+        # cu capul mult întors, colțurile ochiului se apropie în imagine și irisul pare în partea opusă
+        # -> folosim irisul doar cu capul aproape drept; altfel decide unghiul capului
+        iris_x = (s.iris_x or 0.0) if abs(s.yaw) < c.iris_head_max else 0.0
+        eff_yaw = s.yaw + iris_x * c.iris_gain_deg
+        # cu capul dat pe spate, ochii coboară față de cap ca să rămână pe drum / ecran
+        # (eyeLookDown mare) -> nu e privire în jos; capul ridicat are prioritate
+        eye_down = max(0.0, s.eye_down or 0.0) if s.pitch > -c.eye_down_head_up else 0.0
+        eff_pitch = s.pitch + eye_down * c.eye_down_gain_deg
+        if s.pitch < -c.pitch_up_limit:
             s.direction = UP
-        elif eff_yaw > c.yaw_limit or (s.iris_x or 0) > c.iris_x_limit:
+        elif eff_pitch > c.pitch_down_limit or eye_down > c.eye_down_limit:
+            s.direction = DOWN
+        elif eff_yaw > c.yaw_limit or iris_x > c.iris_x_limit:
             s.direction = RIGHT
-        elif eff_yaw < -c.yaw_limit or (s.iris_x or 0) < -c.iris_x_limit:
+        elif eff_yaw < -c.yaw_limit or iris_x < -c.iris_x_limit:
             s.direction = LEFT
         else:
             s.direction = CENTER

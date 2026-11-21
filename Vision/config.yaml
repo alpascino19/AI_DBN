@@ -76,6 +76,7 @@ chest:
   pose_scale_factor: 1.8      # din Pose (fără Hands) măsurăm încheietură->arătător, mai lung decât palma
 
 breathing:
+  enabled: false              # OPRIT: prea multe alarme false. true = pornește din nou analiza respirației
   source: auto                # auto (flow, iar fără textură landmarks) | flow | landmarks
   window_sec: 10              # fereastra de analiză
   min_window_sec: 5
@@ -107,6 +108,9 @@ slump:                        # capul pe volan / prăbușit în față
   hold_sec: 15                # Pose pierde persoana după prăbușire -> păstrăm starea
   leaning_deg: 12             # GRADE: peste atât față de poziția normală -> "aplecat" (linia portocalie)
   leaning_drop: 0.2           # sau dacă capul a coborât 20% față de normal
+  side_deg: 25                # GRADE: căzut într-o parte (umeri / cap înclinați lateral față de normal) + nemișcat
+  side_exit_deg: 18           # iese din "căzut într-o parte" sub atât
+  far_ratio: 0.65             # corpul pare mai mic de atât × normal = s-a îndepărtat (ieșit din poziție)
   lean:                       # aplecarea în față: [de unde începe să conteze, unde contează maxim]
     torso_deg: [10, 35]       # GRADE de înclinare a trunchiului față de poziția normală
     head_forward: [0.2, 0.6]  # cât iese capul în fața umerilor (× unitatea corpului)
@@ -124,4 +128,7 @@ events:
     heavy_breathing: 3.0
     phone_use: 1.0
     head_on_wheel: 2.0
+    slumped_side: 2.0
+    bad_posture: 10.0         # aplecat / cocoșat atâtea secunde -> eveniment
+    out_of_position: 3.0
     default: 1.0

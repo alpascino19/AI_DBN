@@ -272,16 +272,17 @@ def _body_section(p: "Panel", ctx) -> None:
     scale = ctx.signals.get("chest_hand_scale")
     p.row("Marime mana", "-" if scale is None else f"{scale:.2f}",
           ORANGE if ctx.signals.get("chest_reject") == "close" else TEXT)
-    b = ctx.signals.get("breathing") or {}
-    heavy = b.get("state") == "heavy"
-    rate = b.get("rate_bpm")
-    br = "GREA" if heavy else (b.get("state") or "-")
-    score = b.get("score") if isinstance(b.get("score"), (int, float)) else None
-    p.row("Respiratie", br, RED if heavy else TEXT, frac=score, frac_col=grade(score, 0.40, 0.55))
-    rr = f"{rate:.0f} / min" if isinstance(rate, (int, float)) else "-"
-    if b and not b.get("calibrated", True):
-        rr += "  (calibrare)"
-    p.row("Ritm respiratie", rr)
+    b = ctx.signals.get("breathing")
+    if b:                                            # doar cu breathing.enabled: true
+        heavy = b.get("state") == "heavy"
+        rate = b.get("rate_bpm")
+        br = "GREA" if heavy else (b.get("state") or "-")
+        score = b.get("score") if isinstance(b.get("score"), (int, float)) else None
+        p.row("Respiratie", br, RED if heavy else TEXT, frac=score, frac_col=grade(score, 0.40, 0.55))
+        rr = f"{rate:.0f} / min" if isinstance(rate, (int, float)) else "-"
+        if not b.get("calibrated", True):
+            rr += "  (calibrare)"
+        p.row("Ritm respiratie", rr)
     phone = float(ctx.signals.get("phone", 0.0) or 0.0)
     pd = ctx.detections.get("phone_use")
     usage = {"call": "apel", "looking": "se uita", "holding": "in mana"}.get(
@@ -293,9 +294,26 @@ def _body_section(p: "Panel", ctx) -> None:
     p.row("Telefon", ph, ORANGE if pd and pd.active else TEXT, frac=phone, frac_col=grade(phone, 0.25, 0.4))
     sl = ctx.signals.get("slump") or {}
     label, col = POSTURE.get(sl.get("state"), (sl.get("state") or "-", None))
+    if sl.get("direction") == "side":
+        label = "CAZUT LATERAL"
+    if sl.get("out"):
+        label, col = {"lost": ("nu se vede", ORANGE), "far": ("prea departe", ORANGE)}[sl["out"]]
     if sl and not sl.get("calibrated", True):
         label += " (calib.)"
     p.row("Postura", label, col or TEXT)
+    # valorile pentru reglaj live (config.yaml: slump)
+    num = lambda k: sl.get(k) if isinstance(sl.get(k), (int, float)) else None
+    side, drop, lean, ang = num("side_deg"), num("drop"), num("lean"), num("angle")
+    p.row("Inclinare laterala", "-" if side is None else f"{side:.0f} grade",
+          frac=None if side is None else side / 40, frac_col=grade(side, 15, 25))
+    p.row("Cap coborat", "-" if drop is None else f"{drop:.2f}",
+          frac=drop, frac_col=grade(drop, 0.25, 0.6))
+    p.row("Aplecare", "-" if lean is None else f"{lean:.2f}", frac=lean, frac_col=grade(lean, 0.3, 0.6))
+    p.row("Unghi cap (aplecat)", "-" if ang is None else f"{ang:.0f} grade",
+          ORANGE if ang is not None and ang >= 12 else TEXT)
+    p.row("Prabusire (scor)", "-" if num("score") is None else f"{num('score'):.2f}",
+          frac=num("score"), frac_col=grade(num("score"), 0.38, 0.50))
+    p.row("Nemiscat", f"{sl.get('still_sec', 0.0) or 0.0:.1f}s")
 
 
 def render(frame_img, snap, calib, am, t, ctx=None, fps: float = 0.0,
@@ -308,7 +326,7 @@ def render(frame_img, snap, calib, am, t, ctx=None, fps: float = 0.0,
     level = am.level if calib_done else 0
     _draw_camera(cam, snap, ctx, level)
 
-    panel = np.full((900, PANEL_W, 3), BG, np.uint8)
+    panel = np.full((1200, PANEL_W, 3), BG, np.uint8)
     used = _draw_panel(panel, snap, calib, ctx, level, t, title, body)
     H = max(h, used + 16)
 
