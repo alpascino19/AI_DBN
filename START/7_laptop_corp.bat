@@ -13,7 +13,8 @@ if "%IP%"=="" set "IP=%DEFAULT_IP%"
 echo Trimit catre brokerul de pe laptopul 1: %IP%:1883
 call :venv || goto :end
 cd Vision
-"%PY%" -m vigil_vision.run_body --show --mute --publish --mqtt-host %IP% --index 0 %2 %3 %4 %5 %6
+rem --video: imaginea camerei apare si in dashboard (scoate-l pentru privacy mode: doar cifre)
+"%PY%" -m vigil_vision.run_body --show --mute --publish --video --mqtt-host %IP% --index 0 %2 %3 %4 %5 %6
 goto :end
 
 :venv

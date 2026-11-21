@@ -3,7 +3,7 @@ import json
 import threading
 import time
 
-from executor import Executor, validate
+from executor import CarLink, Executor, validate
 
 
 def make():
@@ -294,6 +294,54 @@ def test_alert_abandons_slow_lookup_immediately():
     said, pub = assistant_run("weather", omniroute=slow, interrupt=interrupt)
     assert time.monotonic() - start < 1                              # workerul e liber pentru urgență
     assert said == [] and pub[-1][1]["status"] == "interrupted"
+
+
+# --- ML1 vigil/ecu -> ECU_Arduino vigil/car/cmd (CarLink, din ML2_Pasca) ---
+
+def ecu(mode, target, hazards=False, decel=0.5):
+    """un mesaj vigil/ecu de la ML1 (doar câmpurile pe care le folosește traducerea)"""
+    return json.dumps({"mode": mode, "target_kmh": target, "speed_ref_kmh": 100.0, "decel_mps2": decel,
+                       "hazards": hazards})
+
+
+def cmds(out):
+    return [{k: v for k, v in c.items() if k != "id"} for c in out]
+
+
+def test_car_link_translates_only_changes():
+    car = CarLink()
+    assert car.update(ecu("NORMAL", 100.0)) == []                       # croazieră: nimic de trimis
+    assert cmds(car.update(ecu("CAUTION", 73.0))) == [{"cmd": "slow_down", "target_kmh": 73.0, "decel_mps2": 0.5}]
+    assert car.update(ecu("CAUTION", 73.0)) == []                       # 5 Hz: fără repetări
+    assert car.update(ecu("CAUTION", 70.0)) == []                       # sub 5 km/h diferență: nu spamăm ECU
+    assert cmds(car.update(ecu("ASSIST", 50.0, hazards=True, decel=2.0))) == [
+        {"cmd": "hazard", "on": True}, {"cmd": "slow_down", "target_kmh": 50.0, "decel_mps2": 2.0}]
+    assert cmds(car.update(ecu("MRM", 0.0, hazards=True, decel=2.5))) == [{"cmd": "emergency", "decel_mps2": 2.5}]
+    assert car.update(ecu("MRM", 0.0, hazards=True)) == []              # o singură comandă de urgență
+    # ML1 iese din MRM doar la severitate 0; ECU nu are „accelerează”, deci revenim cu reset
+    assert cmds(car.update(ecu("NORMAL", 100.0))) == [
+        {"cmd": "cancel_emergency"}, {"cmd": "hazard", "on": False}, {"cmd": "reset"}]
+    assert car.update(ecu("NORMAL", 100.0)) == []
+
+
+def test_car_link_after_reset_compares_with_ecu_cruise():
+    # după reset ECU e la croazieră (100 km/h), chiar dacă referința ML1 încă urcă de la 0 (găsit în scenariul demo)
+    car = CarLink()
+    car.update(ecu("MRM", 0.0, hazards=True))
+    car.update(ecu("NORMAL", 100.0))                                    # reset
+    ramping = json.dumps({"mode": "ASSIST", "target_kmh": 50.0, "speed_ref_kmh": 47.0, "decel_mps2": 2.0,
+                          "hazards": True})
+    assert cmds(car.update(ramping)) == [{"cmd": "hazard", "on": True},
+                                         {"cmd": "slow_down", "target_kmh": 50.0, "decel_mps2": 2.0}]
+
+
+def test_car_link_ids_and_bad_messages():
+    car = CarLink()
+    out = car.update(ecu("MRM", 0.0, hazards=True)) + car.update(ecu("NORMAL", 100.0))
+    ids = [c["id"] for c in out]
+    assert all(i.startswith("ml2-") for i in ids) and len(set(ids)) == len(ids)  # ECU le întoarce în evenimente
+    for bad in [b"{x", b"[]", b'{"mode": 3, "target_kmh": 50}', b'{"mode": "CAUTION", "target_kmh": "50"}']:
+        assert car.update(bad) == []
 
 
 if __name__ == "__main__":

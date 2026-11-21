@@ -77,3 +77,15 @@ Logurile complete sunt pe laptopul 1, în `logs\`. Cele ale camerelor se văd î
 * **Un `fata` și un `corp`**, nu de două ori același.
 * Combinarea (`vigil_vision.merge`) pornește doar din `4c`; nu o porniți de mână pe alt laptop.
 * Dacă IP-ul laptopului 1 s-a schimbat, relansați scripturile de pe laptopurile 2 și 3 cu IP-ul nou.
+
+## Imaginea camerelor în dashboard
+`7_laptop_fata.bat` și `7_laptop_corp.bat` pornesc Vision cu `--video`: pe lângă cifre, fiecare cameră trimite un
+JPEG mic (480 px, 5 cadre/s, ~17–30 KB) pe `vigil/video/face` / `vigil/video/body`, iar ferestrele din dashboard
+arată imaginea live cu punctele peste ea. Nimic nu se salvează (QoS 0, fără retain). Pentru **privacy mode**
+(doar cifre și puncte, ca în conceptul inițial): ștergeți `--video` din cele două fișiere `.bat`; pe un singur
+PC, `run_vigil.py --no-video`.
+
+## Placa ECU (mașina simulată)
+`ECU_Arduino/ECU_Arduino.ino` pe ESP32-C3: parola Wi-Fi stă în `ECU_Arduino/wifi_secrets.h` (copiat din
+`wifi_secrets.h.example`, nu se urcă pe git). ML 2 îi trimite comenzile pe `vigil/car/cmd`; graficul vitezei din
+dashboard arată ce cere ML 1 și ce face placa.

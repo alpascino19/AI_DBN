@@ -81,10 +81,25 @@ describe('bodyView (ca fereastra VIGIL - CORP)', () => {
     const rows = Object.fromEntries(v.sections[0].rows.map((r) => [r.label, r.value]))
     expect(rows).toEqual({
       'Mână pe piept': 'nu', 'Mărime mână': '—', Respirație: 'normal', 'Ritm respirație': '14 / min',
-      Telefon: 'nu', Postură: 'drept',
+      Telefon: 'nu', Postură: 'drept', 'Înclinare laterală': '—', 'Cap coborât': '—', Aplecare: '—',
+      'Unghi cap (aplecat)': '—', 'Prăbușire (scor)': '—', Nemișcat: '0.0s',
     })
     expect(v.fps).toBe(11)
     expect(v.chestZone).toEqual([0, 0.77, 1, 1])
+  })
+
+  it('postura nouă din Vision: nu se vede, valori de reglaj, fără respirație', () => {
+    const v = bodyView({ body_panel: { ...BODY_PANEL, visible: false, breathing: null,
+      posture: { state: 'upright', out: 'lost', side_deg: 27, drop: 0.31, lean: null, angle: 14, score: 0.52, still_sec: 2 } },
+    } as Vision)
+    const r = Object.fromEntries(v.sections[0].rows.map((x) => [x.label, x]))
+    expect(r.Corp).toMatchObject({ value: 'nu se vede', tone: 'warn' })        // ca rândul din fereastra CORP
+    expect(r['Postură']).toMatchObject({ value: 'nu se vede', tone: 'warn' })
+    expect(r['Respirație']).toBeUndefined()                                     // breathing.enabled: false
+    expect(r['Înclinare laterală']).toMatchObject({ value: '27 grade', bar: { tone: 'bad' } })
+    expect(r['Unghi cap (aplecat)']).toMatchObject({ value: '14 grade', tone: 'warn' })
+    expect(r['Prăbușire (scor)'].bar?.tone).toBe('bad')
+    expect(r['Nemișcat'].value).toBe('2.0s')
   })
 
   it('mână pe piept + respirație grea, fără panou', () => {

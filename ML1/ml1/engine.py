@@ -86,6 +86,7 @@ class DecisionEngine:
         self.baseline = DriverBaseline() if calibrate else _NoBaseline()
         self.state = StateFilter()      # P(stare reală | observațiile de până acum), matricea de probabilitate
         self.ecu = EcuController()      # comanda fuzzy pentru ECU (calculată la cerere: ecu_step)
+        self.car: dict | None = None    # ce raportează ECU-ul real (vigil/car/state + vigil/car/event)
         self._timeline: dict[str, dict] = {}
         self._a_hist: deque = deque()
         self._closure: deque = deque()   # (ts, ochi închiși) pe ultimele 60 s
@@ -103,6 +104,18 @@ class DecisionEngine:
             t = ts if ts is not None else (self._last_frame_ts or 0.0)
             self._resp = (t, resp)
             self.fusion.update_driver_response(resp, ts=t)
+
+    CAR_FIELDS = ("speed_kmh", "target_kmh", "braking", "hazard", "stopped", "emergency")
+
+    def on_car(self, msg: dict) -> None:
+        """Starea mașinii de la ECU (stare periodică sau eveniment): o păstrăm pe ultima, pentru raportul 112
+        și pentru status. Comanda către ECU rămâne `vigil/ecu`; asta e doar ce face mașina de fapt."""
+        with self._lock:
+            car = dict(self.car or {})
+            car.update({k: msg[k] for k in self.CAR_FIELDS if k in msg})
+            if isinstance(msg.get("event"), str):
+                car["last_event"], car["last_id"] = msg["event"], msg.get("id")
+            self.car = car
 
     def on_vision(self, msg: dict) -> list[dict]:
         """Procesează un cadru. Întoarce deciziile publicate acum (în modul sync include și LLM-ul)."""
@@ -241,6 +254,7 @@ class DecisionEngine:
             "driver_response": resp,
             "timeline": {k: dict(v) for k, v in self._timeline.items()},
             "a_trend": self._a_hist[0][1] if self._a_hist and ts - self._a_hist[0][0] >= 5 else None,
+            "car": dict(self.car) if self.car else None,   # pentru raportul 112; promptul LLM nu îl citește
         }
 
     def _track_closure(self, msg: dict, ts: float) -> None:

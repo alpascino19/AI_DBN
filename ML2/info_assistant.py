@@ -10,6 +10,7 @@ Cheia OmniRoute se citește din variabila de mediu OMNIROUTE_API_KEY.
 import json
 import logging
 import os
+import queue
 import re
 import threading
 import time
@@ -43,6 +44,9 @@ linkuri sau markdown. Scrie unitățile în cuvinte (grade, kilometri pe oră, m
 (10 grade, nu 9,7).
 Pentru vreme, trafic, știri, sport și orice eveniment recent folosești DOAR datele live primite (rezultatele \
 căutării au data publicării: ține cont de ea când spui „ultimul”); dacă lipsesc, spui că nu ai informația acum. \
+La întrebări despre „azi”/„diseară”/„mâine” iei DOAR evenimentele cu acea dată; ignori ce s-a jucat sau s-a \
+întâmplat în alte zile, chiar dacă apare în rezultate. „În România” înseamnă ce se joacă în țară (ex. Superliga), \
+nu doar naționala. \
 Nu inventa. Locația mașinii: {city}. Data și ora: {now}."""
 
 log = logging.getLogger("virgil")
@@ -194,24 +198,59 @@ def speakable(text):
     return re.sub(r"\s*\[\d+(?:,\s*\d+)*\]|[*#_`]+", "", text).strip() or None
 
 
-def answer(question):
-    """Răspunsul vorbit al lui Virgil, sau None dacă modelul nu răspunde."""
+def chat_lines(body):
+    """Liniile răspunsului în flux (SSE) de la OmniRoute."""
+    request = urllib.request.Request(f"{OMNIROUTE}/v1/chat/completions", json.dumps(body).encode(),
+                                     {"Content-Type": "application/json", **omniroute_headers()})
+    with urllib.request.urlopen(request, timeout=40) as r:
+        for raw in r:
+            yield raw.decode("utf-8", "replace").strip()
+
+
+def stream_reply(question, sentences=3):
+    """Propozițiile răspunsului, pe măsură ce le scrie modelul (cel mult `sentences`): Virgil o citește pe
+    prima cât timp modelul o scrie pe următoarea. Tăiem doar după .!? + spațiu, ca 15.00 / 21.11 să rămână întregi."""
     context = gather(question) or "(nicio dată live disponibilă)"
     messages = [{"role": "system", "content": PERSONA.format(city=CITY, now=time.strftime("%d.%m.%Y %H:%M"))},
                 {"role": "user", "content": f"Date live:\n{context}\n\nÎntrebarea șoferului: {question}"}]
     for model in MODELS:
         # 1024: unele rute (ex. claude-code) ajung la modele care „gândesc” întâi; cu 250 nu mai apucau să răspundă
-        body = {"model": model, "max_tokens": 1024, "messages": messages}
+        body = {"model": model, "max_tokens": 1024, "messages": messages, "stream": True}
+        buffer, said, used = "", 0, None
         try:
-            r = http_json(f"{OMNIROUTE}/v1/chat/completions", body, omniroute_headers(), timeout=40)
-            reply = speakable(r["choices"][0]["message"].get("content") or "")
+            for line in chat_lines(body):
+                if not line.startswith("data:") or line == "data: [DONE]":
+                    continue
+                try:
+                    chunk = json.loads(line[5:])
+                    buffer += chunk["choices"][0]["delta"].get("content") or ""
+                    if chunk.get("model") not in (None, "keepalive"):  # OmniRoute trimite „keepalive” cât așteaptă
+                        used = used or chunk["model"]
+                except (ValueError, KeyError, IndexError):
+                    continue
+                *done, buffer = re.split(r"(?<=[.!?])\s+", buffer)  # ultima bucată poate fi neterminată
+                for sentence in filter(None, map(speakable, done)):
+                    yield sentence
+                    said += 1
+                    if said >= sentences:
+                        return
         except Exception as e:
             log.warning("OmniRoute (%s): %r", model, e)
+            if said:
+                return  # am început deja să vorbim: nu repetăm cu alt model
             continue
-        if reply:
-            log.info("model folosit: %s", r.get("model"))
-            return reply
-    return None
+        tail = speakable(buffer)
+        if tail:
+            yield tail
+            said += 1
+        if said:
+            log.info("model folosit: %s", used)
+            return  # altfel (429, răspuns gol): următorul model
+
+
+def answer(question):
+    """Răspunsul întreg, sau None dacă niciun model nu răspunde."""
+    return " ".join(stream_reply(question)) or None
 
 
 def strip_wake(text):
@@ -293,24 +332,51 @@ def main():
         conversation(question, safety.interrupt)
 
 
-DONE = re.compile(r"^(multumesc|mersi|gata|atat|nimic|nu|pa)\b")
+SEARCHING = "Caut imediat."
+DONE = re.compile(r"\b(multumesc|mersi|merci|gata|atat|nimic|suficient|ajunge|destul|pa|revedere)\b|^nu\b")
+
+
+def ends_conversation(text):
+    """„Mersi”, „E suficient”, „Bine, mersi!”... închid; o replică lungă („mersi, și mâine?”) e o întrebare."""
+    return len(text.split()) <= 4 and bool(DONE.search(plain(text)))
 
 
 def conversation(question, interrupt):
-    """Răspunde, apoi ascultă întrebarea următoare fără „Hei Virgil”, până la tăcere sau „mulțumesc/gata”.
+    """Răspunde, apoi ascultă întrebarea următoare fără „Hei Virgil”, până la tăcere sau „mersi/e suficient”.
     Înainte, după primul răspuns Virgil cerea iar „Hei Virgil”, așa că a doua întrebare era ignorată."""
     while question:
         status(f"Am înțeles: „{question}”. Caut răspunsul...")
-        reply = answer(question) or "Nu am putut afla informația acum, încercați puțin mai târziu."
-        status(f"Virgil: {reply}")
-        if not actions.speak(reply, interrupt):
+        # căutarea + modelul rulează în paralel; cât caută spunem „Caut imediat”, apoi citim fiecare propoziție
+        # imediat ce e gata, cât timp modelul o scrie pe următoarea
+        ready = queue.Queue()
+
+        def produce(q=question):
+            try:
+                for sentence in stream_reply(q):
+                    ready.put(sentence)
+            finally:
+                ready.put(None)  # gata (sau eroare)
+
+        threading.Thread(target=produce, daemon=True).start()
+        if not actions.speak(SEARCHING, interrupt):
             return  # întrerupt de o alertă ML 2
+        spoken = 0
+        while (sentence := ready.get()) is not None:
+            status(f"Virgil: {sentence}")
+            if not actions.speak(sentence, interrupt):
+                return  # întrerupt de o alertă ML 2
+            spoken += 1
+        if not spoken:
+            fallback = "Nu am putut afla informația acum, încercați puțin mai târziu."
+            status(f"Virgil: {fallback}")
+            if not actions.speak(fallback, interrupt):
+                return
         actions.play_alarm(1, interrupt)  # bip: poate urma o altă întrebare
         status(f"Mai aveți o întrebare? Vorbiți acum ({actions.LISTEN_SEC} s), sau tăceți ca să încheiați")
         result = actions.listen(interrupt)
         text = result[0]["text"] if result and result[0]["text"] else ""
         question = strip_wake(text) if actions.heard_wake_word(text) else text
-        if question and DONE.search(plain(question)):
+        if question and ends_conversation(question):
             question = ""
     status("Conversație încheiată.")
 

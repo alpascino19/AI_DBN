@@ -354,8 +354,18 @@ Contractele nu se schimbă fără acordul echipei (vezi `CLAUDE.md`).
 | `vigil/assistant` *(nou)* | dashboard → ML 2 | `{"request": "listen" \| "time" \| "weather" \| "traffic"}`: butoanele asistentului |
 | `vigil/assistant/reply` *(nou)* | ML 2 → dashboard | `{"request", "status": "listening" \| "working" \| "speaking" \| "done" \| "interrupted", "heard", "text", "source"}` |
 
-Topicurile asistentului sunt noi și nu ating contractele existente: ML 1 nu le folosește, iar o cerere
+| `vigil/ecu` | ML 1 → ML 2 | comanda fuzzy continuă (5 Hz): `mode`, `target_kmh`, `hazards`... |
+| `vigil/car/cmd` | ML 2 → ECU_Arduino | doar schimbările (`CarLink` în `executor.py`): `{"cmd":"emergency","decel_mps2":2.5,"id":"ml2-3"}`, `slow_down`, `hazard`, `cancel_emergency`, `reset` |
+| `vigil/car/state` / `vigil/car/event` | ECU_Arduino → ML 1, dashboard | viteza reală, frânare, avarii, oprit; evenimentele poartă `id`-ul comenzii ML 2 |
+| `vigil/video/face` / `vigil/video/body` | Vision (`--video`) → dashboard | JPEG binar, 480 px, 5 cadre/s, QoS 0, fără retain |
+
+Topicurile asistentului, ale mașinii și ale imaginii sunt noi și nu schimbă contractele existente. O cerere
 din dashboard nu publică niciodată pe `vigil/driver_response`.
+
+**Lanțul ECU** (combinat din ML1_Pasca / ML2_Pasca): ML 1 calculează comanda fuzzy (`vigil/ecu`) → ML 2 o
+traduce în comenzi discrete pentru placa ECU (`vigil/car/cmd`) → placa simulează mașina și raportează
+(`vigil/car/state`, `vigil/car/event`) → ML 1 pune starea reală în status și în raportul 112, iar dashboard-ul
+desenează graficul vitezei: ce cere ML 1 vs ce face ECU-ul. La pornire ML 2 trimite `reset` (croazieră, fără avarii).
 
 Uneltele acceptate și argumentele lor:
 

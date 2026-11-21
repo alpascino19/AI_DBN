@@ -67,6 +67,27 @@ describe('reduce', () => {
     expect(reduce(initialState, 'vigil/assistant/reply', '{"status":"done"}', T)).toBe(initialState)
   })
 
+  it('vigil/car/state + event + esp32/status: starea mașinii, evenimente, seria graficului', () => {
+    let s = reduce(initialState, 'vigil/esp32/status', 'online', T)
+    expect(s.ecuOnline).toBe(true)
+    s = reduce(s, 'vigil/car/state', '{"speed_kmh":100,"target_kmh":100,"braking":false,"hazard":false}', T)
+    s = reduce(s, 'vigil/car/event', '{"event":"emergency_braking_started","speed_kmh":98.5,"hazard":true,"braking":true,"emergency":true,"id":"ml2-3"}', T + 500)
+    expect(s.car).toMatchObject({ speed_kmh: 98.5, braking: true, hazard: true, emergency: true, target_kmh: 100 })
+    expect(s.carEvents[0]).toMatchObject({ event: 'emergency_braking_started', id: 'ml2-3' })
+    expect(s.series.car.map((p) => p.speed)).toEqual([100, 98.5])
+    expect(reduce(s, 'vigil/esp32/status', 'offline', T).ecuOnline).toBe(false)
+    expect(reduce(s, 'vigil/car/state', '{"braking":true}', T)).toBe(s)   // fără viteză: ignorat
+  })
+
+  it('seria graficului păstrează doar ultimele 2 minute', () => {
+    const ecu = JSON.stringify({ mode: 'NORMAL', speed_factor: 1, speed_ref_kmh: 100, target_kmh: 100,
+      lka_authority: 0, headway_s: 1.8, inputs: { a: 0.9 } })
+    let s = initialState
+    for (const t of [0, 60_000, 130_000]) s = reduce(s, 'vigil/ecu', ecu, t)
+    expect(s.series.ecu.map((p) => p.t)).toEqual([60_000, 130_000])
+    expect(s.series.ecu[1]).toMatchObject({ ref: 100, target: 100, a: 0.9, mode: 'NORMAL' })
+  })
+
   it('vigil/ecu valid; incomplet ignorat', () => {
     const ok = '{"mode":"MRM","speed_factor":0,"speed_ref_kmh":62.5,"lka_authority":1,"headway_s":3.5,"hazards":true}'
     expect(reduce(initialState, 'vigil/ecu', ok, T).ecu?.mode).toBe('MRM')

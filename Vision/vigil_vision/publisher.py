@@ -77,6 +77,14 @@ class Publisher:
         if self.echo or (not sent and self.print_fallback):
             self._print(data)
 
+    def publish_bytes(self, topic: str, data: bytes) -> bool:
+        """Date binare (cadrele JPEG pentru dashboard, video.py) pe alt topic; QoS 0, fără retain.
+        Fără broker nu se afișează nimic în consolă: imaginea nu are sens acolo."""
+        if self._client is None or not self.connected:
+            return False
+        self._client.publish(topic, data, qos=0)
+        return True
+
     def _print(self, data: dict) -> None:
         events = tuple((e["event"], round(e["duration_sec"])) for e in data.get("events", []))
         names = tuple(e[0] for e in events)

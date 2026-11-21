@@ -291,20 +291,23 @@ function bodyRows(v: Vision | null, p: Obj | null): { rows: Row[]; chestOn: bool
   })
   if (p) rows.push({ label: 'Mărime mână', value: f(p.hand_scale), tone: chest?.reject === 'close' ? 'warn' : 'normal' })
 
-  const b = obj(p?.breathing) ?? obj(v?.breathing) ?? {}
-  const heavy = b.state === 'heavy'
-  const score = num(b.score)
-  rows.push({
-    label: 'Respirație',
-    value: heavy ? 'GREA' : (str(b.state) ?? '—'),
-    tone: heavy ? 'bad' : 'normal',
-    bar: { frac: score, tone: grade(score, 0.4, 0.55) },
-  })
-  const rate = num(b.rate_bpm)
-  rows.push({
-    label: 'Ritm respirație',
-    value: (rate === null ? '—' : `${Math.round(rate)} / min`) + (b.calibrated === false ? '  (calibrare)' : ''),
-  })
+  // respirația apare doar când e activată în Vision (config.yaml breathing.enabled), ca în fereastra CORP
+  const b = p ? obj(p.breathing) : obj(v?.breathing)
+  if (b) {
+    const heavy = b.state === 'heavy'
+    const score = num(b.score)
+    rows.push({
+      label: 'Respirație',
+      value: heavy ? 'GREA' : (str(b.state) ?? '—'),
+      tone: heavy ? 'bad' : 'normal',
+      bar: { frac: score, tone: grade(score, 0.4, 0.55) },
+    })
+    const rate = num(b.rate_bpm)
+    rows.push({
+      label: 'Ritm respirație',
+      value: (rate === null ? '—' : `${Math.round(rate)} / min`) + (b.calibrated === false ? '  (calibrare)' : ''),
+    })
+  }
 
   const ph = obj(p?.phone)
   const phone = num(ph?.score) ?? num(v?.phone) ?? 0
@@ -317,9 +320,28 @@ function bodyRows(v: Vision | null, p: Obj | null): { rows: Row[]; chestOn: bool
     bar: { frac: phone, tone: grade(phone, 0.25, 0.4) },
   })
 
+  // postura + valorile de reglaj (Vision body/slump.py; același dict vine și în `posture` din mesajul de bază)
   const sl = obj(p?.posture) ?? obj(v?.posture) ?? {}
   const st = str(sl.state)
-  const [label, tone] = st ? (POSTURE[st] ?? [st, 'normal' as Tone]) : ['—', 'normal' as Tone]
+  let [label, tone] = st ? (POSTURE[st] ?? [st, 'normal' as Tone]) : ['—', 'normal' as Tone]
+  if (sl.direction === 'side') label = 'CĂZUT LATERAL'
+  if (sl.out === 'lost') [label, tone] = ['nu se vede', 'warn']
+  if (sl.out === 'far') [label, tone] = ['prea departe', 'warn']
   rows.push({ label: 'Postură', value: label + (sl.calibrated === false ? ' (calib.)' : ''), tone })
+  const side = num(sl.side_deg)
+  const drop = num(sl.drop)
+  const lean = num(sl.lean)
+  const angle = num(sl.angle)
+  const slScore = num(sl.score)
+  rows.push(
+    { label: 'Înclinare laterală', value: side === null ? '—' : `${Math.round(side)} grade`,
+      bar: { frac: side === null ? null : side / 40, tone: grade(side, 15, 25) } },
+    { label: 'Cap coborât', value: f(drop), bar: { frac: drop, tone: grade(drop, 0.25, 0.6) } },
+    { label: 'Aplecare', value: f(lean), bar: { frac: lean, tone: grade(lean, 0.3, 0.6) } },
+    { label: 'Unghi cap (aplecat)', value: angle === null ? '—' : `${Math.round(angle)} grade`,
+      tone: angle !== null && angle >= 12 ? 'warn' : 'normal' },
+    { label: 'Prăbușire (scor)', value: f(slScore), bar: { frac: slScore, tone: grade(slScore, 0.38, 0.5) } },
+    { label: 'Nemișcat', value: `${(num(sl.still_sec) ?? 0).toFixed(1)}s` },
+  )
   return { rows, chestOn, posture: st }
 }

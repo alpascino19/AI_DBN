@@ -17,6 +17,10 @@ ML1/docs/latex/*.fdb_latexmk
 ML1/docs/latex/*.xdv
 ML1/docs/latex/*.pdf
 
+# Parole Wi-Fi ale plăcilor (ESP32 din ML2, ECU_Arduino) — NU se urcă, repo-ul e public
+**/wifi_secrets.h
+.pytest_cache/
+
 # ML2: date create la rulare (vezi ML2/README.md) — NU se urcă
 ML2/esp32/vigil_alert/wifi_secrets.h
 ML2/recordings/

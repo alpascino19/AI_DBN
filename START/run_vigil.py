@@ -319,6 +319,8 @@ def main() -> None:
     ap.add_argument("--fake", action="store_true", help="Vision trimite date false (fără cameră)")
     ap.add_argument("--scenario", default="demo", help="cu --fake: demo | normal | phone | drowsy | chest | unconscious")
     ap.add_argument("--show", action="store_true", help="fereastra de debug a camerei (Vision)")
+    ap.add_argument("--no-video", action="store_true",
+                    help="privacy mode: camerele trimit doar cifre, fără imagine în dashboard")
     ap.add_argument("--camera", type=int, help="indexul camerei (cu --cameras one)")
     ap.add_argument("--cameras", choices=["one", "two", "remote"], default="one",
                     help="one: o cameră (vigil_vision); two: față + corp pe acest PC; "
@@ -395,7 +397,8 @@ def main() -> None:
         if args.input == "mqtt" and args.cameras != "one":
             procs.append(Proc("MERGE", [py, "-m", "vigil_vision.merge", "--broker", args.broker], ROOT / "Vision", env))
             # --mute: alertele locale ale CV (beep) tac; vocea și alarma sunt treaba ML2
-            common = ["--publish", "--mqtt-host", args.broker, "--mute"] + (["--show"] if args.show else [])
+            common = (["--publish", "--mqtt-host", args.broker, "--mute"] + (["--show"] if args.show else [])
+                      + ([] if args.no_video else ["--video"]))   # imaginea camerei în dashboard
             for role, idx in local_cameras(args):
                 extra = ["--calib", "5"] if role == "face" else []
                 procs.append(Proc(role.upper(), [py, "-m", f"vigil_vision.run_{role}", "--index", str(idx),

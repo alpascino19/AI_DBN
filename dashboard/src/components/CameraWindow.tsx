@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Tone, WindowView } from '../panels'
 
 const W = 640
@@ -16,12 +16,18 @@ const TEXT: Record<Tone, string> = {
 }
 const BAR: Record<Tone, string> = { normal: 'bg-slate-500', ok: 'bg-green-600', warn: 'bg-orange-500', bad: 'bg-red-600' }
 
-/** O fereastră ca `vigil - FATA` / `vigil - CORP`: cameră (doar puncte), coloana cu detalii, banda de avertizări. */
-export function CameraWindow({ view, draw }: { view: WindowView; draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void }) {
+/** O fereastră ca `vigil - FATA` / `vigil - CORP`: camera (imaginea, dacă Vision rulează cu --video, plus punctele),
+ *  coloana cu detalii, banda de avertizări. `draw(ctx, w, h, withVideo)` desenează punctele peste. */
+export function CameraWindow({ view, draw, video }: {
+  view: WindowView
+  draw: (ctx: CanvasRenderingContext2D, w: number, h: number, withVideo: boolean) => void
+  video?: string
+}) {
   const canvas = useRef<HTMLCanvasElement>(null)
+  const [aspect, setAspect] = useState(W / H)   // al imaginii primite (camera poate fi 16:9); punctele urmează la fel
   useEffect(() => {
     const ctx = canvas.current?.getContext('2d')
-    if (ctx) draw(ctx, W, H)
+    if (ctx) draw(ctx, W, H, !!video)
   })
   const level = Math.max(0, Math.min(3, view.level))
   const badgeCls = view.badge.tone === 'level' ? LEVEL_BG[level] : BADGE[view.badge.tone]
@@ -30,14 +36,29 @@ export function CameraWindow({ view, draw }: { view: WindowView; draw: (ctx: Can
     <section className="overflow-hidden rounded-lg border border-slate-300 bg-white text-slate-900 shadow-lg">
       <div className="grid md:grid-cols-[minmax(0,1fr)_17rem]">
         {/* zona camerei se întinde pe toată înălțimea panoului (ca fundalul din fereastra Vision) */}
-        <div
-          className="relative bg-slate-900"
-          style={{ boxShadow: `inset 0 0 0 4px ${view.badge.tone === 'off' ? '#94a3b8' : LEVEL_BORDER[level]}` }}
-        >
-          <div className="relative aspect-[4/3]">
+        <div className="relative bg-slate-900">
+          <div className="relative" style={{ aspectRatio: video ? aspect : W / H }}>
+            {video && (
+              <img
+                src={video}
+                alt={`camera ${view.title}`}
+                className="absolute inset-0 h-full w-full"
+                onLoad={(e) => {
+                  const { naturalWidth: nw, naturalHeight: nh } = e.currentTarget
+                  if (nw && nh && Math.abs(nw / nh - aspect) > 0.01) setAspect(nw / nh)
+                }}
+              />
+            )}
             <canvas ref={canvas} width={W} height={H} className="absolute inset-0 h-full w-full" />
           </div>
-          <span className="absolute bottom-2 left-3 text-[11px] text-slate-500">privacy: doar punctele, fără imagine</span>
+          <span className={`absolute bottom-2 left-3 text-[11px] ${video ? 'rounded bg-red-600 px-1.5 font-semibold text-white' : 'text-slate-500'}`}>
+            {video ? 'LIVE' : 'privacy: doar punctele, fără imagine'}
+          </span>
+          {/* rama pe nivel, deasupra imaginii */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ boxShadow: `inset 0 0 0 4px ${view.badge.tone === 'off' ? '#94a3b8' : LEVEL_BORDER[level]}` }}
+          />
         </div>
 
         <div className="border-t border-slate-200 bg-slate-100 px-4 pb-4 pt-3 md:border-l md:border-t-0">

@@ -10,6 +10,9 @@ Topicuri (contractele din TASKS.md):
     vigil/decision         ML1 -> ML2, dashboard   deciziile (severitate + acțiuni)
     vigil/ml1/status       ML1 -> dashboard        scor a, încredere, calibrare (1 Hz)
     vigil/ecu              ML1 -> ECU, dashboard   comanda fuzzy: viteză, asistență de bandă, distanță, MRM (5 Hz)
+                           (ML2 o traduce în comenzi discrete pe vigil/car/cmd, pentru ECU_Arduino)
+    vigil/car/state        ECU -> ML1   starea reală a mașinii: viteză, frânare, avarii, oprit (la 0.5-5 s)
+    vigil/car/event        ECU -> ML1   evenimente: emergency_braking_started, stopped, ... (cu id-ul comenzii ML2)
 
 `Bridge` conține toată logica și nu depinde de paho (testabilă fără broker);
 `run_mqtt` doar leagă `Bridge` de un client paho.
@@ -32,6 +35,8 @@ TOPIC_RESPONSE = "vigil/driver_response"
 TOPIC_DECISION = "vigil/decision"
 TOPIC_STATUS = "vigil/ml1/status"
 TOPIC_ECU = "vigil/ecu"
+TOPIC_CAR_STATE = "vigil/car/state"
+TOPIC_CAR_EVENT = "vigil/car/event"
 
 
 def _decision_payload(d: dict) -> dict:
@@ -50,7 +55,7 @@ class Bridge:
         self.ecu_period = 1.0 / ecu_hz if ecu_hz > 0 else float("inf")
         self._last_status = -float("inf")
         self._last_ecu = -float("inf")
-        self.received = {"vision": 0, "response": 0, "invalid": 0}
+        self.received = {"vision": 0, "response": 0, "car": 0, "invalid": 0}
         self.svc.add_listener(lambda d: self.send(TOPIC_DECISION, _decision_payload(d)))
 
     def on_message(self, topic: str, payload: bytes | str) -> None:
@@ -72,6 +77,9 @@ class Bridge:
         elif topic == TOPIC_RESPONSE:
             self.received["response"] += 1
             self.svc.ingest_response(msg)
+        elif topic in (TOPIC_CAR_STATE, TOPIC_CAR_EVENT):
+            self.received["car"] += 1
+            self.engine.on_car(msg)
 
     @property
     def engine(self) -> DecisionEngine:
@@ -95,7 +103,7 @@ class Bridge:
         self.send(TOPIC_STATUS, {
             "ts": ts, "a": round(r.a, 3), "confidence": round(r.confidence, 3), "critical": r.critical,
             "camera_on": r.camera_on, "capped_by": r.capped_by, "calibration": self.engine.baseline.to_dict(),
-            "state": self.engine.state.to_dict(),
+            "state": self.engine.state.to_dict(), "car": self.engine.car,
             "stats": dict(self.engine.stats), "received": dict(self.received), "counters": dict(self.svc.counters),
         })
 
@@ -128,7 +136,7 @@ def run_mqtt(host: str, port: int, use_llm: bool) -> None:
 
     def on_connect(c, userdata, flags, rc, *args):
         log.info("conectat la %s:%d", host, port)
-        c.subscribe([(TOPIC_VISION, 0), (TOPIC_RESPONSE, 1)])
+        c.subscribe([(TOPIC_VISION, 0), (TOPIC_RESPONSE, 1), (TOPIC_CAR_STATE, 0), (TOPIC_CAR_EVENT, 1)])
 
     client.on_connect = on_connect
     client.on_message = lambda c, u, m: bridge.on_message(m.topic, m.payload)

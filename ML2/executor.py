@@ -1,4 +1,6 @@
-"""ML 2 — executorul: vigil/decision -> validare -> coadă pe severitate -> un singur worker."""
+"""ML 2 — executorul: vigil/decision -> validare -> coadă pe severitate -> un singur worker.
+Plus legătura cu mașina: comanda fuzzy a ML1 (vigil/ecu) -> comenzi ECU (vigil/car/cmd, ECU_Arduino),
+și butoanele asistentului din dashboard (vigil/assistant)."""
 import heapq
 import itertools
 import json
@@ -152,6 +154,68 @@ class Executor:
             log.info("%s întrerupt de urgență", tool)
 
 
+MRM_DECEL = 2.5       # m/s², ca ML1 (ecu_fuzzy.DECEL_MRM): oprire controlată pe banda de urgență
+URGENT_DECEL = 2.0    # m/s², ca ML1 (DECEL_URGENT) la severitate 3 (atunci ML1 cere și avariile)
+NORMAL_DECEL = 0.5    # m/s², ca ML1 (DECEL_NORMAL): încetinire blândă
+MIN_SLOWDOWN_KMH = 5  # ținta fuzzy se mișcă la fiecare cadru; ECU primește doar scăderi reale
+ECU_CRUISE_KMH = 100.0  # ECU_Arduino CRUISE_KMH: viteza mașinii simulate la pornire și după reset
+
+
+class CarLink:
+    """ML1 trimite pe vigil/ecu o comandă continuă (5 Hz); ECU-ul (ECU_Arduino) înțelege comenzi discrete pe
+    vigil/car/cmd. Traducem doar schimbările: MRM -> emergency, ieșire din MRM -> cancel_emergency,
+    țintă mai mică -> slow_down, avariile -> hazard, revenire la NORMAL -> reset."""
+
+    def __init__(self):
+        self.mrm = False
+        self.hazard = False
+        self.target = None    # ultima țintă trimisă (km/h); None = croazieră
+        self.slowed = False   # ECU a încetinit și trebuie readus la croazieră
+        self.ids = itertools.count(1)
+
+    def _cmd(self, **fields):
+        return {**fields, "id": f"ml2-{next(self.ids)}"}  # ECU îl întoarce în vigil/car/event
+
+    def update(self, payload):
+        """Un mesaj vigil/ecu -> lista de comenzi pentru vigil/car/cmd (de obicei goală)."""
+        try:
+            msg = json.loads(payload)
+        except (ValueError, TypeError):
+            return []
+        if not isinstance(msg, dict):
+            return []
+        mode, target = msg.get("mode"), msg.get("target_kmh")
+        if not isinstance(mode, str) or type(target) not in (int, float):
+            log.warning("vigil/ecu respins: %r", msg)
+            return []
+        out = []
+        if mode == "MRM":
+            if not self.mrm:
+                self.mrm, self.hazard, self.slowed, self.target = True, True, True, 0.0
+                out.append(self._cmd(cmd="emergency", decel_mps2=MRM_DECEL))
+            return out
+        if self.mrm:  # ML1 iese din MRM doar la severitate 0
+            self.mrm = False
+            out.append(self._cmd(cmd="cancel_emergency"))
+        hazards = msg.get("hazards") is True
+        if hazards != self.hazard:
+            self.hazard = hazards
+            out.append(self._cmd(cmd="hazard", on=hazards))
+        if mode == "NORMAL" and not hazards:
+            if self.slowed:
+                # shortcut: ECU nu are „accelerează” (resume păstrează viteza), iar reset sare direct la croazieră;
+                # de cerut colegului o comandă set_speed dacă revenirea trebuie să fie treptată
+                self.slowed, self.target = False, None
+                out.append(self._cmd(cmd="reset"))
+        # fără țintă trimisă, ECU merge cu viteza de croazieră (nu referința ML1, care după un MRM urcă de la 0)
+        elif target <= (self.target if self.target is not None else ECU_CRUISE_KMH) - MIN_SLOWDOWN_KMH:
+            # nu folosim decel_mps2 din vigil/ecu: e pasul referinței ML1 (0 cât timp ea urcă), nu frânarea dorită
+            self.target, self.slowed = float(target), True
+            out.append(self._cmd(cmd="slow_down", target_kmh=round(target, 1),
+                                 decel_mps2=URGENT_DECEL if hazards else NORMAL_DECEL))
+        return out
+
+
 def main():
     import paho.mqtt.client as mqtt
 
@@ -169,14 +233,22 @@ def main():
         log.info("ESP32 <- %d", level)
 
     ex = Executor(lambda tool, args, interrupt: actions.run(tool, args, interrupt, publish), publish_alert)
+    car = CarLink()
+
+    def to_car(payload):
+        for cmd in car.update(payload):
+            client.publish("vigil/car/cmd", json.dumps(cmd), qos=1)  # fără retain: o comandă nu se reia
+            log.info("ECU <- %s", cmd)
 
     def on_connect(client, userdata, flags, reason_code, properties):
         log.info("conectat la %s (%s)", BROKER, reason_code)
-        client.subscribe([("vigil/decision", 1), ("vigil/assistant", 1)])
+        client.subscribe([("vigil/decision", 1), ("vigil/assistant", 1), ("vigil/ecu", 0)])
 
     def on_message(c, u, msg):
         if msg.topic == "vigil/assistant":
             ex.handle_assistant(msg.payload)
+        elif msg.topic == "vigil/ecu":
+            to_car(msg.payload)
         else:
             ex.handle(msg.payload)
 
@@ -185,6 +257,8 @@ def main():
     client.connect(BROKER, 1883)
     client.loop_start()  # reconectarea o face paho singur
     publish_alert(0)  # o singură dată, la pornire: altfel ESP32 rămâne pe ultima stare reținută (ex. buzzer)
+    # la pornire mașina simulată pleacă de la croazieră, fără avarii (ca alerta 0 de mai sus)
+    client.publish("vigil/car/cmd", json.dumps({"cmd": "reset", "id": "ml2-start"}), qos=1)
     threading.Thread(target=actions.warmup, daemon=True).start()
     try:
         while True:

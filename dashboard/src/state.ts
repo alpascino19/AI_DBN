@@ -43,10 +43,31 @@ export type Assistant = {
   source?: string
   receivedAt: number
 }
+/** Mașina simulată pe ESP32 (ECU_Arduino): vigil/car/state, la 0.5 s cât frânează și la 5 s altfel. */
+export type Car = {
+  speed_kmh: number
+  target_kmh?: number
+  braking?: boolean
+  hazard?: boolean
+  stopped?: boolean
+  emergency?: boolean
+  alert?: number
+  receivedAt: number
+}
+/** vigil/car/event: emergency_braking_started, stopped, target_reached, hazard_on, reset, error... */
+export type CarEvent = { event: string; speed_kmh?: number; id?: string; detail?: string; at: number }
+/** Un punct din graficul vitezei; ref/target vin de la ML1 (vigil/ecu), speed de la ECU (vigil/car/state). */
+export type EcuSample = { t: number; ref: number; target: number | null; mode: string; hazards: boolean; a: number | null }
+export type CarSample = { t: number; speed: number; braking: boolean }
 export type State = {
   vision: Vision | null
   status: Status | null
   ecu: Ecu | null
+  car: Car | null
+  carEvents: CarEvent[]
+  /** placa ECU: "online" / "offline" (vigil/esp32/status, reținut + last will); null = nu știm încă */
+  ecuOnline: boolean | null
+  series: { ecu: EcuSample[]; car: CarSample[] }
   assistant: Assistant | null
   decision: Decision | null
   decisions: Decision[]
@@ -57,11 +78,16 @@ export type State = {
 }
 
 export const HISTORY = 50
+export const SERIES_MS = 120_000 // graficul arată ultimele 2 minute
 
 export const initialState: State = {
   vision: null,
   status: null,
   ecu: null,
+  car: null,
+  carEvents: [],
+  ecuOnline: null,
+  series: { ecu: [], car: [] },
   assistant: null,
   decision: null,
   decisions: [],
@@ -69,6 +95,14 @@ export const initialState: State = {
   alertLevel: null,
   emergency: null,
   lastMessageAt: null,
+}
+
+/** Adaugă un punct și taie tot ce e mai vechi de SERIES_MS. */
+function push<T extends { t: number }>(list: T[], item: T): T[] {
+  const from = item.t - SERIES_MS
+  let i = 0
+  while (i < list.length && list[i].t < from) i++
+  return [...list.slice(i), item]
 }
 
 function parseObject(payload: string): Record<string, unknown> | null {
@@ -87,6 +121,10 @@ export function reduce(state: State, topic: string, payload: string, now: number
     // exact o cifră 0-3: un mesaj gol (ștergerea stării reținute) nu înseamnă nivelul 0
     const text = payload.trim()
     return /^[0-3]$/.test(text) ? { ...state, alertLevel: Number(text), lastMessageAt: now } : state
+  }
+  if (topic === 'vigil/esp32/status') {
+    const text = payload.trim()
+    return text === 'online' || text === 'offline' ? { ...state, ecuOnline: text === 'online' } : state
   }
   const msg = parseObject(payload)
   if (!msg) return state
@@ -114,11 +152,41 @@ export function reduce(state: State, topic: string, payload: string, now: number
         },
       }
     }
-    case 'vigil/ecu':
-      return typeof msg.mode === 'string' && isNum(msg.speed_factor) && isNum(msg.speed_ref_kmh) &&
-        isNum(msg.lka_authority) && isNum(msg.headway_s)
-        ? { ...seen, ecu: msg as Ecu }
-        : state
+    case 'vigil/ecu': {
+      if (!(typeof msg.mode === 'string' && isNum(msg.speed_factor) && isNum(msg.speed_ref_kmh) &&
+        isNum(msg.lka_authority) && isNum(msg.headway_s))) return state
+      const ecu = msg as Ecu
+      const a = ecu.inputs?.a
+      const sample: EcuSample = {
+        t: now, ref: ecu.speed_ref_kmh, target: isNum(ecu.target_kmh) ? ecu.target_kmh : null,
+        mode: ecu.mode, hazards: ecu.hazards === true, a: isNum(a) ? a : null,
+      }
+      return { ...seen, ecu, series: { ...state.series, ecu: push(state.series.ecu, sample) } }
+    }
+    case 'vigil/car/state':
+    case 'vigil/car/event': {
+      // evenimentele au și ele viteza curentă: intră în grafic la fel ca starea periodică
+      if (!isNum(msg.speed_kmh)) return state
+      const b = (k: string) => (typeof msg[k] === 'boolean' ? (msg[k] as boolean) : undefined)
+      const car: Car = {
+        ...(state.car ?? {}),
+        speed_kmh: msg.speed_kmh,
+        ...(isNum(msg.target_kmh) ? { target_kmh: msg.target_kmh } : {}),
+        ...Object.fromEntries(['braking', 'hazard', 'stopped', 'emergency']
+          .filter((k) => b(k) !== undefined).map((k) => [k, b(k)])),
+        ...(isNum(msg.alert) ? { alert: msg.alert } : {}),
+        receivedAt: now,
+      }
+      const carEvents = topic === 'vigil/car/event' && typeof msg.event === 'string'
+        ? [{ event: msg.event, speed_kmh: msg.speed_kmh, at: now,
+          ...(typeof msg.id === 'string' ? { id: msg.id } : {}),
+          ...(typeof msg.detail === 'string' ? { detail: msg.detail } : {}) }, ...state.carEvents].slice(0, 8)
+        : state.carEvents
+      return {
+        ...seen, car, carEvents, ecuOnline: true,
+        series: { ...state.series, car: push(state.series.car, { t: now, speed: msg.speed_kmh, braking: car.braking === true }) },
+      }
+    }
     case 'vigil/driver_response':
       if (typeof msg.answered !== 'boolean') return state
       return {

@@ -87,76 +87,135 @@ def test_gather_survives_failed_source():
     assert ia.gather("Ce vreme e?") == ""
 
 
+def sse(*chunks, model="m"):
+    """răspuns în flux, ca de la OmniRoute: câte o linie „data:” pe bucată de text"""
+    import json
+    lines = [f"data: {json.dumps({'model': model, 'choices': [{'delta': {'content': c}}]})}" for c in chunks]
+    return lines + ["data: [DONE]"]
+
+
+def with_stream(fn, gather="date"):
+    real = ia.chat_lines, ia.gather
+    ia.gather = lambda q: gather
+    try:
+        return fn()
+    finally:
+        ia.chat_lines, ia.gather = real
+
+
 def test_answer_when_model_down():
-    def down(*a, **k):
+    def down(body):
         raise OSError("OmniRoute oprit")
-    ia.http_json = down
-    ia.gather = lambda q: ""
-    assert ia.answer("Ce vreme e?") is None
+        yield  # generator, ca cel real
+
+    def run():
+        ia.chat_lines = down
+        assert ia.answer("Ce vreme e?") is None
+    with_stream(run)
 
 
 def test_answer_empty_content_is_no_answer():
-    # modelele care „gândesc” pot întoarce content null (finish_reason: length)
-    ia.http_json = lambda *a, **k: {"model": "x", "choices": [{"message": {"content": None}}]}
-    ia.gather = lambda q: ""
-    assert ia.answer("Care sunt știrile?") is None
+    # modelele care „gândesc” pot trimite doar raționament, fără text de răspuns
+    def run():
+        ia.chat_lines = lambda body: sse(None, None)
+        assert ia.answer("Care sunt știrile?") is None
+    with_stream(run)
 
 
 def test_general_question_answered_from_tavily_context():
-    real = ia.gather, ia.http_json
     prompts = []
-    try:
-        ia.gather = lambda q: "Căutare web (Tavily): România – Polonia 2-1"
-        ia.http_json = lambda url, body=None, *a, **k: prompts.append(body["messages"][1]["content"]) or {
-            "choices": [{"message": {"content": "**2-1** pentru România [1]."}}]}
+
+    def run():
+        ia.chat_lines = lambda body: prompts.append(body["messages"][1]["content"]) or sse("**2-1** pentru ", "România [1].")
         assert ia.answer("Cât s-a terminat România-Polonia?") == "2-1 pentru România."  # fără markdown și trimiteri
         assert "România – Polonia 2-1" in prompts[0]  # modelul primește rezultatele căutării
-    finally:
-        ia.gather, ia.http_json = real
+    with_stream(run, gather="Căutare web (Tavily): România – Polonia 2-1")
 
 
 def test_answer_falls_back_to_next_model_on_rate_limit():
     import urllib.error
-    real = ia.http_json, ia.gather
     tried = []
 
-    def fake(url, body=None, headers=None, timeout=10):
+    def fake(body):
         tried.append(body["model"])
         if body["model"] == ia.MODELS[0]:  # prima: limita gratuită depășită
-            raise urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)
-        return {"model": body["model"], "choices": [{"message": {"content": "Plouă ușor."}}]}
+            raise urllib.error.HTTPError("url", 429, "Too Many Requests", {}, None)
+        yield from sse("Plouă ușor.")
 
-    try:
-        ia.http_json, ia.gather = fake, lambda q: "Vremea: ploaie"
+    def run():
+        ia.chat_lines = fake
         assert ia.answer("Ce vreme e afară?") == "Plouă ușor."
         assert tried == ia.MODELS[:2]
-    finally:
-        ia.http_json, ia.gather = real
+    with_stream(run)
+
+
+def test_first_sentence_comes_before_the_model_finishes():
+    progress = []
+
+    def slow(body):
+        for line in sse("Azi plouă. ", "Mâine e soare. ", "Poimâine ", "ninge."):
+            progress.append(line)
+            yield line
+
+    def run():
+        ia.chat_lines = slow
+        sentences = ia.stream_reply("Ce vreme e?")
+        assert next(sentences) == "Azi plouă."
+        assert len(progress) < 4  # prima propoziție a plecat înainte ca modelul să termine
+        assert list(sentences) == ["Mâine e soare.", "Poimâine ninge."]
+    with_stream(run)
 
 
 def test_conversation_keeps_listening_until_silence_or_thanks():
     import threading
-    real = ia.answer, ia.actions.speak, ia.actions.listen, ia.actions.play_alarm
+    real = ia.stream_reply, ia.actions.speak, ia.actions.listen, ia.actions.play_alarm
     heard = lambda text: ({"answered": bool(text), "latency_sec": None, "text": text}, None, {})
     try:
-        ia.answer = lambda q: f"răspuns la {q}"
+        ia.stream_reply = lambda q: iter([f"răspuns la {q}"])
         said = []
         ia.actions.speak = lambda text, interrupt: said.append(text) or True
         ia.actions.play_alarm = lambda level, interrupt: None
 
-        # a doua întrebare vine fără „Hei Virgil”; tăcerea încheie
+        # a doua întrebare vine fără „Hei Virgil”; tăcerea încheie; „Caut imediat.” cât timp caută
         follow = [heard("Și mâine cum va fi vremea?"), heard(None)]
         ia.actions.listen = lambda interrupt: follow.pop(0)
         ia.conversation("Ce vreme e azi?", threading.Event())
-        assert said == ["răspuns la Ce vreme e azi?", "răspuns la Și mâine cum va fi vremea?"]
+        assert said == [ia.SEARCHING, "răspuns la Ce vreme e azi?",
+                        ia.SEARCHING, "răspuns la Și mâine cum va fi vremea?"]
 
-        # „mulțumesc” încheie, fără să mai caute
+        # „e suficient” încheie, fără să mai caute
         said.clear()
-        follow = [heard("Mulțumesc, atât.")]
+        follow = [heard("E suficient, mersi.")]
         ia.conversation("Ce meciuri sunt azi?", threading.Event())
-        assert said == ["răspuns la Ce meciuri sunt azi?"]
+        assert said == [ia.SEARCHING, "răspuns la Ce meciuri sunt azi?"]
     finally:
-        ia.answer, ia.actions.speak, ia.actions.listen, ia.actions.play_alarm = real
+        ia.stream_reply, ia.actions.speak, ia.actions.listen, ia.actions.play_alarm = real
+
+
+def test_ends_conversation():
+    for text in ["Mersi", "Mulțumesc, atât.", "E suficient.", "Bine, mersi!", "Gata", "Ajunge", "E destul",
+                 "Nu", "Nu mai", "Pa", "La revedere"]:
+        assert ia.ends_conversation(text), text
+    for text in ["Mersi, și mâine cum e vremea?", "Cum e traficul?", "Nu știu ce meciuri sunt azi, îmi spui?"]:
+        assert not ia.ends_conversation(text), text
+
+
+def test_stream_keeps_times_whole_and_stops_at_three_sentences():
+    def run():
+        ia.chat_lines = lambda body: sse("Azi sunt trei meciuri. Csikszereda joacă la ora 15", ".00 cu Corvinul. ",
+                                         "CFR Cluj joacă la 17.30. Dinamo joacă diseară. Mai sunt și în Liga 2!")
+        assert list(ia.stream_reply("Ce meciuri sunt azi?")) == [
+            "Azi sunt trei meciuri.", "Csikszereda joacă la ora 15.00 cu Corvinul.", "CFR Cluj joacă la 17.30."]
+        ia.chat_lines = lambda body: sse("O singură propoziție")
+        assert list(ia.stream_reply("?")) == ["O singură propoziție"]  # fără punct la final: tot e citită
+    with_stream(run)
+
+
+def test_answer_is_shortened():
+    def run():
+        ia.chat_lines = lambda body: sse("Unu. Doi. ", "Trei. Patru. Cinci.")
+        assert ia.answer("Ce mai e nou?") == "Unu. Doi. Trei."
+    with_stream(run)
 
 
 def test_safety_silences_on_alert_only():

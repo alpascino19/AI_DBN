@@ -108,9 +108,17 @@ def build_112_report(ctx: dict, location: dict | None = None, now: float | None 
         *(lines or ["- șoferul nu reacționează"]),
         f"Răspuns la „Sunteți bine?”: {_answer(ctx)}",
         f"Scor atenție: {a:.2f} / 1",
-        "Vehicul: avarii pornite, manevră de oprire în siguranță.",
+        _vehicle(ctx.get("car")),
     ])
     return text[:MAX_112_LEN]
+
+
+def _vehicle(car: dict | None) -> str:
+    """Starea reală raportată de ECU (vigil/car/state); fără ECU, textul de dinainte."""
+    if not car or not isinstance(car.get("speed_kmh"), (int, float)):
+        return "Vehicul: avarii pornite, manevră de oprire în siguranță."
+    motion = "oprit" if car.get("stopped") else "frânează până la oprire" if car.get("braking") else "în mers"
+    return f"Vehicul (ECU): {car['speed_kmh']:.0f} km/h, {motion}, avarii {'pornite' if car.get('hazard') else 'oprite'}."
 
 
 # ------------------------------------------------------------- post-cursă ----

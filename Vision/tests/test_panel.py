@@ -61,6 +61,32 @@ class TestBodyPanel(unittest.TestCase):
         self.assertEqual(p["fps"], 11)
 
 
+class TestPostureAndVideo(unittest.TestCase):
+    def test_posture_tuning_values_and_optional_breathing(self):
+        ctx = NS(pose=None, detections={}, geom=None,
+                 signals={"slump": {"state": "upright", "out": "lost", "side_deg": np.float32(12.4), "drop": 0.31,
+                                    "lean": None, "angle": 13.6, "score": 0.42, "still_sec": 2.04}})
+        p = body_panel(ctx, NS(level=1, active=[]))
+        json.dumps(p)
+        self.assertIsNone(p["breathing"])                 # breathing.enabled: false -> fără rândurile respirației
+        self.assertEqual(p["posture"]["out"], "lost")
+        self.assertEqual((p["posture"]["side_deg"], p["posture"]["angle"], p["posture"]["still_sec"]), (12, 14, 2.0))
+        self.assertIsNone(p["posture"]["lean"])
+
+    def test_video_sender_rate_limit_and_jpeg(self):
+        from vigil_vision.video import VideoSender, encode_jpeg
+        img = np.zeros((720, 1280, 3), np.uint8)
+        jpg = encode_jpeg(img)
+        self.assertTrue(jpg.startswith(b"\xff\xd8"))          # JPEG
+        sent = []
+        pub = NS(publish_bytes=lambda topic, data: sent.append((topic, len(data))) or True)
+        v = VideoSender(pub, "vigil/video/face", fps=5)
+        for i in range(30):                                   # 30 cadre în 1 s -> 5 trimise
+            v.maybe_send(img, i / 30)
+        self.assertEqual(len(sent), 5)
+        self.assertEqual(sent[0][0], "vigil/video/face")
+
+
 class TestMergeKeepsPanels(unittest.TestCase):
     def test_each_panel_comes_from_its_camera(self):
         face = {"ear": 0.27, "face_detected": True, "face_panel": {"level": 0}, "body_panel": {"x": "greșit"}}

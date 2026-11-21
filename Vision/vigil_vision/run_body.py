@@ -56,10 +56,13 @@ def main() -> None:
     from .pipeline import Pipeline
     am = AlertManager(body_rules())
     no_face_eyes, no_face_head = EyeState(), HeadState()   # regulile de corp nu folosesc fața
-    pub = _NoPublish()
+    pub, video = _NoPublish(), None
     if args.publish:
         from .publisher import Publisher
         pub = Publisher(cfg, topic=BODY_TOPIC, host=args.mqtt_host)
+        if args.video:
+            from .video import VideoSender
+            video = VideoSender(pub, "vigil/video/body")
     pipeline = Pipeline(cfg, publisher=pub, camera=cam)
     pipeline.face = None                          # fără față în această aplicație
     period, next_pub = 1.0 / max(1, cfg.get("publish_hz", 10)), 0.0
@@ -74,6 +77,8 @@ def main() -> None:
                 pub.publish({**pipeline.build_message(ctx, reader.fps).to_dict(),
                              "body_panel": body_panel(ctx, am, reader.fps)})     # panoul, pentru dashboard
                 next_pub = t + period
+            if video is not None:
+                video.maybe_send(frame.image, t)
             for a in new_alerts:
                 print(f"{time.strftime('%H:%M:%S')} [CORP nivel {a.level}] {a.message}")
                 if not args.mute and a.level >= args.min_sound:

@@ -64,7 +64,7 @@ def body_panel(ctx, am, fps: float = 0.0) -> Optional[dict]:
         return d if d is not None and d.active else None
 
     s = ctx.signals
-    b = s.get("breathing") or {}
+    b = s.get("breathing")                     # None când breathing.enabled e false (config.yaml)
     sl = s.get("slump") or {}
     pd = ctx.detections.get("phone_use")
     zone = s.get("chest_zone")
@@ -75,11 +75,16 @@ def body_panel(ctx, am, fps: float = 0.0) -> Optional[dict]:
         "visible": ctx.pose is not None,
         "chest": {"on": det("hand_on_chest") is not None, "src": s.get("chest_src"), "reject": s.get("chest_reject")},
         "hand_scale": _n(s.get("chest_hand_scale")),
-        "breathing": {"state": b.get("state"), "score": _n(b.get("score")), "rate_bpm": _n(b.get("rate_bpm"), 0),
-                      "calibrated": bool(b.get("calibrated", True))},
+        "breathing": None if not b else {"state": b.get("state"), "score": _n(b.get("score")),
+                                         "rate_bpm": _n(b.get("rate_bpm"), 0), "calibrated": bool(b.get("calibrated", True))},
         "phone": {"score": _n(s.get("phone", 0.0)), "active": bool(pd and pd.active),
                   "usage": (pd.attrs or {}).get("usage") if pd else None},
-        "posture": {"state": sl.get("state"), "calibrated": bool(sl.get("calibrated", True))},
+        # postura și valorile ei de reglaj, ca rândurile din fereastra CORP (body/slump.py)
+        "posture": {"state": sl.get("state"), "calibrated": bool(sl.get("calibrated", True)),
+                    "direction": sl.get("direction"), "out": sl.get("out"),
+                    "side_deg": _n(sl.get("side_deg"), 0), "drop": _n(sl.get("drop")), "lean": _n(sl.get("lean")),
+                    "angle": _n(sl.get("angle"), 0), "score": _n(sl.get("score")),
+                    "still_sec": _n(sl.get("still_sec"), 1) or 0.0},
         # pentru desen: zona pieptului și baza gâtului (linia posturii din fereastra CORP)
         "chest_zone": [_n(v, 3) for v in zone] if zone else None,
         "neck": [_n(geom.sx, 3), _n(geom.sy, 3)] if geom is not None else None,
