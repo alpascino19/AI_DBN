@@ -130,6 +130,9 @@ class Panel:
 
 
 POSTURE = {"upright": ("drept", None), "leaning": ("aplecat", ORANGE), "slumped": ("PRABUSIT", RED)}
+# conexiunile MediaPipe Hands (încheietura 0 -> fiecare deget)
+HAND_BONES = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 5), (5, 6), (6, 7), (7, 8), (5, 9), (9, 10), (10, 11),
+              (11, 12), (9, 13), (13, 14), (14, 15), (15, 16), (13, 17), (0, 17), (17, 18), (18, 19), (19, 20)]
 
 
 def _draw_camera(cam, snap, ctx, level) -> None:
@@ -141,8 +144,14 @@ def _draw_camera(cam, snap, ctx, level) -> None:
         if z:
             on = ctx.detections.get("hand_on_chest")
             cv2.rectangle(cam, px(z[0], z[1]), px(z[2], z[3]), (0, 0, 255) if on and on.active else (0, 200, 0), 2)
-        for hand in ctx.hands:
-            cv2.circle(cam, px(*hand.palm_center()), 6, (0, 165, 255), -1)
+        for hand in ctx.hands:                       # toată mâna: 21 de puncte + oasele degetelor
+            pts = [px(l.x, l.y) for l in hand.landmarks]
+            for a, b in HAND_BONES:
+                if a < len(pts) and b < len(pts):
+                    cv2.line(cam, pts[a], pts[b], (0, 200, 255), 1, cv2.LINE_AA)
+            for q in pts:
+                cv2.circle(cam, q, 2, (0, 200, 255), -1)
+            cv2.circle(cam, px(*hand.palm_center()), 6, (0, 140, 255), -1)
         for o in ctx.objects:
             cv2.rectangle(cam, px(o.x1, o.y1), px(o.x2, o.y2), (255, 0, 255), 2)
         g = ctx.geom
@@ -241,7 +250,15 @@ def _draw_panel(panel, snap, calib, ctx, level, t) -> int:
         d = ctx.detections.get(name)
         return bool(d and d.active)
 
-    p.row("Mana pe piept", "DA" if on("hand_on_chest") else "nu", RED if on("hand_on_chest") else TEXT)
+    why = {"face": "la fata", "partial": "partial", "fingers_up": "degete sus", "moving": "in miscare",
+           "depth": "in aer", "phone": "telefon", "close": "langa camera"}.get(ctx.signals.get("chest_reject"))
+    src = {"hands": "mana", "pose": "schelet"}.get(ctx.signals.get("chest_src"), "")
+    p.row("Mana pe piept", (f"DA ({src})" if src else "DA") if on("hand_on_chest")
+          else (f"nu ({why})" if why else "nu"),
+          RED if on("hand_on_chest") else TEXT)
+    scale = ctx.signals.get("chest_hand_scale")
+    p.row("Marime mana", "-" if scale is None else f"{scale:.2f}",
+          ORANGE if ctx.signals.get("chest_reject") == "close" else TEXT)
     b = ctx.signals.get("breathing") or {}
     heavy = b.get("state") == "heavy"
     rate = b.get("rate_bpm")
