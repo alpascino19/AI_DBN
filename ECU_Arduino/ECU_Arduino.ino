@@ -11,7 +11,8 @@
 //                            {"cmd":"resume"}   stop braking, keep current speed (refused in emergency)
 //                            {"cmd":"reset"}    demo reset: cruise speed, hazards off
 //                            any command may carry "id" - it is echoed back in the events
-//   IN   vigil/alert         "0".."3"  (alert level -> buzzer)
+//   IN   vigil/alert         "0".."3"  (alert level from ML2 -> LED when hazards are off: 1 on, 2 blink,
+//                                       3 fast blink; plus buzzer if one is wired)
 //   OUT  vigil/car/state     {"speed_kmh":72.4,"target_kmh":0,"braking":true,"hazard":true,
 //                             "stopped":false,"emergency":true,"alert":3}
 //   OUT  vigil/car/event     {"event":"emergency_braking_started","speed_kmh":100,"target_kmh":0,
@@ -230,9 +231,13 @@ void updateCar() {
 void updateOutputs() {
   unsigned long now = millis();
 
-  // Hazard lights blink
+  // Hazard lights blink. Otherwise the same LED shows the alert level sent by ML2 on vigil/alert
+  // (no buzzer is wired, so without this the alert levels would have no visible effect)
   if (car.hazard) {
     bool on = (now / HAZARD_BLINK_MS) % 2 == 0;
+    setOutput(HAZARD_PIN, on, HAZARD_ACTIVE_LOW);
+  } else {
+    bool on = alertLevel == 1 || (alertLevel == 2 && (now / 250) % 2 == 0) || (alertLevel == 3 && (now / 60) % 2 == 0);
     setOutput(HAZARD_PIN, on, HAZARD_ACTIVE_LOW);
   }
 
