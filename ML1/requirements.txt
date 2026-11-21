@@ -1,0 +1,5 @@
+# ML1 — motorul de decizie. Nucleul (fuziune, reguli, LLM prin Ollama, API HTTP) folosește doar biblioteca standard.
+numpy          # evaluarea (ml1/evaluate.py)
+matplotlib     # graficele evaluării (docs/figures)
+paho-mqtt      # puntea MQTT (ml1/mqtt_bridge.py) și --mqtt-out la API
+# Program extern: Ollama + `ollama pull qwen2.5:1.5b` (fără el, ML1 merge doar cu reguli)

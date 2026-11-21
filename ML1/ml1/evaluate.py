@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -730,6 +731,9 @@ def plot_all(test_sims, res_runs: dict, roc: dict, rel: dict, example_idx: int) 
 # ------------------------------------------------------------ main ----
 
 def main(argv=None) -> dict:
+    # consola Windows (cp1252) nu are ă/ș/ț: fără asta, rezumatul tipărit oprea evaluarea
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")
     p = argparse.ArgumentParser()
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--quick", action="store_true")

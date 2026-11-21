@@ -137,7 +137,7 @@ def normalize_vision(msg: Any) -> dict:
 
 # --------------------------------------------------------------- date CV ----
 
-VISION_DIR = Path(__file__).resolve().parent.parent / "Vision"
+VISION_DIR = Path(__file__).resolve().parents[2] / "Vision"   # CodeLap/ML1/ml1 -> CodeLap/Vision
 
 
 def _import_cv_fake():

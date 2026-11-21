@@ -420,7 +420,7 @@ newer fast-path decision.
 
 ## 7. Hands-on exercises
 
-Run from the repo root. Each exercise builds one intuition.
+Run from the `ML1/` folder (`cd ML1`). Each exercise builds one intuition.
 
 1. **Trace a frame yourself.** Replay CV's demo and print the fusion contributions at the chest phase:
    ```

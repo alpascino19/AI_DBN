@@ -7,15 +7,15 @@ venv/
 # Materiale de curs (drepturi de autor ale profesorului; repo-ul e public) — rămân local
 ML_C*.pdf
 
-# LaTeX: fișiere de build (PDF-ul final e în docs/TECHNICAL_DEEP_DIVE.pdf)
-docs/latex/*.aux
-docs/latex/*.log
-docs/latex/*.toc
-docs/latex/*.out
-docs/latex/*.fls
-docs/latex/*.fdb_latexmk
-docs/latex/*.xdv
-docs/latex/*.pdf
+# LaTeX: fișiere de build (PDF-ul final e în ML1/docs/TECHNICAL_DEEP_DIVE.pdf)
+ML1/docs/latex/*.aux
+ML1/docs/latex/*.log
+ML1/docs/latex/*.toc
+ML1/docs/latex/*.out
+ML1/docs/latex/*.fls
+ML1/docs/latex/*.fdb_latexmk
+ML1/docs/latex/*.xdv
+ML1/docs/latex/*.pdf
 
 # ML2: date create la rulare (vezi ML2/README.md) — NU se urcă
 ML2/esp32/vigil_alert/wifi_secrets.h
