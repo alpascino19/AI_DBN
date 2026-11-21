@@ -4,10 +4,14 @@
     .venv\\Scripts\\python START\\run_vigil.py                 # cameră reală + LLM + voce + dashboard
     .venv\\Scripts\\python START\\run_vigil.py --fake          # fără cameră: scenariul demo al echipei CV
     .venv\\Scripts\\python START\\run_vigil.py --fake --scenario chest --no-llm
+    .venv\\Scripts\\python START\\run_vigil.py --cameras two   # DOUĂ camere pe acest PC: față (index 0) + corp (index 1)
+    .venv\\Scripts\\python START\\run_vigil.py --cameras remote  # camerele sunt pe alte laptopuri; aici doar combinarea
     .venv\\Scripts\\python START\\run_vigil.py --input http    # ML1 primește cadre prin HTTP (serverul Spring Boot)
     .venv\\Scripts\\python START\\run_vigil.py --check         # doar verificările, nu pornește nimic
 
-Ordinea de pornire: ML2 (încarcă vocea, 10–50 s) -> ML1 (warmup LLM) -> Vision -> dashboard. Toate comunică
+Ordinea de pornire: ML2 (încarcă vocea, 10–50 s) -> ML1 (warmup LLM) -> Vision -> dashboard.
+Cu două camere, Vision = run_face (vigil/vision/face) + run_body (vigil/vision/body) + vigil_vision.merge, care le
+combină în vigil/vision, singurul topic pe care îl citesc ML1 și dashboard-ul (docs/vision-doua-camere.md). Toate comunică
 prin brokerul MQTT local (Mosquitto): modulele pe 1883, dashboard-ul din browser pe 9001 (WebSocket).
 
     Vision ──vigil/vision──► ML1 ──vigil/decision──► ML2 ──vigil/alert──► ESP32
@@ -37,7 +41,7 @@ LOGS = ROOT / "logs"
 DASHBOARD = ROOT / "dashboard"
 ML1_MODEL = os.environ.get("VIGIL_MODEL", "qwen2.5:1.5b")
 DASH_URL = "http://localhost:5173"
-COLORS = {"ML2": "\033[35m", "ML1": "\033[36m", "CV": "\033[33m", "WEB": "\033[34m", "VIGIL": "\033[32m"}
+COLORS = {"ML2": "\033[35m", "ML1": "\033[36m", "CV": "\033[33m", "FACE": "\033[93m", "BODY": "\033[95m", "MERGE": "\033[90m", "WEB": "\033[34m", "VIGIL": "\033[32m"}
 RESET = "\033[0m"
 
 
@@ -105,6 +109,56 @@ def start_ollama(wait: float = 20.0) -> bool:
     return False
 
 
+def local_cameras(args) -> list[tuple[str, int]]:
+    """Camerele care rulează pe ACEST PC în modurile cu două camere: [(rol, index), ...]."""
+    if args.no_cv or args.input != "mqtt":
+        return []
+    face = args.face_index if args.face_index is not None else 0
+    if args.cameras == "two":
+        return [("face", face), ("body", args.body_index if args.body_index is not None else 1)]
+    if args.cameras == "remote" and args.local_camera == "face":
+        return [("face", face)]
+    if args.cameras == "remote" and args.local_camera == "body":   # pe un laptop, camera lui e de obicei 0
+        return [("body", args.body_index if args.body_index is not None else 0)]
+    return []
+
+
+def dashboard_url(broker: str) -> str:
+    """Pagina caută implicit brokerul pe calculatorul care o servește; altfel i-l spunem explicit."""
+    if broker in ("localhost", "127.0.0.1", "::1"):
+        return DASH_URL
+    return f"{DASH_URL}/?broker=ws://{broker}:9001"
+
+
+def probe_cameras(cams: list[tuple[str, int]]) -> bool:
+    """Deschide fiecare cameră o clipă: mai bine aflăm acum decât după ce pornește tot."""
+    indexes = [i for _, i in cams]
+    if len(set(indexes)) < len(indexes):
+        say("VIGIL", f"EROARE: fața și corpul au același index de cameră ({indexes[0]}): --face-index / --body-index")
+        return False
+    code = ("import sys, cv2\n"
+            "for i in map(int, sys.argv[1:]):\n"
+            "    c = cv2.VideoCapture(i, cv2.CAP_DSHOW if sys.platform == 'win32' else cv2.CAP_ANY)\n"
+            "    ok = c.isOpened() and c.read()[0]\n"
+            "    c.release()\n"
+            "    print(i, 'ok' if ok else 'fail')\n")
+    try:
+        r = subprocess.run([sys.executable, "-c", code, *map(str, indexes)], capture_output=True, text=True, timeout=45)
+    except subprocess.TimeoutExpired:
+        say("VIGIL", "EROARE: deschiderea camerelor a durat prea mult (le folosește alt program?)")
+        return False
+    status = dict(line.split() for line in r.stdout.splitlines() if len(line.split()) == 2)
+    good = True
+    for role, idx in ((("față" if r == "face" else "corp"), i) for r, i in cams):
+        if status.get(str(idx)) == "ok":
+            say("VIGIL", f"camera {role}: index {idx} OK")
+        else:
+            say("VIGIL", f"EROARE: camera {role} (index {idx}) nu se deschide: o folosește alt program, nu e conectată "
+                         "sau are alt index (--face-index / --body-index; telefonul ca webcam apare de obicei ca 1)")
+            good = False
+    return good
+
+
 def voice_model(args) -> str:
     """Modelul conversației ML2: --voice-llm, altfel cel implicit al ML2 (VIGIL_MODEL / qwen2.5:1.5b)."""
     return args.voice_llm or ML1_MODEL
@@ -131,7 +185,17 @@ def preflight(args) -> bool:
             have = any(m == name or m.startswith(name + "-") or m == name + ":latest" for m in models)
             say("VIGIL", f"model {name} pentru {who}: {'OK' if have else 'LIPSEȘTE: ollama pull ' + name}")
     needed = [("paho.mqtt", "toate"), ("numpy", "toate")]
-    if not args.fake and not args.no_cv and args.input == "mqtt":
+    if args.cameras != "one" and args.fake:
+        say("VIGIL", "--fake merge doar cu o cameră (run_face / run_body nu au date false): ignor --fake")
+        args.fake = False
+    if args.cameras != "one" and args.input == "http":
+        say("VIGIL", "--cameras nu are sens cu --input http (camera e la serverul Spring): ignor --cameras")
+        args.cameras = "one"
+    if args.local_camera and args.cameras != "remote":
+        say("VIGIL", "--local-camera merge doar cu --cameras remote: îl ignor")
+        args.local_camera = None
+    local = local_cameras(args)
+    if not args.fake and not args.no_cv and args.input == "mqtt" and (args.cameras == "one" or local):
         needed += [("cv2", "Vision"), ("mediapipe", "Vision"), ("ultralytics", "Vision")]
     if not args.no_ml2:
         needed += [("sounddevice", "ML2"), ("faster_whisper", "ML2"), ("edge_tts", "ML2")]
@@ -139,6 +203,13 @@ def preflight(args) -> bool:
         if not python_has(mod):
             say("VIGIL", f"EROARE: lipsește pachetul `{mod}` ({who}): rulează START\\1_instalare.bat")
             ok = False
+    if local:
+        ok &= probe_cameras(local)
+    if args.cameras == "remote":
+        missing = [r for r in ("face", "body") if r not in dict(local)]
+        bats = " și ".join(f"START\\7_laptop_{'fata' if r == 'face' else 'corp'}.bat" for r in missing)
+        say("VIGIL", f"de pe alt laptop aștept {', '.join('vigil/vision/' + r for r in missing)} pe {args.broker}:1883 "
+                     f"(acolo: {bats} <IP-ul brokerului>)")
     if not args.no_dashboard:
         if not shutil.which("npm", path=fresh_path()):
             say("VIGIL", "dashboard: lipsește Node.js (START\\1_instalare.bat) -> pornesc fără dashboard")
@@ -150,7 +221,7 @@ def preflight(args) -> bool:
             say("VIGIL", "dashboard: brokerul nu ascultă pe 9001 (WebSocket) -> pagina nu va primi date. "
                          "Rulează o dată START\\0_broker_admin.bat (cere drepturi de administrator)")
         else:
-            say("VIGIL", f"dashboard: {DASH_URL} (broker WebSocket 9001 OK)")
+            say("VIGIL", f"dashboard: {dashboard_url(args.broker)} (broker WebSocket 9001 OK)")
     return ok
 
 
@@ -187,11 +258,21 @@ class Proc:
 
 
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="replace")   # --help și mesajele cu ă/ș/ț în consola cp1252
     ap = argparse.ArgumentParser(description="Pornește Vision + ML1 + ML2 + dashboard")
     ap.add_argument("--fake", action="store_true", help="Vision trimite date false (fără cameră)")
     ap.add_argument("--scenario", default="demo", help="cu --fake: demo | normal | phone | drowsy | chest | unconscious")
     ap.add_argument("--show", action="store_true", help="fereastra de debug a camerei (Vision)")
-    ap.add_argument("--camera", type=int, help="indexul camerei")
+    ap.add_argument("--camera", type=int, help="indexul camerei (cu --cameras one)")
+    ap.add_argument("--cameras", choices=["one", "two", "remote"], default="one",
+                    help="one: o cameră (vigil_vision); two: față + corp pe acest PC; "
+                         "remote: camerele sunt pe alte laptopuri, aici doar broker + combinarea fluxurilor")
+    ap.add_argument("--local-camera", choices=["face", "body"],
+                    help="cu --cameras remote: acest PC are și el una dintre camere (cealaltă vine de pe alt laptop)")
+    ap.add_argument("--face-index", type=int, help="indexul camerei feței (implicit 0)")
+    ap.add_argument("--body-index", type=int,
+                    help="indexul camerei corpului (implicit 1 cu --cameras two, 0 cu --local-camera body)")
     ap.add_argument("--no-llm", action="store_true", help="ML1 doar cu reguli fixe")
     ap.add_argument("--no-ml2", action="store_true", help="fără executorul ML2 (voce / alarmă)")
     ap.add_argument("--no-cv", action="store_true", help="fără Vision (ex. cadrele vin de la serverul Spring)")
@@ -238,7 +319,15 @@ def main() -> None:
             cmd.append("--llm")
         procs.append(Proc("ML1", cmd, ROOT / "ML1", env))
         time.sleep(4.0 if not args.no_llm else 1.0)   # warmup LLM înainte să vină cadre
-        if not args.no_cv and args.input == "mqtt":
+        if args.input == "mqtt" and args.cameras != "one":
+            procs.append(Proc("MERGE", [py, "-m", "vigil_vision.merge", "--broker", args.broker], ROOT / "Vision", env))
+            # --mute: alertele locale ale CV (beep) tac; vocea și alarma sunt treaba ML2
+            common = ["--publish", "--mqtt-host", args.broker, "--mute"] + (["--show"] if args.show else [])
+            for role, idx in local_cameras(args):
+                extra = ["--calib", "5"] if role == "face" else []
+                procs.append(Proc(role.upper(), [py, "-m", f"vigil_vision.run_{role}", "--index", str(idx),
+                                                 *extra, *common], ROOT / "Vision", env))
+        elif not args.no_cv and args.input == "mqtt":
             cv = [py, "-m", "vigil_vision"]
             if args.fake:
                 cv += ["--fake", "--scenario", args.scenario]
@@ -251,9 +340,9 @@ def main() -> None:
             npm = shutil.which("npm", path=path)
             procs.append(Proc("WEB", [npm, "run", "dev", "--", "--strictPort"], DASHBOARD, env))
             if not args.no_browser:
-                threading.Timer(4.0, webbrowser.open, args=(DASH_URL,)).start()
+                threading.Timer(4.0, webbrowser.open, args=(dashboard_url(args.broker),)).start()
         say("VIGIL", "sistemul rulează — Ctrl+C pentru oprire; loguri în logs/"
-                     + ("" if args.no_dashboard else f"; dashboard: {DASH_URL}"))
+                     + ("" if args.no_dashboard else f"; dashboard: {dashboard_url(args.broker)}"))
         t_end = time.time() + args.duration if args.duration else None
         while any(p.p.poll() is None for p in procs):
             if t_end and time.time() >= t_end:

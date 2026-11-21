@@ -29,7 +29,10 @@ Fără placă video merge și pe procesor, doar mai încet.
 |---|---|---|
 | **`2_verificare.bat`** | doar verificări: broker, Ollama, modele, pachete, dashboard | dacă ceva nu merge |
 | **`3_pornire_demo.bat`** | tot sistemul **fără cameră**: Vision trimite scenariul demo al echipei CV (telefon, somnolență, mână pe piept, prăbușire) | repetiții, test rapid |
-| **`4_pornire_camera.bat`** | tot sistemul **cu camera reală** | demo-ul adevărat |
+| **`4_pornire_camera.bat`** | tot sistemul **cu o cameră** (față + corp din aceeași imagine) | un singur webcam |
+| **`4b_pornire_2camere.bat`** | tot sistemul cu **două camere pe acest PC**: față (index 0) + corp (index 1) | webcam + cameră USB / telefon ca webcam |
+| **`4c_pornire_PC_central.bat`** | PC-ul central când **camerele sunt pe alte două laptopuri**: broker, combinarea, ML1, ML2, dashboard | demo-ul cu 4 calculatoare |
+| **`7_laptop_fata.bat IP`** / **`7_laptop_corp.bat IP`** | pe laptopurile cu camere: trimit fața / corpul la PC-ul central | împreună cu `4c` |
 | **`5_pornire_spring.bat`** | ML1 primește cadrele prin **HTTP** de la serverul Spring Boot (port 8090), restul la fel | integrarea cu serverul |
 | **`6_teste.bat`** | toate testele automate: ML1, Vision, ML2, dashboard | după orice modificare |
 
@@ -41,6 +44,46 @@ Ce vezi la `3_pornire_demo.bat`, în ordine: ML2 încarcă vocea (10–50 s) →
 Vision începe scenariul → la telefon un memento vocal blând, la somnolență alarmă + „Faceți o pauză?”, la
 prăbușire alarmă urgentă + „Sunteți bine?”, iar dacă nimeni nu răspunde, raportul 112 simulat (fereastra roșie
 din dashboard).
+
+## Două camere (față + corp)
+
+Camera feței rulează `vigil_vision.run_face` (topic `vigil/vision/face`), camera corpului
+`vigil_vision.run_body` (`vigil/vision/body`). `vigil_vision.merge` le combină într-un singur `vigil/vision`, la
+10 mesaje/s: de la față ochii și privirea, de la corp telefonul, respirația, postura; evenimentele amândurora.
+ML1, ML2 și dashboard-ul nu se schimbă. Dacă o cameră tace peste 1 s, câmpurile ei lipsesc și ML1 scade
+încrederea, fără valori inventate.
+
+```
+cameră față ── run_face ── vigil/vision/face ─┐
+                                               ├─► vigil_vision.merge ── vigil/vision ──► ML1 ──► ML2, dashboard
+cameră corp ── run_body ── vigil/vision/body ─┘
+```
+
+**A. Ambele camere pe același PC** (de ex. webcam-ul laptopului + o cameră USB):
+`START\4b_pornire_2camere.bat`. Verificarea de la pornire deschide fiecare cameră și spune dacă vreuna lipsește.
+Alt index: `START\4b_pornire_2camere.bat --face-index 0 --body-index 2`. Ferestrele camerelor: `--show`.
+
+**B. Două laptopuri, fiecare cu camera lui, legate la același broker Mosquitto (același IP).**
+Brokerul rulează pe unul dintre calculatoare. Acolo rulezi o dată `0_broker_admin.bat` ca administrator, ca
+brokerul să accepte conexiuni din rețea. Un singur calculator pornește `4c` (combinarea + ML1 + ML2 +
+dashboard). Toate sunt pe același hotspot. `4c` îți afișează IP-ul calculatorului.
+
+| Varianta | Laptopul 1 | Laptopul 2 | Al treilea PC |
+|---|---|---|---|
+| **Laptopul 1 e și central** (broker pe el) | `4c_pornire_PC_central.bat --local-camera face` | `7_laptop_corp.bat IP-laptop-1` | — |
+| **Camerele doar trimit**, centralul e alt PC | `7_laptop_fata.bat IP-PC` | `7_laptop_corp.bat IP-PC` | `4c_pornire_PC_central.bat` |
+| **Brokerul e pe alt PC** decât ML1 / ML2 | `7_laptop_fata.bat IP-broker` | `7_laptop_corp.bat IP-broker` | `4c_pornire_PC_central.bat --broker IP-broker` |
+
+(Cu camera corpului pe laptopul central: `--local-camera body`, iar celălalt rulează `7_laptop_fata.bat`.)
+
+* Pe laptopurile care doar trimit trebuie doar repo-ul și Python. Prima pornire instalează singură pachetele Vision.
+* Fiecare laptop are un nume de client MQTT unic (numele calculatorului + `face` / `body`), deci nu se
+  deconectează reciproc.
+* În fereastra lui `4c` apare `prima cameră face a răspuns` / `body` când sosesc datele, iar
+  `camera body: nu mai trimite` dacă un laptop se oprește.
+* Combinarea (`vigil_vision.merge`) trebuie să ruleze **o singură dată** în tot sistemul. Pornește-o doar prin
+  `4c`, nu și manual pe alt calculator.
+* Cu brokerul pe alt PC, dashboard-ul se deschide singur cu `?broker=ws://IP:9001`.
 
 ## Opțiuni (se adaugă după numele fișierului, în terminal)
 
@@ -76,6 +119,8 @@ placa video, dar româna liberă e slabă. Pe aceleași replici:
 | `model ... LIPSEȘTE` | `ollama pull qwen2.5:1.5b` |
 | vocea e robotică | fără internet edge-tts nu merge; trece automat pe vocea offline Piper |
 | camera nu pornește | închide alte aplicații care o folosesc (Teams, Zoom) sau încearcă `--camera 1` |
+| `camera corp (index 1) nu se deschide` | a doua cameră nu e conectată sau are alt index: `--body-index 2` |
+| PC-ul central nu primește nimic de la laptopuri | același hotspot? IP-ul corect? `0_broker_admin.bat` rulat pe PC-ul central? Firewall-ul Windows să permită portul 1883 |
 | fereastra se închide imediat | rulează fișierul din terminal (`cmd`), ca să vezi eroarea |
 
 ## Unde e restul
