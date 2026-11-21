@@ -161,6 +161,7 @@ class Ml1Service:
                 "camera_on": None if r is None else r.camera_on,
                 "severity": last["severity"] if last else 0,
                 "calibration": self.engine.baseline.to_dict(),
+                "state": self.engine.state.to_dict(), "ecu": self.engine.ecu.last,
                 "engine": dict(self.engine.stats), "counters": dict(self.counters),
                 "decisions": seq,
             }

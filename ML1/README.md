@@ -8,7 +8,11 @@ vigil/vision ─┐
               ├─► normalizare + calibrare ─► fuziune (scor a, încredere) ─► reguli (calea de siguranță) ─┬─► vigil/decision
 driver_resp ──┘                                                          │                              │
                                                                          └─► Qwen2.5 1.5B (doar la schimbare) ─► gărzi ─┘
+                                 reguli + a ─► matricea de probabilitate (HMM) ─► fuzzy + supervizor ─► vigil/ecu
 ```
+
+Pe lângă decizie, ML1 publică și comanda pentru ECU (`vigil/ecu`, 5 Hz): viteză, asistență de bandă, distanță,
+manevra de oprire pe banda de urgență. Vezi [docs/PROBABILITY_ECU.md](docs/PROBABILITY_ECU.md).
 
 Tot ce ține de ML1 e în acest folder: codul (`ml1/`), testele (`tests/`), documentația (`docs/`), pitch-ul și o
 singură comandă, `run_ml1.py`. Sistemul complet (cameră + ML1 + ML2 + dashboard) se pornește din
@@ -20,7 +24,7 @@ Din folderul `ML1/` (sau oricare altul, cu calea `ML1\run_ml1.py`); folosește a
 
 ```powershell
 python run_ml1.py check                    # Ollama, modelul qwen2.5:1.5b, pachete, broker
-python run_ml1.py test                     # 114 teste, ~1 min, fără Ollama și fără broker
+python run_ml1.py test                     # 137 de teste, ~1 min, fără Ollama și fără broker
 python run_ml1.py dashboard --autostart demo --speed 2 --llm   # corp simulat + grafice, se deschide în browser
 ```
 
@@ -40,6 +44,8 @@ Instalare doar pentru ML1 (dacă nu ai rulat deja `START\1_instalare.bat`):
 | `python run_ml1.py api --llm` | ML1 pe HTTP + SSE pentru serverul Spring Boot, port 8090 (`--host 0.0.0.0`, `--mqtt-out`) — [docs/API.md](docs/API.md) |
 | `python run_ml1.py evaluate` | evaluarea pe șoferi nevăzuți → [docs/EVALUATION_RESULTS.md](docs/EVALUATION_RESULTS.md) + `docs/figures/` (`--llm`, `--quick`) |
 | `python run_ml1.py bench` | latența și validitatea LLM-ului pe calculatorul curent (`--models qwen2.5:1.5b --runs 5`) |
+| `python run_ml1.py prob` | matricea de probabilitate a stărilor (emisie, tranziție, P(stare reală \| alarmă)); `--fit` o re-învață |
+| `python run_ml1.py ecu` | controlerul fuzzy pentru ECU pe situații tipice (`--bench`, `--export-c` → `ecu/vigil_fuzzy_lut.h`) |
 | `python run_ml1.py data` | regenerează `tests/data/*.jsonl` (seed fix) |
 | `python run_ml1.py pdf` | recompilează [docs/TECHNICAL_DEEP_DIVE.pdf](docs/TECHNICAL_DEEP_DIVE.pdf) din LaTeX |
 
@@ -55,6 +61,7 @@ Alt model: `set VIGIL_MODEL=llama3.2:1b` înainte de comandă. Detalii și probl
 | [docs/CV_INTEGRATION.md](docs/CV_INTEGRATION.md) | semantica reală a semnalelor CV și ce s-a aliniat în ML1 |
 | [docs/ML_METHODS.md](docs/ML_METHODS.md) | metodele ML folosite, legate de cursurile C1–C6 |
 | [docs/EVALUATION.md](docs/EVALUATION.md) / [EVALUATION_RESULTS.md](docs/EVALUATION_RESULTS.md) | protocolul de evaluare și rezultatele curente |
+| [docs/PROBABILITY_ECU.md](docs/PROBABILITY_ECU.md) | matricea de probabilitate (HMM, decizie Bayes) și controlul fuzzy pentru ECU, cu tabelul C |
 | [docs/MODEL_CHOICE.md](docs/MODEL_CHOICE.md) | de ce Qwen2.5 1.5B (vs Llama 3.2 1B) și ce s-a măsurat |
 | [docs/API.md](docs/API.md) | API-ul HTTP pentru Spring Boot, cu exemple Java |
 | [docs/RUNBOOK.md](docs/RUNBOOK.md) | toate comenzile pe larg + probleme frecvente |
@@ -85,6 +92,8 @@ Alt model: `set VIGIL_MODEL=llama3.2:1b` înainte de comandă. Detalii și probl
 | Histerezis la coborâre, răspunsuri întârziate aruncate | `ml1/engine.py` | fără pâlpâire, fără decizii vechi |
 | Raport 112 din șablon | `ml1/reports.py` | instant, doar fapte observate |
 | Timeout 2.5 s → reguli | `ml1/validate.py` | plan B garantat |
+| Filtru HMM în Python pur, tranziții în cache | `ml1/probability.py` | ~3 µs / cadru; kappa 0.78 → 0.89 față de reguli pe cadru |
+| Fuzzy compilat în tabel C (6 KB, uint8) | `ecu/vigil_fuzzy_lut.h` | rulează pe orice ECU, fără LLM și fără numpy |
 
 ## Structura
 
@@ -101,10 +110,13 @@ ML1/
 │   ├── profile.py      pragurile aliniate la codul CV
 │   ├── prompt.py, llm_client.py, actions.py, validate.py   LLM-ul și gărzile lui
 │   ├── engine.py       DecisionEngine: le leagă pe toate
+│   ├── probability.py  matricea de probabilitate a stărilor (HMM) + statistici; prob_matrix.json = matricele învățate
+│   ├── ecu_fuzzy.py    controlerul fuzzy + supervizorul pentru ECU (vigil/ecu), exportul în C
 │   ├── service.py, mqtt_bridge.py, http_api.py              intrare / ieșire (MQTT, REST + SSE)
 │   ├── reports.py      raportul 112 și raportul post-cursă
 │   ├── dashboard.py, web/, mock_pose.py                     dashboard-ul ML1
 │   └── evaluate.py, bench.py, fake_vision.py, replay.py    evaluare, benchmark, date de test
-├── tests/              114 teste + tests/data (scenarii .jsonl)
+├── ecu/                vigil_fuzzy_lut.h (generat) + test_lut.c
+├── tests/              137 de teste + tests/data (scenarii .jsonl)
 └── docs/               documentația, figurile, PDF-ul și sursa LaTeX
 ```

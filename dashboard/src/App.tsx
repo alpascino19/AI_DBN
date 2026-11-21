@@ -1,6 +1,7 @@
 import { AttentionGauge } from './components/AttentionGauge'
 import { CameraPanel } from './components/CameraPanel'
 import { DecisionCard } from './components/DecisionCard'
+import { EcuCard } from './components/EcuCard'
 import { EmergencyOverlay } from './components/EmergencyOverlay'
 import { Events } from './components/Events'
 import { Header } from './components/Header'
@@ -28,6 +29,7 @@ export default function App() {
         </div>
         <div className="grid content-start gap-4">
           <DecisionCard decision={state.decision} history={state.decisions} />
+          <EcuCard ecu={state.ecu} />
           <Responses responses={state.responses} />
         </div>
       </main>

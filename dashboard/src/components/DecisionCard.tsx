@@ -1,5 +1,6 @@
 import type { Decision } from '../state'
-import { Card, SEVERITY, clock } from './ui'
+import { SEVERITY, clock } from './format'
+import { Card } from './ui'
 
 function Row({ d }: { d: Decision }) {
   const sev = SEVERITY[d.severity]

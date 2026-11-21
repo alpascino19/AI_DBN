@@ -5,7 +5,8 @@ simulat), iar dashboard-ul arată totul live.
 
 ```
 Vision (CV1 + CV2) ──vigil/vision──► ML1 (decide) ──vigil/decision──► ML2 (execută) ──vigil/alert──► ESP32
-   camera / date false                   ▲                                │
+   camera / date false                   ▲  │                             │
+                                         │  └──vigil/ecu──► ECU (viteză, asistență de bandă, oprire pe banda de urgență)
                                          └──────vigil/driver_response─────┘
                          dashboard React (browser) ◄── toate topicurile, prin WebSocket
 ```
@@ -28,9 +29,10 @@ Toate instrucțiunile, opțiunile și problemele frecvente: **[START/README.md](
 |---|---|---|---|
 | [`START/`](START/) | toți | instalare, pornirea întregului sistem (`run_vigil.py` + fișiere `.bat`), teste | [START/README.md](START/README.md) |
 | [`Vision/`](Vision/) | CV1 + CV2 | MediaPipe + YOLO → EAR, PERCLOS, privire, mână pe piept, respirație, telefon, prăbușire | [Vision/README.md](Vision/README.md) |
-| [`ML1/`](ML1/) | ML1 | fuziune → scor de atenție, reguli de siguranță, LLM local (Qwen2.5 1.5B), gărzi, API pentru Spring Boot; cod, teste, documentație, pitch | [ML1/README.md](ML1/README.md) |
+| [`ML1/`](ML1/) | ML1 | fuziune → scor de atenție, reguli de siguranță, LLM local (Qwen2.5 1.5B), gărzi, API pentru Spring Boot, matricea de probabilitate a stărilor + control fuzzy pentru ECU; cod, teste, documentație, pitch | [ML1/README.md](ML1/README.md) |
 | [`ML2/`](ML2/) | ML2 | executor: voce (edge-tts / Piper), conversație (Whisper + LLM), alarmă, ESP32, 112 simulat | [ML2/README.md](ML2/README.md) |
 | [`dashboard/`](dashboard/) | ML2 | interfața live (React + mqtt.js) | [dashboard/README.md](dashboard/README.md) |
 
 Dependențele Python ale tuturor modulelor: [`requirements.txt`](requirements.txt) (un singur `.venv` la rădăcină).
-Împărțirea taskurilor: [TASKS.md](TASKS.md).
+Împărțirea taskurilor: [TASKS.md](TASKS.md). Conceptul inițial (viziune, MPC, cadru legal):
+[docs/CONCEPT.md](docs/CONCEPT.md). Rularea pe 3 laptopuri: [START/3_LAPTOPURI.md](START/3_LAPTOPURI.md).

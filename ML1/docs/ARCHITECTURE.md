@@ -39,7 +39,8 @@
 | `vigil/vision` | CV → ML1 | `schemas.VisionMessage.to_dict()` | `Vision/vigil_vision/schemas.py` |
 | `vigil/driver_response` | ML2 → ML1 | `{"answered": bool, "latency_sec": float\|null, "text": str\|null, "ts"?: float}` | ML2 |
 | `vigil/decision` | ML1 → ML2, dashboard | `{"a", "severity", "actions": [{"tool","args"}], "reason", "source", "ts", "latency_ms"?, "safety_notes"?}` | [`mqtt_bridge.py`](../ml1/mqtt_bridge.py) |
-| `vigil/ml1/status` | ML1 → dashboard | `{"a", "confidence", "critical", "calibration", "stats", ...}` la 1 Hz | [`mqtt_bridge.py`](../ml1/mqtt_bridge.py) |
+| `vigil/ml1/status` | ML1 → dashboard | `{"a", "confidence", "critical", "calibration", "state", "stats", ...}` la 1 Hz | [`mqtt_bridge.py`](../ml1/mqtt_bridge.py) |
+| `vigil/ecu` | ML1 → ECU, dashboard | comanda fuzzy: `mode`, `speed_ref_kmh`, `lka_authority`, `headway_s`, `hazards`, `state.p_state` la 5 Hz | [`ecu_fuzzy.py`](../ml1/ecu_fuzzy.py), [PROBABILITY_ECU.md](PROBABILITY_ECU.md) |
 
 Aceleași mesaje pot veni și prin HTTP de la serverul Spring Boot (camera live): `POST /api/v1/vision`, decizii pe
 `GET /api/v1/decisions/stream` (SSE). Contractul complet: [API.md](API.md).

@@ -1,5 +1,6 @@
 import type { Vision } from '../state'
-import { Card, fmt } from './ui'
+import { fmt } from './format'
+import { Card } from './ui'
 
 export function Events({ vision }: { vision: Vision | null }) {
   const events = Array.isArray(vision?.events) ? vision.events : []

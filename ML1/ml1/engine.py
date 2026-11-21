@@ -29,7 +29,9 @@ from typing import Any, Callable
 from .actions import PHRASES
 from .calibration import DriverBaseline
 from .cv_adapter import normalize_vision
+from .ecu_fuzzy import EcuController
 from .fusion import AttentionFusion, eye_artifact
+from .probability import StateFilter
 from .profile import P
 from .reports import build_trip_report
 from .rules import answer_status, fallback_decision, rule_severity, wants_112
@@ -82,6 +84,8 @@ class DecisionEngine:
         self._called_112 = False
         self._last_fast_reason: str | None = None
         self.baseline = DriverBaseline() if calibrate else _NoBaseline()
+        self.state = StateFilter()      # P(stare reală | observațiile de până acum), matricea de probabilitate
+        self.ecu = EcuController()      # comanda fuzzy pentru ECU (calculată la cerere: ecu_step)
         self._timeline: dict[str, dict] = {}
         self._a_hist: deque = deque()
         self._closure: deque = deque()   # (ts, ochi închiși) pe ultimele 60 s
@@ -131,6 +135,7 @@ class DecisionEngine:
             ctx = self._context(r.to_dict(), msg, ts)
             rule_sev, rule_reason = rule_severity(ctx)
             self._latest_rule_sev = rule_sev
+            self.state.update(rule_sev, r.a, r.confidence, ts)
             if rule_sev < self._last_pub["severity"]:
                 self._lower_since = self._lower_since if self._lower_since is not None else ts
             else:
@@ -316,6 +321,17 @@ class DecisionEngine:
         self._resp = None
         self._called_112 = False
         self._last_fast_reason = None
+
+    def ecu_step(self, v_set_kmh: float | None = None) -> dict | None:
+        """Comanda ECU pentru ultimul cadru (fuzzy pe a, P(stare), încredere + supervizorul determinist).
+        Separat de on_vision: puntea o cere la 5 Hz, evaluarea o poate rula offline."""
+        with self._lock:
+            r = self.last_result
+            if r is None:
+                return None
+            cmd = self.ecu.step(r.ts, r.a, self.state.b, r.confidence, self._last_pub["severity"],
+                                self._called_112, v_set_kmh)
+            return {**cmd, "state": self.state.to_dict()}
 
     def trip_log(self) -> dict:
         return {"a_samples": list(self.a_samples), "decisions": list(self.decisions), "events": dict(self.event_totals)}

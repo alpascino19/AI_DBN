@@ -1,6 +1,8 @@
 # Vision pe două laptopuri — conflicte MQTT și soluția propusă
 
-**Pentru:** echipa Vision (CV 1 + CV 2) · **De la:** ML 2 · **Status:** propunere, de discutat împreună
+**Pentru:** echipa Vision (CV 1 + CV 2) · **De la:** ML 2 · **Status:** implementat (`Vision/vigil_vision/merge.py`,
+`client_id` unic pe laptop). Documentul păstrează analiza; **pornirea actuală** e în [START/3_LAPTOPURI.md](../START/3_LAPTOPURI.md)
+(topologia de mai jos, cu 4 calculatoare, a fost înlocuită de cea cu 3 laptopuri).
 
 ## Contextul
 La demo avem 4 calculatoare pe același hotspot:

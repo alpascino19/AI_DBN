@@ -1,5 +1,6 @@
 import type { State } from '../state'
-import { Card, fmt } from './ui'
+import { fmt } from './format'
+import { Card } from './ui'
 
 export function AttentionGauge({ state }: { state: State }) {
   // scorul vine de la ML 1 (vigil/ml1/status, 1/s); altfel din ultima decizie

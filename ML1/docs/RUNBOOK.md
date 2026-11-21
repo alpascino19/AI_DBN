@@ -18,7 +18,7 @@ python run_ml1.py check               # verifică tot
 ## 2. Teste
 
 ```powershell
-python run_ml1.py test                # 114 teste, ~1 min, fără Ollama și fără broker
+python run_ml1.py test                # 137 de teste, ~1 min, fără Ollama și fără broker
 python run_ml1.py test -v             # cu numele fiecărui test
 ```
 
@@ -55,7 +55,8 @@ cd ML1;    python run_ml1.py bridge --llm                     # ML1 (fără --ll
 cd ML2;    ..\.venv\Scripts\python executor.py                # ML2 (voce, alarmă, ESP32)
 ```
 
-ML1 ascultă `vigil/vision` și `vigil/driver_response`, publică `vigil/decision` și `vigil/ml1/status`.
+ML1 ascultă `vigil/vision` și `vigil/driver_response`, publică `vigil/decision`, `vigil/ml1/status` și
+`vigil/ecu` (comanda fuzzy pentru ECU, 5 Hz).
 
 ### Prin HTTP (serverul Spring Boot + camera live)
 

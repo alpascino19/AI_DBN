@@ -10,8 +10,4 @@ edge-tts==7.3.1         # voce neurală Microsoft (cere internet; are nevoie de 
 piper-tts==1.8.0        # voce locală de rezervă, fără internet
 pyttsx3==2.99           # a doua rezervă de voce (vocea Windows)
 pyserial==3.5           # esp32_test.py citește confirmările plăcii pe portul serial
-
-# Opțional — doar pentru controlul vehiculului cu fuzzy logic (încă neimplementat):
-# scikit-fuzzy==0.5.0
-# scipy==1.18.1
-# highway-env==1.12.1
+# Controlul fuzzy al vehiculului e în ML1 (ml1/ecu_fuzzy.py, topicul vigil/ecu), fără pachete în plus.

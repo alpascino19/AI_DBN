@@ -2,13 +2,15 @@
 
     python run_ml1.py                      # lista comenzilor
     python run_ml1.py check                # Ollama + model + pachete + broker
-    python run_ml1.py test                 # cele 114 teste (fără Ollama, fără broker)
+    python run_ml1.py test                 # cele 137 de teste (fără Ollama, fără broker)
     python run_ml1.py dashboard --llm      # corp simulat + grafice, http://127.0.0.1:8765
     python run_ml1.py scenario collapse    # un scenariu din tests/data, în consolă (--llm = cu Qwen)
     python run_ml1.py bridge --llm         # ML1 pe MQTT: vigil/vision -> vigil/decision
     python run_ml1.py api --llm            # ML1 pe HTTP pentru serverul Spring Boot (docs/API.md)
     python run_ml1.py evaluate             # evaluarea -> docs/EVALUATION_RESULTS.md + docs/figures/
     python run_ml1.py bench                # latența și validitatea LLM-ului pe calculatorul curent
+    python run_ml1.py prob                 # matricea de probabilitate (HMM) a stărilor șoferului
+    python run_ml1.py ecu --export-c       # controlerul fuzzy pentru ECU -> ML1/ecu/vigil_fuzzy_lut.h
     python run_ml1.py data                 # regenerează tests/data/*.jsonl
     python run_ml1.py pdf                  # recompilează docs/TECHNICAL_DEEP_DIVE.pdf din LaTeX
 
@@ -40,6 +42,8 @@ MODULES = {
     "api":       ("ml1.http_api", "ML1 pe HTTP/SSE pentru Spring Boot (--llm, --port 8090, --mqtt-out)"),
     "evaluate":  ("ml1.evaluate", "evaluarea pe șoferi nevăzuți (--llm, --quick)"),
     "bench":     ("ml1.bench", "latența și validitatea LLM-ului (--models qwen2.5:1.5b --runs 5)"),
+    "prob":      ("ml1.probability", "matricea de probabilitate a stărilor (HMM) și statisticile ei (--fit)"),
+    "ecu":       ("ml1.ecu_fuzzy", "controlerul fuzzy pentru ECU: tabel de situații (--bench, --export-c)"),
     "data":      ("ml1.fake_vision", "regenerează datele de test din tests/data"),
 }
 EXTRA = {

@@ -19,9 +19,24 @@ export type Vision = Record<string, unknown> & {
   events?: VisionEvent[]
 }
 export type Status = { a: number; confidence: number; camera_on?: boolean; calibration?: Record<string, unknown> }
+/** Comanda fuzzy a ML1 pentru ECU (vigil/ecu, 5 Hz). */
+export type Ecu = {
+  mode: 'NORMAL' | 'CAUTION' | 'ASSIST' | 'MRM' | string
+  speed_factor: number
+  speed_ref_kmh: number
+  target_kmh?: number
+  decel_mps2?: number
+  lka_authority: number
+  headway_s: number
+  hazards?: boolean
+  lane?: string
+  state?: { p_state?: number[]; p_risk?: number; expected_severity?: number }
+  inputs?: { a?: number; risk?: number; confidence?: number; severity?: number }
+}
 export type State = {
   vision: Vision | null
   status: Status | null
+  ecu: Ecu | null
   decision: Decision | null
   decisions: Decision[]
   responses: DriverResponse[]
@@ -35,6 +50,7 @@ export const HISTORY = 50
 export const initialState: State = {
   vision: null,
   status: null,
+  ecu: null,
   decision: null,
   decisions: [],
   responses: [],
@@ -69,6 +85,11 @@ export function reduce(state: State, topic: string, payload: string, now: number
       return { ...seen, vision: msg as Vision }
     case 'vigil/ml1/status':
       return isNum(msg.a) && isNum(msg.confidence) ? { ...seen, status: msg as Status } : state
+    case 'vigil/ecu':
+      return typeof msg.mode === 'string' && isNum(msg.speed_factor) && isNum(msg.speed_ref_kmh) &&
+        isNum(msg.lka_authority) && isNum(msg.headway_s)
+        ? { ...seen, ecu: msg as Ecu }
+        : state
     case 'vigil/driver_response':
       if (typeof msg.answered !== 'boolean') return state
       return {

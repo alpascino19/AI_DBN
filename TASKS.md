@@ -38,16 +38,17 @@ Cameră → CV (față + corp) → fuziune / scor de atenție → LLM (decide) �
 - [ ] De la CV (opțional): publicat `perclos_recent` / `recovered`, `closed_sec`, `off_road_ratio`, `direction`; alertele locale CV pe mut în demo
 - [x] ML2 integrat: răspunde pe `vigil/driver_response`; acceptă severitatea 0 (revenire la normal + ESP32 stins)
 - [x] Sistem combinat: `START/` (`run_vigil.py` + fișiere `.bat`: instalare, demo, cameră, Spring, teste), Vision -> ML1 -> ML2 -> dashboard prin Mosquitto, `requirements.txt` comun, `.venv`; testat cap-coadă cu `--fake`
+- [x] Matricea de probabilitate a stărilor (filtru HMM, decizie Bayes cu cost asimetric, statistici kappa / MCC / LR) — `ML1/ml1/probability.py`; controlul fuzzy pentru ECU (`vigil/ecu`) + tabel C — `ML1/ml1/ecu_fuzzy.py`, `ML1/ecu/`, `ML1/docs/PROBABILITY_ECU.md`
 - [x] Conversația ML2 pe Qwen (ML2: `qwen2.5:1.5b` implicit, același model ca ML1; `--voice-llm qwen2.5:3b` / `gemma3:4b` pentru română mai bună)
 - [x] ML1 adunat într-un singur folder `ML1/` (cod, teste, documentație, pitch) cu o singură comandă `ML1/run_ml1.py`
 - [x] **Owner pitch** — `ML1/PITCH.md` (script de 3 min + întrebări probabile; de repetat cu echipa)
 
 ## ML 2 — Executorul de acțiuni, vocea și hardware-ul
-- [ ] Uneltele pe care le apelează LLM-ul: `speak(text)`, `play_alarm(level)`, `ask_driver(question)`, `set_esp32(level)`, `call_112(report)`, `suggest_break()`
-- [ ] TTS pentru mesaje (`pyttsx3`) și STT pentru răspunsul șoferului (Whisper)
-- [ ] Verificarea vocală: întreabă „Sunteți bine?”, măsoară timpul și coerența răspunsului, trimite rezultatul înapoi la LLM
-- [ ] ESP32 + MQTT: LED/buzzer după nivelul de alertă
-- [ ] Apel 112 **simulat**: afișează raportul generat pe dashboard + avarii simulate
+- [x] Uneltele pe care le apelează LLM-ul: `speak(text)`, `play_alarm(level)`, `ask_driver(question)`, `set_esp32(level)`, `call_112(report)`, `suggest_break()` — `ML2/executor.py`, `ML2/actions.py`
+- [x] TTS pentru mesaje (edge-tts, Piper, `pyttsx3`) și STT pentru răspunsul șoferului (Whisper)
+- [x] Verificarea vocală: întreabă „Sunteți bine?”, măsoară timpul și coerența răspunsului, trimite rezultatul înapoi pe `vigil/driver_response`
+- [x] ESP32 + MQTT: LED/buzzer după nivelul de alertă — `ML2/esp32/vigil_alert/`
+- [x] Apel 112 **simulat**: raportul generat pe dashboard + avarii simulate
 - [ ] *Opțional:* controlul vehiculului (vezi mai jos)
 
 ## Severitate → acțiuni (decise de LLM)
@@ -66,6 +67,7 @@ Comunicare prin brokerul MQTT local (oricum necesar pentru ESP32).
 | `vigil/decision` | ML 1 → ML 2, dashboard | `{"a":0.2,"severity":3,"actions":[{"tool":"play_alarm","args":{"level":3}},{"tool":"ask_driver","args":{"question":"Sunteți bine?"}}],"reason":"mână pe piept 4 s + respirație grea"}` |
 | `vigil/driver_response` | ML 2 → ML 1 | `{"answered":false,"latency_sec":null,"text":null}` |
 | `vigil/alert` | ML 2 → ESP32 | `3` |
+| `vigil/ecu` | ML 1 → ECU, dashboard | `{"mode":"MRM","speed_ref_kmh":71,"lka_authority":1.0,"headway_s":3.5,"hazards":true,...}` ([detalii](ML1/docs/PROBABILITY_ECU.md#4-contractul-vigilecu-ml1--ecu-dashboard-5-hz)) |
 
 ## Etape
 1. **Prima oră:** contractele de mai sus + fiecare scrie un generator de date false pentru topicul lui.
@@ -86,6 +88,7 @@ Comunicare prin brokerul MQTT local (oricum necesar pentru ESP32).
 ---
 
 ## Opțional — Controlul vehiculului (doar dacă rămâne timp, ML 2)
-- [ ] `highway-env` + controler P simplu
+- [x] Controler fuzzy (Mamdani) pe `a` + matricea de probabilitate: viteză, asistență de bandă, distanță — `ML1/ml1/ecu_fuzzy.py`, publicat pe `vigil/ecu`, card pe dashboard
+- [x] Manevra de risc minim (bandă de urgență, viteză → 0) declanșată de 112 sau de severitatea 3 confirmată de matrice
+- [ ] `highway-env` + bucla închisă cu `vigil/ecu`
 - [ ] MPC `cvxpy` + OSQP cu scorul `a` în funcția de cost
-- [ ] Manevra de risc minim (bandă de urgență, viteză → 0) declanșată de severitatea 3

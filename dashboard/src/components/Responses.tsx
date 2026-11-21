@@ -1,5 +1,6 @@
 import type { DriverResponse } from '../state'
-import { Card, clock, fmt } from './ui'
+import { clock, fmt } from './format'
+import { Card } from './ui'
 
 export function Responses({ responses }: { responses: DriverResponse[] }) {
   return (

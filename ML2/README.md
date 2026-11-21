@@ -389,7 +389,7 @@ Toate se află în capul fișierului `actions.py`.
 
 ## 9. Ce nu e făcut
 
-- **Controlul vehiculului cu fuzzy logic** (opțional, `scikit-fuzzy` + `highway-env`): încă neimplementat. Pachetele sunt comentate în `requirements.txt`.
+- **Bucla închisă cu vehiculul:** comanda fuzzy pentru ECU există în ML 1 (`ML1/ml1/ecu_fuzzy.py`, topicul `vigil/ecu`, vezi [ML1/docs/PROBABILITY_ECU.md](../ML1/docs/PROBABILITY_ECU.md)), dar nu e legată de o mașină sau de `highway-env`.
 - **„Hei Virgil” în executor:** asistentul cu idle există doar în `voice_test.py`. În executor, conversația pornește numai când ML 1 trimite `ask_driver`.
 - **Recunoașterea unui anumit vorbitor:** Virgil ascultă vocea cea mai apropiată, nu doar vocea șoferului.
 - **Calibrarea `NEAR_DBFS`** pe microfonul de la demo.

@@ -42,4 +42,5 @@ Cap căzut fără răspuns → alarmă urgentă, buzzer, **112 simulat cu raport
 | De ce 1.5B, nu un model mare? | Încape lângă YOLO + Whisper, răspunde sub 0.5 s, licență comercială; regulile duc siguranța. |
 | De ce nu Llama 3.2 1B? | E ~20% mai mic, dar licență cu condiții, fără română oficială, tool use slab (BFCL 25.7); e rezerva (`VIGIL_MODEL`). |
 | Ce limitări? | Benchmark-ul are 5 situații; modelul a greșit în scenarii complete (alerte inventate), de aceea există gardurile. Pragurile se reglează pe date reale. |
-| Și pe un ECU clasic? | Nu: un microcontroller nu poate rula un LLM. Țintă: controllerul de cockpit (Snapdragon Cockpit, DRIVE Orin, R-Car). |
+| Și pe un ECU clasic? | LLM-ul nu: rulează pe controllerul de cockpit (Snapdragon Cockpit, DRIVE Orin, R-Car). Comanda pentru vehicul da: controlerul fuzzy e compilat într-un tabel C de 6 KB (`ML1/ecu/vigil_fuzzy_lut.h`), fără LLM și fără alocare. |
+| Cât de sigură e o alarmă? | Matricea de probabilitate o spune: un „2” publicat e oboseală reală în 58% din cadre, un „3” e urgență în 77–88%. De aceea mașina frânează doar când și filtrul HMM confirmă. |

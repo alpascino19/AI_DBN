@@ -1,5 +1,6 @@
 import type { Vision } from '../state'
-import { Card, fmt } from './ui'
+import { fmt } from './format'
+import { Card } from './ui'
 
 const state = (v: unknown) => (v && typeof v === 'object' ? (v as { state?: unknown }).state : undefined)
 

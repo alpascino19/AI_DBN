@@ -2,7 +2,7 @@ import mqtt from 'mqtt'
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { dismissEmergency, initialState, reduce, type State } from './state'
 
-const TOPICS = ['vigil/vision', 'vigil/decision', 'vigil/driver_response', 'vigil/alert', 'vigil/ml1/status']
+const TOPICS = ['vigil/vision', 'vigil/decision', 'vigil/driver_response', 'vigil/alert', 'vigil/ml1/status', 'vigil/ecu']
 
 // brokerul: ?broker=ws://IP:9001, altfel același calculator care servește pagina
 export const BROKER =

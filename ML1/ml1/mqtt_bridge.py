@@ -9,6 +9,7 @@ Topicuri (contractele din TASKS.md):
     vigil/driver_response  ML2 -> ML1   răspunsul la „Sunteți bine?”
     vigil/decision         ML1 -> ML2, dashboard   deciziile (severitate + acțiuni)
     vigil/ml1/status       ML1 -> dashboard        scor a, încredere, calibrare (1 Hz)
+    vigil/ecu              ML1 -> ECU, dashboard   comanda fuzzy: viteză, asistență de bandă, distanță, MRM (5 Hz)
 
 `Bridge` conține toată logica și nu depinde de paho (testabilă fără broker);
 `run_mqtt` doar leagă `Bridge` de un client paho.
@@ -19,8 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import time
-from typing import Any, Callable
+from typing import Callable
 
 from .engine import DecisionEngine
 from .service import Ml1Service
@@ -31,6 +31,7 @@ TOPIC_VISION = "vigil/vision"
 TOPIC_RESPONSE = "vigil/driver_response"
 TOPIC_DECISION = "vigil/decision"
 TOPIC_STATUS = "vigil/ml1/status"
+TOPIC_ECU = "vigil/ecu"
 
 
 def _decision_payload(d: dict) -> dict:
@@ -41,12 +42,14 @@ def _decision_payload(d: dict) -> dict:
 
 
 class Bridge:
-    def __init__(self, target: DecisionEngine | Ml1Service, send: Callable[[str, dict], None], status_hz: float = 1.0):
+    def __init__(self, target: DecisionEngine | Ml1Service, send: Callable[[str, dict], None], status_hz: float = 1.0,
+                 ecu_hz: float = 5.0):
         self.svc = target if isinstance(target, Ml1Service) else Ml1Service(engine=target)
-        self.engine = self.svc.engine
         self.send = send
         self.status_period = 1.0 / status_hz if status_hz > 0 else float("inf")
+        self.ecu_period = 1.0 / ecu_hz if ecu_hz > 0 else float("inf")
         self._last_status = -float("inf")
+        self._last_ecu = -float("inf")
         self.received = {"vision": 0, "response": 0, "invalid": 0}
         self.svc.add_listener(lambda d: self.send(TOPIC_DECISION, _decision_payload(d)))
 
@@ -65,9 +68,22 @@ class Bridge:
             res = self.svc.ingest_vision(msg)   # deciziile pleacă prin listener
             if res.get("accepted"):
                 self._maybe_status(res["ts"])
+                self._maybe_ecu(res["ts"])
         elif topic == TOPIC_RESPONSE:
             self.received["response"] += 1
             self.svc.ingest_response(msg)
+
+    @property
+    def engine(self) -> DecisionEngine:
+        return self.svc.engine     # serviciul poate crea un motor nou (reset), puntea îl urmează
+
+    def _maybe_ecu(self, ts: float) -> None:
+        if ts - self._last_ecu < self.ecu_period:
+            return
+        self._last_ecu = ts
+        cmd = self.engine.ecu_step()
+        if cmd is not None:
+            self.send(TOPIC_ECU, cmd)
 
     def _maybe_status(self, ts: float) -> None:
         if ts - self._last_status < self.status_period:
@@ -79,6 +95,7 @@ class Bridge:
         self.send(TOPIC_STATUS, {
             "ts": ts, "a": round(r.a, 3), "confidence": round(r.confidence, 3), "critical": r.critical,
             "camera_on": r.camera_on, "capped_by": r.capped_by, "calibration": self.engine.baseline.to_dict(),
+            "state": self.engine.state.to_dict(),
             "stats": dict(self.engine.stats), "received": dict(self.received), "counters": dict(self.svc.counters),
         })
 

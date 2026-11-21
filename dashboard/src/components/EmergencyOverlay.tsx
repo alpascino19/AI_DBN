@@ -1,4 +1,4 @@
-import { clock } from './ui'
+import { clock } from './format'
 
 export function EmergencyOverlay({ emergency, onClose }: { emergency: { report: string; at: number }; onClose: () => void }) {
   return (

@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import sys
 import time
 from collections import deque
@@ -39,6 +38,8 @@ from pathlib import Path
 import numpy as np
 
 from . import profile
+from . import probability as prob
+from .ecu_fuzzy import EcuController
 from .engine import DecisionEngine
 
 HZ = 5
@@ -49,9 +50,8 @@ CV_MIN_DUR = {"hand_on_chest": 2.0, "heavy_breathing": 3.0, "phone_use": 1.0, "h
 CV_GAP_SEC = 1.0   # Vision/config.yaml events.gap_sec
 K = 4
 SEV_NAMES = ["0 OK", "1 Redusă", "2 Medie", "3 Ridicată"]
-# Cost asimetric: subestimare cu k trepte = 5k (×2 dacă era urgență), supraestimare = 1k.
-COST = np.array([[0 if p == t else (5 * (t - p) * (2 if t == 3 else 1) if p < t else (p - t)) for p in range(K)]
-                 for t in range(K)], dtype=float)
+# Cost asimetric (probability.COST): subestimare cu k trepte = 5k (×2 dacă era urgență), supraestimare = 1k.
+COST = np.array(prob.COST, dtype=float)
 
 
 # ------------------------------------------------------------ simulare ----
@@ -354,6 +354,7 @@ def run_system(sim: TripSim, llm=None, calibrate: bool = True) -> dict:
     eng = DecisionEngine(llm_fn=llm, calibrate=calibrate)
     pending: list[tuple[float, dict]] = []
     pred, a_vals, feats, decisions = [], [], [], []
+    ts, rule, conf, c112 = [], [], [], []
     cur = 0
     for msg in sim.frames:
         t = msg["ts"]
@@ -372,9 +373,100 @@ def run_system(sim: TripSim, llm=None, calibrate: bool = True) -> dict:
         r = eng.last_result
         a_vals.append(r.a)
         feats.append(features(msg, r, eng))
+        ts.append(t)
+        rule.append(eng._latest_rule_sev)
+        conf.append(r.confidence)
+        c112.append(eng._called_112)
     t112 = next((d["ts"] for d in decisions if any(a["tool"] == "call_112" for a in d["actions"])), None)
     return {"pred": np.array(pred), "a": np.array(a_vals), "X": np.array(feats, dtype=float),
-            "decisions": decisions, "t112": t112, "llm_calls": eng.stats["llm_calls"]}
+            "decisions": decisions, "t112": t112, "llm_calls": eng.stats["llm_calls"],
+            "ts": ts, "rule": rule, "conf": conf, "c112": c112}
+
+
+# ------------------------------------------- matricea de probabilitate + ECU ----
+
+def hmm_sequences(sims, runs) -> list[dict]:
+    """Secvențele pentru probability.fit_model: adevărul brut (nu etichetele cu ferestre „nu contează”)."""
+    return [{"truth": s.truth, "rule": r["rule"], "a": r["a"].tolist(), "conf": r["conf"]} for s, r in zip(sims, runs)]
+
+
+def hmm_run(model: prob.ProbModel, run: dict) -> np.ndarray:
+    f = prob.StateFilter(model)
+    return np.array([f.update(rs, a, c, t) for t, rs, a, c in zip(run["ts"], run["rule"], run["a"], run["conf"])])
+
+
+def bayes_predict(B: np.ndarray) -> np.ndarray:
+    return (B @ COST).argmin(1)          # riscul așteptat al fiecărei severități, pe cadru
+
+
+def ecu_metrics(sims, runs, beliefs) -> dict:
+    """Controlerul fuzzy pe fiecare călătorie (5 Hz, ca puntea MQTT): cât încetinește când trebuie și cât
+    deranjează când nu trebuie."""
+    by_state = {k: [] for k in range(K)}
+    ref_by_state = {k: [] for k in range(K)}
+    normal_slow, normal_n, cam_off_slow, cam_off_n = 0, 0, 0, 0
+    steady_slow, steady_n = 0, 0
+    mrm_delay, mrm_missed, mrm_false, emerg_trips, speed30 = [], 0, 0, 0, []
+    t_ecu = 0.0
+    n_steps = 0
+    for s, r, B in zip(sims, runs, beliefs):
+        ecu = EcuController()
+        mrm_t = None
+        false_here = False
+        was_mrm = False
+        last_episode = -1e9
+        t0 = time.perf_counter()
+        for i, t in enumerate(r["ts"]):
+            cmd = ecu.step(t, float(r["a"][i]), B[i].tolist(), r["conf"][i], int(r["pred"][i]), r["c112"][i])
+            truth = s.truth[i]
+            if truth != 0:
+                last_episode = t
+            elif s.kind[i] != "privacy" and t - last_episode >= 15.0:   # condus normal, departe de un episod
+                steady_n += 1
+                steady_slow += cmd["speed_ref_kmh"] < 0.9 * ecu.v_set
+            if truth >= 0:
+                by_state[truth].append(cmd["speed_factor"])
+                ref_by_state[truth].append(cmd["speed_ref_kmh"])
+            if truth == 0 and s.kind[i] == "privacy":     # camera oprită: prudența e intenționată
+                cam_off_n += 1
+                cam_off_slow += cmd["speed_ref_kmh"] < 0.9 * ecu.v_set
+            elif truth == 0:
+                normal_n += 1
+                normal_slow += cmd["speed_ref_kmh"] < 0.9 * ecu.v_set
+            is_mrm = cmd["mode"] == "MRM"
+            if is_mrm:
+                emerg_now = s.emergency_onset is not None and t >= s.emergency_onset
+                if emerg_now and mrm_t is None:
+                    mrm_t = t
+                # fals = MRM PORNIT fără urgență și fără un șofer care a tăcut (ca la 112); un MRM început
+                # corect rămâne activ până la revenirea la severitatea 0, chiar dacă trece în segmentul următor
+                elif not was_mrm and not emerg_now and s.seg_idx[i] not in s.unresponsive:
+                    false_here = True
+            was_mrm = is_mrm
+            if s.emergency_onset is not None and abs(t - (s.emergency_onset + 30.0)) < 0.5 / HZ:
+                speed30.append(cmd["speed_ref_kmh"])
+        t_ecu += time.perf_counter() - t0
+        n_steps += len(r["ts"])
+        mrm_false += false_here
+        if s.emergency_onset is not None:
+            emerg_trips += 1
+            if mrm_t is None:
+                mrm_missed += 1
+            else:
+                mrm_delay.append(mrm_t - s.emergency_onset)
+    mean = lambda xs: float(np.mean(xs)) if xs else None
+    return {
+        "speed_factor_by_state": [mean(by_state[k]) for k in range(K)],
+        "speed_ref_by_state_kmh": [mean(ref_by_state[k]) for k in range(K)],
+        "normal_time_slowed_pct": 100.0 * normal_slow / normal_n if normal_n else None,
+        "camera_off_slowed_pct": 100.0 * cam_off_slow / cam_off_n if cam_off_n else None,
+        "steady_normal_slowed_pct": 100.0 * steady_slow / steady_n if steady_n else None,
+        "mrm_reached": f"{emerg_trips - mrm_missed}/{emerg_trips}",
+        "mrm_delay_median_s": float(np.median(mrm_delay)) if mrm_delay else None,
+        "mrm_false_trips": mrm_false,
+        "speed_30s_after_emergency_kmh": mean(speed30),
+        "us_per_step": 1e6 * t_ecu / max(1, n_steps),
+    }
 
 
 EV_FEATS = ["hand_on_chest", "heavy_breathing", "phone_in_hand", "head_on_wheel", "head_drop", "eyes_closed", "yawn"]
@@ -632,9 +724,6 @@ def tune_a_thresholds(sims, runs) -> tuple:
 
 # ---------------------------------------------------------- grafice ----
 
-STATUS = ["#0ca30c", "#fab219", "#ec835a", "#d03b3b"]
-
-
 def plot_all(test_sims, res_runs: dict, roc: dict, rel: dict, example_idx: int) -> list[str]:
     import matplotlib
     matplotlib.use("Agg")
@@ -785,8 +874,20 @@ def main(argv=None) -> dict:
     tree = Tree(depth=4, min_leaf=60).fit(Xtr, ytr)
     results["tree_rules"] = tree.rules(FEATURE_NAMES)
 
+    # matricea de probabilitate (emisie + tranziție Markov): învățată DOAR pe train
+    t_fit = time.perf_counter()
+    pmodel = prob.fit_model(hmm_sequences(sims["train"], runs["train"]), HZ)
+    results["prob_model"] = {"fit_s": round(time.perf_counter() - t_fit, 3), "meta": pmodel.meta,
+                             "dwell_s": [round(x, 1) for x in pmodel.mean_dwell_sec()],
+                             "transition_1s": [[round(x, 4) for x in row] for row in pmodel.transition(1.0)],
+                             "emission": [[round(x, 3) for x in row] for row in pmodel.emission]}
+    results["prob_stats"], results["ecu"] = {}, {}
+
     for split in ("test", "shift"):
         S, R = sims[split], runs[split]
+        t_hmm = time.perf_counter()
+        beliefs = [hmm_run(pmodel, r) for r in R]
+        hmm_us = 1e6 * (time.perf_counter() - t_hmm) / max(1, sum(len(r["ts"]) for r in R))
         res = {}
         res["clasa majoritară (0)"] = frame_summary("majoritar", S, [np.zeros(len(s.frames), int) for s in S], rng)
         res["prag pe a"] = frame_summary("prag pe a", S, [a_threshold_predict(r["a"], cuts) for r in R], rng)
@@ -794,8 +895,18 @@ def main(argv=None) -> dict:
         res["arbore"] = frame_summary("arbore", S, [tree.predict(r["X"]) for r in R], rng)
         res["reguli, praguri vechi (legacy)"] = summarize("legacy", S, runs_legacy[split], rng)
         res["rules fără calibrare"] = summarize("rules fără calibrare", S, runs_nocal[split], rng)
+        res["HMM (cea mai probabilă stare)"] = frame_summary("HMM MAP", S, [B.argmax(1) for B in beliefs], rng)
+        res["HMM (cost așteptat minim)"] = frame_summary("HMM Bayes", S, [bayes_predict(B) for B in beliefs], rng)
+        res["rules ∨ HMM Bayes"] = frame_summary("max", S, [np.maximum(r["pred"], bayes_predict(B))
+                                                            for r, B in zip(R, beliefs)], rng)
         res["rules+calibrare"] = summarize("rules+calibrare", S, R, rng)
         res["rules+calibrare"]["_runs"] = R
+        results["prob_stats"][split] = {
+            "rules+calibrare": prob.matrix_stats(res["rules+calibrare"]["cm"]),
+            "HMM (cost așteptat minim)": prob.matrix_stats(res["HMM (cost așteptat minim)"]["cm"]),
+            "hmm_us_per_frame": hmm_us,
+        }
+        results["ecu"][split] = ecu_metrics(S, R, beliefs)
         if args.llm and split == "test":
             from .llm_client import OllamaClient
             llm = OllamaClient()
@@ -830,6 +941,9 @@ def main(argv=None) -> dict:
     profile.use("cv")
     results["elapsed_s"] = round(time.time() - t_start, 1)
     if not args.no_write:
+        if not args.quick:     # matricele folosite live de ML1 (engine.StateFilter) vin din evaluarea completă
+            pmodel.meta["seed"] = args.seed
+            results["prob_model"]["saved"] = str(pmodel.save().name)
         write_report(results)
     print_summary(results)
     return results
@@ -851,6 +965,62 @@ def _row(name, r):
     return (f"| {name} | {s['macro_f1']:.3f} [{lo:.2f}–{hi:.2f}] | {r3:.2f} [{e_lo:.2f}–{e_hi:.2f}] | "
             f"{s['cost_per_frame']:.3f} | {_fmt(fa, 1)} | {_fmt(lat3, 1)} | "
             f"{(str(c['tp']) + '/' + str(c['tp'] + c['fn']) + ' · fals ' + str(c['fp'])) if c else '–'} |")
+
+
+def _md_matrix(M, rows, cols, nd=3) -> list[str]:
+    return (["| | " + " | ".join(cols) + " |", "|---" * (len(cols) + 1) + "|"]
+            + [f"| {r} | " + " | ".join(f"{x:.{nd}f}" for x in row) + " |" for r, row in zip(rows, M)])
+
+
+def _prob_section(res: dict) -> list[str]:
+    pm, ps = res.get("prob_model"), res.get("prob_stats")
+    if not pm or not ps:
+        return []
+    st = list(prob.STATE_NAMES)
+    L = ["## Matricea de probabilitate (filtru Bayes / HMM, `ml1/probability.py`)", "",
+         f"Învățată doar pe train ({pm['meta'].get('trips')} călătorii, {pm['meta'].get('frames')} cadre, "
+         f"{pm['fit_s']} s). Stări = severitatea reală; observația = (severitatea din reguli, treapta lui a). "
+         "Durata medie în stare: " + ", ".join(f"{n} {d:.0f} s" for n, d in zip(st, pm["dwell_s"])) + ".", "",
+         "Tranziția pe 1 s, P(S(t+1) = coloană | S(t) = rând):", ""]
+    L += _md_matrix(pm["transition_1s"], st, st, 4) + [""]
+    for split, title in (("test", "test"), ("shift", "shift")):
+        s = ps.get(split)
+        if not s:
+            continue
+        r, h = s["rules+calibrare"], s["HMM (cost așteptat minim)"]
+        L += [f"### Statistici pe matricea de confuzie — {title}", "",
+              "P(starea reală | severitatea publicată) = cât de credibilă e fiecare alarmă (rules+calibrare):", ""]
+        L += _md_matrix(r["p_true_given_pred"], [f"publicat {k}" for k in range(K)], st) + [""]
+        L += ["| Stare | suport | sensibilitate | specificitate | VPP | VPN | LR+ | LR− |", "|---|---|---|---|---|---|---|---|"]
+        for c in r["per_class"]:
+            L.append(f"| {c['state']} | {c['support']} | {_fmt(c['sensitivity'], 3)} | {_fmt(c['specificity'], 3)} | "
+                     f"{_fmt(c['ppv'], 3)} | {_fmt(c['npv'], 3)} | {_fmt(c['lr_pos'], 1)} | {_fmt(c['lr_neg'], 3)} |")
+        L += ["", "| Variantă | acuratețe | acuratețe echilibrată | kappa | MCC | cost / cadru ↓ |", "|---|---|---|---|---|---|"]
+        for name, x in (("rules+calibrare", r), ("HMM (cost așteptat minim)", h)):
+            L.append(f"| {name} | {x['accuracy']:.3f} | {x['balanced_accuracy']:.3f} | {x['kappa']:.3f} | "
+                     f"{x['mcc']:.3f} | {x['cost_per_frame']:.3f} |")
+        L += ["", f"Costul filtrului: {s['hmm_us_per_frame']:.1f} µs / cadru (Python pur).", ""]
+    return L
+
+
+def _ecu_section(res: dict) -> list[str]:
+    ecu = res.get("ecu")
+    if not ecu:
+        return []
+    L = ["## Controlul fuzzy pentru ECU (`ml1/ecu_fuzzy.py`)", "",
+         "Intrări: a, riscul 0.5·P(obosit) + P(urgență) din matricea de probabilitate, încrederea; supervizor "
+         "determinist deasupra (plafoane pe severitate, MRM, rată limitată). Viteza setată: 100 km/h.", "",
+         "| Split | viteză medie: atent · distras · obosit · urgență | timp normal încetinit < 90% ↓ "
+         "(din care ≥ 15 s după un episod) | cameră oprită încetinit | MRM atins | întârziere MRM (s, mediană) "
+         "| călătorii cu MRM fals ↓ | viteză la 30 s după urgență | µs / pas |",
+         "|---|---|---|---|---|---|---|---|---|"]
+    for split, e in ecu.items():
+        sp = " · ".join("–" if v is None else f"{v:.0%}" for v in e["speed_factor_by_state"])
+        L.append(f"| {split} | {sp} | {_fmt(e['normal_time_slowed_pct'], 1)}% ({_fmt(e['steady_normal_slowed_pct'], 1)}%) "
+                 f"| {_fmt(e['camera_off_slowed_pct'], 0)}% | {e['mrm_reached']} | "
+                 f"{_fmt(e['mrm_delay_median_s'], 1)} | {e['mrm_false_trips']} | "
+                 f"{_fmt(e['speed_30s_after_emergency_kmh'], 0)} km/h | {e['us_per_step']:.0f} |")
+    return L + [""]
 
 
 def write_report(res: dict) -> None:
@@ -890,6 +1060,7 @@ def write_report(res: dict) -> None:
           f"Scorul 1 − a ca detector pentru severitate ≥ 2 (test): ROC-AUC {res['roc_attention']['auc']:.3f}, "
           f"AP {res['roc_attention']['ap']:.3f}. Calibrarea softmax: Brier {res['softmax_calibration']['brier']:.3f}.", "",
           "## Arborele de decizie învățat (reguli citibile)", "", "```", *res["tree_rules"], "```", ""]
+    L += _prob_section(res) + _ecu_section(res)
     for f in res.get("figures", []):
         L += [f"![{f}](figures/{f})", ""]
     (DOCS / "EVALUATION_RESULTS.md").write_text("\n".join(L), encoding="utf-8")
@@ -908,6 +1079,15 @@ def print_summary(res: dict) -> None:
     print("\nprofil (val):", {k: (round(v['macro_f1'], 3), round(v['cost'], 3)) for k, v in res['profile_val'].items()},
           "ales:", res['profile_chosen'])
     print(f"\npraguri a (val): {res['a_cuts_from_val']}   AUC(1-a)={res['roc_attention']['auc']:.3f}   {res['elapsed_s']} s")
+    for split, s in res.get("prob_stats", {}).items():
+        r, h = s["rules+calibrare"], s["HMM (cost așteptat minim)"]
+        print(f"matrice {split}: kappa reguli {r['kappa']:.3f} / HMM {h['kappa']:.3f}  MCC {r['mcc']:.3f} / {h['mcc']:.3f}  "
+              f"filtru {s['hmm_us_per_frame']:.1f} µs/cadru")
+    for split, e in res.get("ecu", {}).items():
+        print(f"ECU {split}: viteză pe stare {[None if v is None else round(v, 2) for v in e['speed_factor_by_state']]}  "
+              f"normal încetinit {_fmt(e['normal_time_slowed_pct'], 1)}% (stabil {_fmt(e['steady_normal_slowed_pct'], 1)}%)  "
+              f"MRM {e['mrm_reached']} "
+              f"(întârziere {_fmt(e['mrm_delay_median_s'], 1)} s, false {e['mrm_false_trips']})  {e['us_per_step']:.0f} µs/pas")
 
 
 if __name__ == "__main__":

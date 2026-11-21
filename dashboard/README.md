@@ -39,6 +39,7 @@ Implicit, pagina caută brokerul pe calculatorul care o servește (`ws://<host>:
 | Semnale cameră: EAR, PERCLOS, clipit, privire, cap căzut, telefon, respirație, postură, FPS | `vigil/vision`. Valorile lipsă apar „—”, valorile îngrijorătoare cu portocaliu |
 | Evenimente active: tip, durată, încredere | `vigil/vision` → `events` |
 | Decizie LLM: severitate, motiv, unelte, sursă, latență + istoric (ultimele 50) | `vigil/decision` |
+| ECU (control fuzzy): mod, viteza de referință și ținta, asistența de bandă, distanța, frânarea, avariile + P(atent / distras / obosit / urgență) | `vigil/ecu` (5/s, de la ML1) |
 | Răspunsul șoferului: textul și latența, sau „fără răspuns” | `vigil/driver_response` |
 | **Fereastră roșie de urgență** cu raportul 112 | o decizie care conține `call_112` |
 

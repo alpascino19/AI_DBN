@@ -55,6 +55,12 @@ describe('reduce', () => {
     expect(reduce(initialState, 'vigil/alert', '1.5', T)).toBe(initialState)
   })
 
+  it('vigil/ecu valid; incomplet ignorat', () => {
+    const ok = '{"mode":"MRM","speed_factor":0,"speed_ref_kmh":62.5,"lka_authority":1,"headway_s":3.5,"hazards":true}'
+    expect(reduce(initialState, 'vigil/ecu', ok, T).ecu?.mode).toBe('MRM')
+    expect(reduce(initialState, 'vigil/ecu', '{"mode":"MRM"}', T)).toBe(initialState)
+  })
+
   it('vigil/ml1/status', () => {
     expect(reduce(initialState, 'vigil/ml1/status', '{"a":0.4,"confidence":0.9}', T).status?.a).toBe(0.4)
   })
