@@ -17,7 +17,7 @@ body_camera:
 
 mqtt:
   enabled: true
-  host: localhost
+  host: 172.22.118.20
   port: 1883
   topic: vigil/vision
   print_fallback: true        # fără broker -> afișează JSON-ul în consolă
