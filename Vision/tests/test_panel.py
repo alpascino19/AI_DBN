@@ -86,6 +86,79 @@ class TestPostureAndVideo(unittest.TestCase):
         self.assertEqual(len(sent), 5)
         self.assertEqual(sent[0][0], "vigil/video/face")
 
+    def test_video_on_by_default_and_options(self):
+        import argparse
+
+        from vigil_vision.video import VIDEO_FPS, VIDEO_WIDTH, VideoSender, add_video_args
+        p = argparse.ArgumentParser()
+        add_video_args(p)
+        a = p.parse_args([])
+        self.assertTrue(a.video)                              # live implicit
+        self.assertEqual((a.video_fps, a.video_width), (VIDEO_FPS, VIDEO_WIDTH))
+        self.assertTrue(p.parse_args(["--video"]).video)      # fișierele .bat vechi merg în continuare
+        self.assertFalse(p.parse_args(["--no-video"]).video)
+        v = VideoSender.from_args(NS(), "t", p.parse_args(["--video-fps", "6", "--video-width", "480"]))
+        self.assertEqual((round(1 / v.period), v.width), (6, 480))
+
+    def test_video_thread_runs_at_camera_speed_not_processing_speed(self):
+        import threading
+        import time
+
+        from vigil_vision.video import VideoSender
+
+        class FakeCamera:                                     # 30 cadre/s, ca Vision/config.yaml
+            def __init__(self):
+                self.running = True
+
+            def reader(self, name):
+                cam = self
+
+                class R:
+                    def __iter__(self):
+                        t0 = time.monotonic()
+                        while cam.running:
+                            time.sleep(1 / 30)
+                            yield NS(image=np.zeros((480, 640, 3), np.uint8), timestamp=time.monotonic() - t0)
+                return R()
+
+        sent = []
+        lock = threading.Lock()
+
+        def publish_bytes(topic, data):
+            with lock:
+                sent.append(topic)
+            return True
+
+        cam = FakeCamera()
+        VideoSender(NS(publish_bytes=publish_bytes), "vigil/video/body", fps=20).start(cam)
+        time.sleep(1.5)                                       # procesarea poate fi oricât de lentă: firul e separat
+        cam.running = False
+        self.assertGreaterEqual(len(sent) / 1.5, 16)          # ~20/s (sleep-ul Windows e imprecis)
+
+    def test_slow_network_skips_frames_instead_of_queueing(self):
+        from vigil_vision.publisher import Publisher
+        pub = Publisher({"mqtt": {"topic": "vigil/vision", "enabled": False}})
+        infos = []
+
+        class Info:
+            def __init__(self):
+                self.done = False
+
+            def is_published(self):
+                return self.done
+
+        def publish(topic, data, qos=0):
+            infos.append(Info())
+            return infos[-1]
+
+        pub._client, pub.connected = NS(publish=publish), True
+        self.assertTrue(pub.publish_bytes("vigil/video/face", b"1"))
+        self.assertFalse(pub.publish_bytes("vigil/video/face", b"2"))   # primul încă pe drum: sărit
+        self.assertTrue(pub.publish_bytes("vigil/video/body", b"x"))    # alt topic, independent
+        infos[0].done = True
+        self.assertTrue(pub.publish_bytes("vigil/video/face", b"3"))
+        self.assertEqual(len(infos), 3)
+
 
 class TestMergeKeepsPanels(unittest.TestCase):
     def test_each_panel_comes_from_its_camera(self):

@@ -62,7 +62,7 @@ def main() -> None:
         pub = Publisher(cfg, topic=BODY_TOPIC, host=args.mqtt_host)
         if args.video:
             from .video import VideoSender
-            video = VideoSender(pub, "vigil/video/body")
+            video = VideoSender.from_args(pub, "vigil/video/body", args).start(cam)   # fir propriu, nu 7-11 cadre/s
     pipeline = Pipeline(cfg, publisher=pub, camera=cam)
     pipeline.face = None                          # fără față în această aplicație
     period, next_pub = 1.0 / max(1, cfg.get("publish_hz", 10)), 0.0
@@ -77,8 +77,6 @@ def main() -> None:
                 pub.publish({**pipeline.build_message(ctx, reader.fps).to_dict(),
                              "body_panel": body_panel(ctx, am, reader.fps)})     # panoul, pentru dashboard
                 next_pub = t + period
-            if video is not None:
-                video.maybe_send(frame.image, t)
             for a in new_alerts:
                 print(f"{time.strftime('%H:%M:%S')} [CORP nivel {a.level}] {a.message}")
                 if not args.mute and a.level >= args.min_sound:

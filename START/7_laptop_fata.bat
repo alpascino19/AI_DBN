@@ -13,7 +13,7 @@ if "%IP%"=="" set "IP=%DEFAULT_IP%"
 echo Trimit catre brokerul de pe laptopul 1: %IP%:1883
 call :venv || goto :end
 cd Vision
-rem --video: imaginea camerei apare si in dashboard (scoate-l pentru privacy mode: doar cifre)
+rem Imaginea live (20 cadre/s, 640 px) apare in dashboard. Hotspot slab: adauga --video-fps 10. Doar cifre: --no-video
 "%PY%" -m vigil_vision.run_face --show --calib 5 --mute --publish --video --mqtt-host %IP% %2 %3 %4 %5 %6
 goto :end
 

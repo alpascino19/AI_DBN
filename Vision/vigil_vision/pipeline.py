@@ -130,6 +130,7 @@ class Pipeline:
         sm = cfg.get("smoothing", {})
         self.smoother = PoseSmoother(sm.get("min_cutoff", 1.5), sm.get("beta", 0.5))
         self.face: Optional[FaceWorker] = None
+        self.videos: list = []          # video.VideoSender: imaginea live (__main__ le pune; run() le pornește)
         self._period = 1.0 / max(1, cfg["publish_hz"])
         self._stop = threading.Event()
 
@@ -178,6 +179,8 @@ class Pipeline:
     # ---------- bucla principală ----------
     def run(self) -> None:
         self.camera.start()
+        for i, v in enumerate(self.videos):   # imaginea live: fir propriu, la viteza camerei
+            v.start(self.camera, reader=f"video{i}")
         self.face = FaceWorker.from_hook(self.cfg, self.camera)
         if self.face is not None:
             self.face.start()

@@ -19,6 +19,8 @@ ML1/docs/latex/*.pdf
 
 # Parole Wi-Fi ale plăcilor (ESP32 din ML2, ECU_Arduino) — NU se urcă, repo-ul e public
 **/wifi_secrets.h
+# Ghidul OmniRoute cu cheile API (Gemini, Tavily, OmniRoute, OpenWebNinja) — NU se urcă
+omniroute-virgil.md
 .pytest_cache/
 
 # ML2: date create la rulare (vezi ML2/README.md) — NU se urcă

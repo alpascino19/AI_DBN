@@ -8,10 +8,11 @@ import { EmergencyOverlay } from './components/EmergencyOverlay'
 import { Events } from './components/Events'
 import { Header } from './components/Header'
 import { Responses } from './components/Responses'
+import { TestPanel } from './components/TestPanel'
 import { useVigil } from './useVigil'
 
 export default function App() {
-  const { state, video, connected, broker, resetAlerts, dismiss, ask, resetCar } = useVigil()
+  const { state, video, connected, broker, publish, resetAlerts, dismiss, ask, resetCar } = useVigil()
   return (
     <div className="min-h-screen">
       <Header state={state} connected={connected} broker={broker} onReset={resetAlerts} />
@@ -27,6 +28,7 @@ export default function App() {
         </div>
         <div className="grid content-start gap-4">
           <AssistantCard assistant={state.assistant} connected={connected} onAsk={ask} />
+          <TestPanel publish={publish} connected={connected} onDismiss={dismiss} />
           <DecisionCard decision={state.decision} history={state.decisions} />
           <EcuCard ecu={state.ecu} />
           <Responses responses={state.responses} />

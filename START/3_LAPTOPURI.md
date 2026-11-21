@@ -78,12 +78,27 @@ Logurile complete sunt pe laptopul 1, în `logs\`. Cele ale camerelor se văd î
 * Combinarea (`vigil_vision.merge`) pornește doar din `4c`; nu o porniți de mână pe alt laptop.
 * Dacă IP-ul laptopului 1 s-a schimbat, relansați scripturile de pe laptopurile 2 și 3 cu IP-ul nou.
 
-## Imaginea camerelor în dashboard
-`7_laptop_fata.bat` și `7_laptop_corp.bat` pornesc Vision cu `--video`: pe lângă cifre, fiecare cameră trimite un
-JPEG mic (480 px, 5 cadre/s, ~17–30 KB) pe `vigil/video/face` / `vigil/video/body`, iar ferestrele din dashboard
-arată imaginea live cu punctele peste ea. Nimic nu se salvează (QoS 0, fără retain). Pentru **privacy mode**
-(doar cifre și puncte, ca în conceptul inițial): ștergeți `--video` din cele două fișiere `.bat`; pe un singur
-PC, `run_vigil.py --no-video`.
+## Video live în dashboard
+Ambele camere trimit imaginea live, implicit (orice pornire Vision cu `--publish`): JPEG-uri de 640 px, 20 cadre/s
+(~30 KB/cadru, ~0.6 MB/s pe cameră; prin hotspot ~10 Mbit/s pentru ambele), pe `vigil/video/face` și
+`vigil/video/body`. Imaginea are firul ei, la viteza camerei (30 cadre/s), deci și camera corpului dă 20 cadre/s,
+deși detecția corpului merge doar la 7–11. Ferestrele FAȚA și CORP din dashboard arată imaginea cu punctele peste
+ea și, pe eticheta `LIVE`, câte cadre/s ajung de fapt.
+* Cu o singură cameră (`4_pornire_camera.bat`), aceeași imagine apare în ambele ferestre.
+* Dacă rețeaua nu ține pasul, camera **sare** cadrele vechi (nu se adună întârziere): imaginea rămâne actuală,
+  doar cu mai puține cadre/s. Hotspot slab: adăugați `--video-fps 10` sau `--video-width 480` în `.bat`.
+
+## Teste & reset (dashboard)
+Cardul **Teste & reset** arată fiecare componentă separat, fără camere:
+* **Reset:** alerte (ESP32 stins) · mașina (croazieră, fără avarii) · ML1 (călătorie nouă, calibrare de la zero) ·
+  **Tot** (cere a doua apăsare).
+* **Componente:** ESP32 1→2→3→0 (câte 2.5 s) · voce ML2 (o frază de test, cel mult o dată la 10 s) · **112 simulat**
+  (cere a doua apăsare; raport marcat TEST, fereastra roșie, revenire la normal după 15 s; nimic nu pleacă de pe laptop).
+* **ECU:** frânare de urgență, încetinire la 60 / 30, avarii pornite / oprite, anulează urgența, reia. Răspunsul
+  plăcii apare în graficul mașinii, cu `id`-ul comenzii. Cât timp ML1 rulează, ML2 poate suprascrie o comandă
+  manuală la următoarea schimbare a comenzii fuzzy.
+* Doar cifre și puncte (privacy mode, ca în conceptul inițial): `--no-video` în `.bat`, sau `run_vigil.py --no-video`.
+* Nimic nu se salvează (QoS 0, fără retain).
 
 ## Placa ECU (mașina simulată)
 `ECU_Arduino/ECU_Arduino.ino` pe ESP32-C3: parola Wi-Fi stă în `ECU_Arduino/wifi_secrets.h` (copiat din

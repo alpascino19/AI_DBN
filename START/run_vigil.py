@@ -398,7 +398,7 @@ def main() -> None:
             procs.append(Proc("MERGE", [py, "-m", "vigil_vision.merge", "--broker", args.broker], ROOT / "Vision", env))
             # --mute: alertele locale ale CV (beep) tac; vocea și alarma sunt treaba ML2
             common = (["--publish", "--mqtt-host", args.broker, "--mute"] + (["--show"] if args.show else [])
-                      + ([] if args.no_video else ["--video"]))   # imaginea camerei în dashboard
+                      + (["--no-video"] if args.no_video else []))   # imaginea live e implicită în Vision
             for role, idx in local_cameras(args):
                 extra = ["--calib", "5"] if role == "face" else []
                 procs.append(Proc(role.upper(), [py, "-m", f"vigil_vision.run_{role}", "--index", str(idx),
@@ -411,6 +411,8 @@ def main() -> None:
                 cv.append("--show")
             if args.camera is not None:
                 cv += ["--camera", str(args.camera)]
+            if args.no_video:
+                cv.append("--no-video")      # altfel o cameră trimite imaginea live în ambele ferestre
             procs.append(Proc("CV", cv, ROOT / "Vision", env))
         if not args.no_dashboard:
             npm = shutil.which("npm", path=path)

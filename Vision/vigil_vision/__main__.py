@@ -26,6 +26,8 @@ def main() -> None:
     ap.add_argument("--no-mqtt", action="store_true", help="nu te conecta la broker")
     ap.add_argument("--echo", action="store_true", help="afișează în consolă și când MQTT merge")
     ap.add_argument("-v", "--verbose", action="store_true")
+    from .video import add_video_args
+    add_video_args(ap)          # imaginea live pentru dashboard (--no-video = doar cifre)
     args = ap.parse_args()
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
@@ -41,7 +43,12 @@ def main() -> None:
         return
 
     from .pipeline import Pipeline
-    Pipeline(cfg, publisher=pub, show=args.show).run()
+    pipeline = Pipeline(cfg, publisher=pub, show=args.show)
+    if args.video and not args.no_mqtt:
+        # o singură cameră vede și fața, și corpul: același cadru apare în ambele ferestre din dashboard
+        from .video import VideoSender
+        pipeline.videos = [VideoSender.from_args(pub, f"vigil/video/{role}", args) for role in ("face", "body")]
+    pipeline.run()
 
 
 if __name__ == "__main__":

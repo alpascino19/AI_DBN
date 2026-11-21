@@ -40,6 +40,7 @@ Implicit, pagina caută brokerul pe calculatorul care o servește (`ws://<host>:
 | Evenimente active: tip, durată, încredere | `vigil/vision` → `events` |
 | Decizie LLM: severitate, motiv, unelte, sursă, latență + istoric (ultimele 50) | `vigil/decision` |
 | ECU (control fuzzy): mod, viteza de referință și ținta, asistența de bandă, distanța, frânarea, avariile + P(atent / distras / obosit / urgență) | `vigil/ecu` (5/s, de la ML1) |
+| **Teste & reset**: reset alerte / mașină / ML1 (recalibrare) / tot; teste ESP32 1→2→3→0, voce ML2, 112 simulat (marcat TEST); comenzile plăcii ECU una câte una; jurnalul ultimelor acțiuni | publică pe `vigil/alert`, `vigil/car/cmd`, `vigil/ml1/cmd`, `vigil/decision` (`source: "test"`); vezi [START/3_LAPTOPURI.md](../START/3_LAPTOPURI.md) |
 | **Asistent Virgil**: butonul „Întreabă-l pe Virgil” (ascultă o întrebare la microfon) și butoanele „Ora”, „Vremea”, „Traficul”; arată ce a auzit Virgil, răspunsul și sursa | publică pe `vigil/assistant`, citește `vigil/assistant/reply` (ML2, vezi [ML2/README.md](../ML2/README.md) 4.4c) |
 | Răspunsul șoferului: textul și latența, sau „fără răspuns” | `vigil/driver_response` |
 | **Fereastră roșie de urgență** cu raportul 112 | o decizie care conține `call_112` |

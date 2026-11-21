@@ -63,8 +63,8 @@ def face_message(out: FaceOutput, events: list, fps: float) -> VisionMessage:
 def add_mqtt_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--publish", action="store_true", help="trimite pe MQTT (vigil/vision/face sau /body)")
     p.add_argument("--mqtt-host", help="IP-ul brokerului (implicit mqtt.host din config.yaml)")
-    p.add_argument("--video", action="store_true",
-                   help="cu --publish: trimite și imaginea camerei (JPEG mic) pentru dashboard; fără = privacy mode")
+    from .video import add_video_args
+    add_video_args(p)          # cu --publish: și imaginea live pentru dashboard (--no-video = doar cifre)
 
 
 def main() -> None:
@@ -98,7 +98,7 @@ def main() -> None:
         pub = Publisher(cfg, topic=FACE_TOPIC, host=args.mqtt_host)
         if args.video:
             from .video import VideoSender
-            video = VideoSender(pub, "vigil/video/face")
+            video = VideoSender.from_args(pub, "vigil/video/face", args).start(cam)   # fir propriu, 20 cadre/s
     period, next_pub = 1.0 / max(1, cfg.get("publish_hz", 10)), 0.0
     reader = cam.reader(CV1)
     try:
@@ -111,8 +111,6 @@ def main() -> None:
                 pub.publish({**face_message(out, events, reader.fps).to_dict(),
                              "face_panel": face_panel(snap, stack.calib, am, t, reader.fps)})  # pentru dashboard
                 next_pub = t + period
-            if video is not None:
-                video.maybe_send(frame.image, t)
             if stack.calib.done:
                 for a in am.update(snap.eyes, snap.head, stack.detections(), t):
                     print(f"{time.strftime('%H:%M:%S')} [FAȚĂ nivel {a.level}] {a.message}")

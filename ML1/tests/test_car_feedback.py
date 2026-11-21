@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from ml1.engine import DecisionEngine
-from ml1.mqtt_bridge import TOPIC_CAR_EVENT, TOPIC_CAR_STATE, TOPIC_STATUS, TOPIC_VISION, Bridge
+from ml1.mqtt_bridge import TOPIC_CAR_EVENT, TOPIC_CAR_STATE, TOPIC_ML1_CMD, TOPIC_STATUS, TOPIC_VISION, Bridge
 from ml1.reports import build_112_report
 
 DATA = Path(__file__).resolve().parent / "data"
@@ -60,6 +60,24 @@ class TestCarFeedback(unittest.TestCase):
         # fără ECU conectat: textul de dinainte
         self.assertIn("Vehicul: avarii pornite, manevră de oprire în siguranță.",
                       build_112_report({"fusion": {"a": 0.1}}, now=0))
+
+
+class TestResetFromDashboard(unittest.TestCase):
+    def test_reset_starts_a_new_trip_and_calibration(self):
+        sent = []
+        br = Bridge(DecisionEngine(), lambda t, o: sent.append((t, o)))
+        for line in (DATA / "calibration.jsonl").read_text(encoding="utf-8").splitlines()[:40]:
+            if line.strip():
+                br.on_message(TOPIC_VISION, line)
+        old = br.engine
+        self.assertGreater(old.stats["frames"], 0)
+        br.on_message(TOPIC_ML1_CMD, json.dumps({"cmd": "reset", "id": "dashboard-1"}))
+        self.assertIsNot(br.engine, old)                  # motor nou
+        self.assertEqual(br.engine.stats["frames"], 0)
+        self.assertFalse(br.engine.baseline.ready)        # calibrare de la zero
+        self.assertEqual(br.received["cmd"], 1)
+        br.on_message(TOPIC_ML1_CMD, json.dumps({"cmd": "format_c"}))   # necunoscută: ignorată
+        self.assertEqual(br.received["cmd"], 2)
 
 
 if __name__ == "__main__":

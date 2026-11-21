@@ -35,6 +35,7 @@ class Publisher:
         self._client = None
         self._last_print = 0.0
         self._last_events: tuple = ()
+        self._pending: dict = {}        # topic -> ultimul MQTTMessageInfo binar (cadre video)
         if m["enabled"] if enabled is None else enabled:
             self._connect(host or m["host"], int(m["port"]))
 
@@ -79,10 +80,14 @@ class Publisher:
 
     def publish_bytes(self, topic: str, data: bytes) -> bool:
         """Date binare (cadrele JPEG pentru dashboard, video.py) pe alt topic; QoS 0, fără retain.
-        Fără broker nu se afișează nimic în consolă: imaginea nu are sens acolo."""
+        Dacă cadrul precedent de pe același topic nu a plecat încă (rețea lentă), îl sărim pe cel nou: imaginea
+        rămâne actuală în loc să rămână tot mai în urmă. Fără broker nu se afișează nimic în consolă."""
         if self._client is None or not self.connected:
             return False
-        self._client.publish(topic, data, qos=0)
+        last = self._pending.get(topic)
+        if last is not None and not last.is_published():
+            return False
+        self._pending[topic] = self._client.publish(topic, data, qos=0)
         return True
 
     def _print(self, data: dict) -> None:

@@ -18,10 +18,12 @@ const BAR: Record<Tone, string> = { normal: 'bg-slate-500', ok: 'bg-green-600', 
 
 /** O fereastră ca `vigil - FATA` / `vigil - CORP`: camera (imaginea, dacă Vision rulează cu --video, plus punctele),
  *  coloana cu detalii, banda de avertizări. `draw(ctx, w, h, withVideo)` desenează punctele peste. */
-export function CameraWindow({ view, draw, video }: {
+export function CameraWindow({ view, draw, video, videoFps }: {
   view: WindowView
   draw: (ctx: CanvasRenderingContext2D, w: number, h: number, withVideo: boolean) => void
   video?: string
+  /** cadre/s primite de dashboard (nu cele ale camerei): arată dacă rețeaua ține pasul */
+  videoFps?: number
 }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const [aspect, setAspect] = useState(W / H)   // al imaginii primite (camera poate fi 16:9); punctele urmează la fel
@@ -52,7 +54,7 @@ export function CameraWindow({ view, draw, video }: {
             <canvas ref={canvas} width={W} height={H} className="absolute inset-0 h-full w-full" />
           </div>
           <span className={`absolute bottom-2 left-3 text-[11px] ${video ? 'rounded bg-red-600 px-1.5 font-semibold text-white' : 'text-slate-500'}`}>
-            {video ? 'LIVE' : 'privacy: doar punctele, fără imagine'}
+            {video ? `LIVE${videoFps ? ` · ${Math.round(videoFps)} fps` : ''}` : 'fără imagine: doar punctele'}
           </span>
           {/* rama pe nivel, deasupra imaginii */}
           <div

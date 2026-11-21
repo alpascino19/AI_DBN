@@ -13,6 +13,7 @@ Topicuri (contractele din TASKS.md):
                            (ML2 o traduce în comenzi discrete pe vigil/car/cmd, pentru ECU_Arduino)
     vigil/car/state        ECU -> ML1   starea reală a mașinii: viteză, frânare, avarii, oprit (la 0.5-5 s)
     vigil/car/event        ECU -> ML1   evenimente: emergency_braking_started, stopped, ... (cu id-ul comenzii ML2)
+    vigil/ml1/cmd          dashboard -> ML1   {"cmd": "reset"}: călătorie nouă (calibrare de la zero)
 
 `Bridge` conține toată logica și nu depinde de paho (testabilă fără broker);
 `run_mqtt` doar leagă `Bridge` de un client paho.
@@ -37,6 +38,7 @@ TOPIC_STATUS = "vigil/ml1/status"
 TOPIC_ECU = "vigil/ecu"
 TOPIC_CAR_STATE = "vigil/car/state"
 TOPIC_CAR_EVENT = "vigil/car/event"
+TOPIC_ML1_CMD = "vigil/ml1/cmd"     # dashboard -> ML1: {"cmd": "reset"} = călătorie nouă, calibrare de la zero
 
 
 def _decision_payload(d: dict) -> dict:
@@ -55,7 +57,7 @@ class Bridge:
         self.ecu_period = 1.0 / ecu_hz if ecu_hz > 0 else float("inf")
         self._last_status = -float("inf")
         self._last_ecu = -float("inf")
-        self.received = {"vision": 0, "response": 0, "car": 0, "invalid": 0}
+        self.received = {"vision": 0, "response": 0, "car": 0, "cmd": 0, "invalid": 0}
         self.svc.add_listener(lambda d: self.send(TOPIC_DECISION, _decision_payload(d)))
 
     def on_message(self, topic: str, payload: bytes | str) -> None:
@@ -80,6 +82,16 @@ class Bridge:
         elif topic in (TOPIC_CAR_STATE, TOPIC_CAR_EVENT):
             self.received["car"] += 1
             self.engine.on_car(msg)
+        elif topic == TOPIC_ML1_CMD:
+            self.received["cmd"] += 1
+            if msg.get("cmd") == "reset":
+                # motor nou: calibrare, episod, matricea de stare și controlerul ECU pornesc de la zero; ML2 vede
+                # pe vigil/ecu revenirea la NORMAL și readuce mașina la croazieră
+                self.svc.reset()
+                self._last_status = self._last_ecu = -float("inf")
+                log.info("reset ML1 din dashboard (%s)", msg.get("id", "-"))
+            else:
+                log.warning("comandă ML1 necunoscută: %r", msg)
 
     @property
     def engine(self) -> DecisionEngine:
@@ -136,7 +148,8 @@ def run_mqtt(host: str, port: int, use_llm: bool) -> None:
 
     def on_connect(c, userdata, flags, rc, *args):
         log.info("conectat la %s:%d", host, port)
-        c.subscribe([(TOPIC_VISION, 0), (TOPIC_RESPONSE, 1), (TOPIC_CAR_STATE, 0), (TOPIC_CAR_EVENT, 1)])
+        c.subscribe([(TOPIC_VISION, 0), (TOPIC_RESPONSE, 1), (TOPIC_CAR_STATE, 0), (TOPIC_CAR_EVENT, 1),
+                     (TOPIC_ML1_CMD, 1)])
 
     client.on_connect = on_connect
     client.on_message = lambda c, u, m: bridge.on_message(m.topic, m.payload)
