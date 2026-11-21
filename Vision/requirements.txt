@@ -1,0 +1,9 @@
+opencv-python
+mediapipe
+ultralytics
+numpy
+pydantic
+paho-mqtt
+pyyaml
+fastapi
+uvicorn
