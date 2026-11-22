@@ -78,7 +78,7 @@ export type State = {
 }
 
 export const HISTORY = 50
-export const SERIES_MS = 120_000 // graficul arată ultimele 2 minute
+export const SERIES_MS = 60_000 // graficul arată ultimul minut (mai lizibil decât 2 minute)
 
 export const initialState: State = {
   vision: null,

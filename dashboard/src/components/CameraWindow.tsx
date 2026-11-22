@@ -44,7 +44,7 @@ export function CameraWindow({ view, draw, video, videoFps }: {
   const single = view.sections.length === 1
 
   return (
-    <section className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+    <section className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
       <div className="relative bg-slate-950" style={{ aspectRatio: video ? aspect : W / H }}>
         {video && (
           <img
@@ -68,7 +68,7 @@ export function CameraWindow({ view, draw, video, videoFps }: {
         )}
       </div>
 
-      <div className="px-4 pb-4 pt-3">
+      <div className="flex flex-1 flex-col px-4 pb-4 pt-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className={`text-base font-semibold ${SENTENCE}`}>{view.title}</h2>
           <span className="flex items-center gap-3">
@@ -82,11 +82,11 @@ export function CameraWindow({ view, draw, video, videoFps }: {
           </div>
         )}
 
-        <div className="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+        <div className="mb-4 mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
           {view.sections.map((s) => (
             <div key={s.title} className={single ? 'sm:col-span-2' : ''}>
               <h3 className={`border-b border-slate-800 pb-1 text-xs font-medium text-slate-400 ${SENTENCE}`}>{s.title}</h3>
-              <dl className={`mt-1.5 gap-x-6 space-y-1 ${single ? 'sm:columns-2' : ''}`}>
+              <dl className={`mt-1.5 gap-x-6 space-y-1 ${single ? 'sm:columns-2 xl:columns-1 2xl:columns-2' : ''}`}>
                 {s.rows.map((r) => (
                   <div key={r.label} className="grid break-inside-avoid grid-cols-[1fr_auto] items-center gap-2 text-sm">
                     <dt className="flex items-center gap-2 text-slate-400">
@@ -111,7 +111,7 @@ export function CameraWindow({ view, draw, video, videoFps }: {
           <p className="mt-3 text-xs text-slate-400">doar câmpurile de bază (Vision nu a trimis panoul complet)</p>
         )}
 
-        <div className="mt-4 border-t border-slate-800 pt-3">
+        <div className="mt-auto border-t border-slate-800 pt-3">
           <h3 className="text-xs font-medium text-slate-400">Avertizări</h3>
           {off ? (
             <p className="mt-1.5 text-sm text-slate-400">nu sosesc date de la această cameră</p>

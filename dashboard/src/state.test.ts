@@ -79,12 +79,12 @@ describe('reduce', () => {
     expect(reduce(s, 'vigil/car/state', '{"braking":true}', T)).toBe(s)   // fără viteză: ignorat
   })
 
-  it('seria graficului păstrează doar ultimele 2 minute', () => {
+  it('seria graficului păstrează doar ultimul minut', () => {
     const ecu = JSON.stringify({ mode: 'NORMAL', speed_factor: 1, speed_ref_kmh: 100, target_kmh: 100,
       lka_authority: 0, headway_s: 1.8, inputs: { a: 0.9 } })
     let s = initialState
-    for (const t of [0, 60_000, 130_000]) s = reduce(s, 'vigil/ecu', ecu, t)
-    expect(s.series.ecu.map((p) => p.t)).toEqual([60_000, 130_000])
+    for (const t of [0, 30_000, 65_000]) s = reduce(s, 'vigil/ecu', ecu, t)
+    expect(s.series.ecu.map((p) => p.t)).toEqual([30_000, 65_000])
     expect(s.series.ecu[1]).toMatchObject({ ref: 100, target: 100, a: 0.9, mode: 'NORMAL' })
   })
 

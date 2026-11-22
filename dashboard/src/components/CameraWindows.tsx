@@ -20,7 +20,7 @@ export function CameraWindows({ vision, video }: { vision: Vision | null; video?
   const face = faceView(vision)
   const body = bodyView(vision)
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-2">
+    <div className="grid items-stretch gap-4 xl:grid-cols-2">
       <LiveWindow cam="face" video={video} view={face}
         draw={(ctx, w, h, withVideo) => drawFace(ctx, vision?.landmarks, !!face.eyesClosed, w, h, withVideo)} />
       <LiveWindow cam="body" video={video} view={body}

@@ -13,7 +13,7 @@ const SPEED = [
   { key: 'ref', name: 'Referința ML1', short: 'ML1', color: C.ref },
   { key: 'target', name: 'Ținta fuzzy', short: 'țintă', color: C.target },
 ] as const
-const M = { l: 40, r: 78, t: 24, b: 24 }
+const M = { l: 48, r: 104, t: 28, b: 30 }
 const BAND_LABEL_PX = 44  // o bandă mai îngustă nu își scrie numele (s-ar suprapune; legenda îl are)
 const ECU_GAP_MS = 3000   // ML1 publică la 5 Hz: o pauză mai lungă = ML1 oprit
 const CAR_GAP_MS = 12000  // ECU publică la 5 s când nu frânează
@@ -36,7 +36,7 @@ function useWidth() {
   return [ref, w] as const
 }
 
-/** Ceasul graficului: fereastra de 2 minute alunecă și când nu sosesc mesaje. */
+/** Ceasul graficului: fereastra de un minut alunecă și când nu sosesc mesaje. */
 function useNow(ms = 1000) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -48,7 +48,7 @@ function useNow(ms = 1000) {
 
 const fmtAgo = (now: number, t: number) => (now - t < 1500 ? 'acum' : `-${Math.round((now - t) / 1000)} s`)
 
-/** Viteza mașinii: ce cere ML1 (fuzzy) vs ce face ECU-ul (ECU_Arduino), plus atenția șoferului, pe ultimele 2 minute. */
+/** Viteza mașinii: ce cere ML1 (fuzzy) vs ce face ECU-ul (ECU_Arduino), plus atenția șoferului, pe ultimul minut. */
 export function CarChart({ ecu, car, carNow, events, online, onReset }: {
   ecu: EcuSample[]
   car: CarSample[]
@@ -71,9 +71,9 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
   const carIn = car.filter((s) => s.t >= t0)
   const vmax = Math.max(120, ...ecuIn.map((s) => s.ref), ...carIn.map((s) => s.speed))
   const ymax = Math.ceil(vmax / 40) * 40
-  const H1 = 220
+  const H1 = 300
   const y1 = (v: number) => M.t + (1 - v / ymax) * (H1 - M.t - M.b)
-  const H2 = 96
+  const H2 = 130
   const y2 = (v: number) => M.t + (1 - v) * (H2 - M.t - M.b)
 
   const pts: Record<string, Pt[]> = {
@@ -84,8 +84,8 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
   const mrm = runs(ecuIn, (s) => s.mode === 'MRM')
   const hazards = runs(ecuIn, (s) => s.hazards && s.mode !== 'MRM')
   const ends = SPEED.map((s) => pts[s.key].filter((p) => p.v !== null).at(-1))
-  const endY = spread(ends.map((p) => (p?.v != null ? y1(p.v) : -99)), 13, M.t + 4, H1 - M.b)
-  const xticks = [120, 90, 60, 30, 0].map((sec) => ({ sec, px: x(now - sec * 1000) }))
+  const endY = spread(ends.map((p) => (p?.v != null ? y1(p.v) : -99)), 18, M.t + 4, H1 - M.b)
+  const xticks = [60, 45, 30, 15, 0].map((sec) => ({ sec, px: x(now - sec * 1000) }))
   const empty = ecuIn.length === 0 && carIn.length === 0
 
   // citirea la poziția cursorului: toate seriile la același moment
@@ -106,7 +106,7 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
   }
 
   return (
-    <Card title="Mașina: comanda ML1 → ECU (ultimele 2 minute)">
+    <Card title="Mașina: comanda ML1 → ECU (ultimul minut)">
       <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
         <span className="flex items-center gap-1.5">
           <span className={`h-2 w-2 rounded-full ${online ? 'bg-green-500' : online === false ? 'bg-red-500' : 'bg-slate-500'}`} />
@@ -161,33 +161,33 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
             {mrm.map(([a, b]) => (
               <g key={`m${a}`}>
                 <rect x={x(a)} y={M.t} width={Math.max(2, x(b) - x(a))} height={H1 - M.t - M.b} fill={C.critical} opacity={0.18} />
-                {x(b) - x(a) >= BAND_LABEL_PX && <text x={x(a) + 4} y={M.t + 11} fontSize="11" fill="#fca5a5">MRM</text>}
+                {x(b) - x(a) >= BAND_LABEL_PX && <text x={x(a) + 4} y={M.t + 11} fontSize="13" fill="#fca5a5">MRM</text>}
               </g>
             ))}
             {hazards.map(([a, b]) => (
               <g key={`h${a}`}>
                 <rect x={x(a)} y={M.t} width={Math.max(2, x(b) - x(a))} height={H1 - M.t - M.b} fill={C.warning} opacity={0.12} />
-                {x(b) - x(a) >= BAND_LABEL_PX && <text x={x(a) + 4} y={M.t + 11} fontSize="11" fill="#fde68a">avarii</text>}
+                {x(b) - x(a) >= BAND_LABEL_PX && <text x={x(a) + 4} y={M.t + 11} fontSize="13" fill="#fde68a">avarii</text>}
               </g>
             ))}
             {Array.from({ length: ymax / 40 + 1 }, (_, i) => i * 40).map((v) => (
               <g key={v}>
                 <line x1={M.l} x2={M.l + iw} y1={y1(v)} y2={y1(v)} stroke={v === 0 ? C.axis : C.grid} />
-                <text x={M.l - 6} y={y1(v) + 3} fontSize="11" textAnchor="end" fill="#64748b" className="tabular-nums">{v}</text>
+                <text x={M.l - 8} y={y1(v) + 4} fontSize="13" textAnchor="end" fill="#94a3b8" className="tabular-nums">{v}</text>
               </g>
             ))}
-            <text x={M.l - 6} y={10} fontSize="11" textAnchor="end" fill="#64748b">km/h</text>
+            <text x={M.l - 8} y={14} fontSize="13" textAnchor="end" fill="#94a3b8">km/h</text>
             {xticks.map(({ sec, px }) => (
-              <text key={sec} x={px} y={H1 - 6} fontSize="11" textAnchor={sec === 0 ? 'end' : 'middle'} fill="#64748b">
+              <text key={sec} x={px} y={H1 - 8} fontSize="13" textAnchor={sec === 0 ? 'end' : 'middle'} fill="#94a3b8">
                 {sec === 0 ? 'acum' : `-${sec} s`}
               </text>
             ))}
             {SPEED.map((s) => (
               <path key={s.key} d={linePath(pts[s.key], x, y1, s.key === 'car' ? CAR_GAP_MS : ECU_GAP_MS, s.key === 'car')}
-                fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                fill="none" stroke={s.color} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
             ))}
             {SPEED.map((s, i) => ends[i]?.v != null && (
-              <text key={s.key} x={M.l + iw + 6} y={endY[i] + 3} fontSize="11" fill="#cbd5e1" className="tabular-nums">
+              <text key={s.key} x={M.l + iw + 8} y={endY[i] + 5} fontSize="15" fontWeight="600" fill="#e2e8f0" className="tabular-nums">
                 <tspan fill={s.color}>●</tspan> {s.short} {Math.round(ends[i]!.v!)}
               </text>
             ))}
@@ -200,11 +200,11 @@ export function CarChart({ ecu, car, carNow, events, online, onReset }: {
             {[0, 0.5, 1].map((v) => (
               <g key={v}>
                 <line x1={M.l} x2={M.l + iw} y1={y2(v)} y2={y2(v)} stroke={v === 0 ? C.axis : C.grid} />
-                <text x={M.l - 6} y={y2(v) + 3} fontSize="11" textAnchor="end" fill="#64748b">{v}</text>
+                <text x={M.l - 8} y={y2(v) + 4} fontSize="13" textAnchor="end" fill="#94a3b8">{v}</text>
               </g>
             ))}
             <path d={linePath(ecuIn.map((s) => ({ t: s.t, v: s.a })), x, y2, ECU_GAP_MS)} fill="none" stroke={C.a}
-              strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+              strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
             {hv && <line x1={x(hv.t)} x2={x(hv.t)} y1={M.t} y2={H2 - M.b} stroke="#94a3b8" strokeWidth="1" />}
           </svg>
 
