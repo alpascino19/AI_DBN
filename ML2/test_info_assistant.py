@@ -200,10 +200,28 @@ def test_weather_place():
     assert ia.weather_place("Cum e vremea în România?") == "România"
     assert ia.weather_place("E frig în Moldova?") == "Iași"
     assert ia.weather_place("Ce vreme e pe litoral?") == "Constanța"
+    assert ia.weather_place("Spune-mi te rog vremea din alba Iulia.") == "alba Iulia"   # cum a scris Whisper
+    assert ia.weather_place("Plouă la Baia Mare azi?") == "Baia Mare"
+    assert ia.weather_place("Cum e vremea la noi?") is None
+    assert ia.weather_place("E frig afară?") is None
 
 
 FORECAST = {"current": {"temperature_2m": 5, "weather_code": 61, "wind_speed_10m": 8},
             "daily": {"temperature_2m_max": [7], "temperature_2m_min": [1], "precipitation_probability_max": [80]}}
+
+
+def test_geocode_picks_county():
+    asked = []
+    real = ia.http_json
+    ia.http_json = lambda url, *a, **k: asked.append(url) or {"results": [
+        {"name": "Scărișoara", "admin1": "Județul Olt", "latitude": 44.0, "longitude": 24.6},
+        {"name": "Scărișoara", "admin1": "Județul Alba", "latitude": 46.5, "longitude": 22.8}]}
+    try:
+        assert ia.geocode("scărișoara județul albă") == ("Scărișoara", 46.5, 22.8)
+        assert "name=sc%C4%83ri%C8%99oara&" in asked[0] and "count=10" in asked[0]
+        assert ia.geocode("Scărișoara") == ("Scărișoara", 44.0, 24.6)       # fără județ: primul rezultat
+    finally:
+        ia.http_json = real
 
 
 def test_weather_city_and_romania():

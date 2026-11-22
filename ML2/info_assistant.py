@@ -50,7 +50,10 @@ căutării au data publicării: ține cont de ea când spui „ultimul”); dac�
 La întrebări despre „azi”/„diseară”/„mâine” iei DOAR evenimentele cu acea dată; ignori ce s-a jucat sau s-a \
 întâmplat în alte zile, chiar dacă apare în rezultate. „În România” înseamnă ce se joacă în țară (ex. Superliga), \
 nu doar naționala. \
-Nu inventa. Locația mașinii: {city}. Data și ora: {now}."""
+La întrebări de cunoștințe generale (mașini și întreținere, presiunea în roți, zgomote, sfaturi, explicații) răspunzi \
+din ce știi, concret și util, chiar dacă datele live nu le conțin; la un zgomot sau o defecțiune spui cauzele \
+probabile și recomanzi un service, iar dacă pare periculos, să oprească în siguranță. \
+Nu inventa fapte de actualitate. Locația mașinii: {city}. Data și ora: {now}."""
 
 log = logging.getLogger("virgil")
 
@@ -143,18 +146,30 @@ def weather_place(question):
     for word, city in REGIONS.items():
         if re.search(rf"\b(in|la|din|pe|spre)\s+(zona\s+|regiunea\s+)?{word}\b", q):
             return city
-    # „la Brașov”, „în Vatra Dornei”: Whisper scrie localitățile cu majusculă
-    m = re.search(r"\b(?:în|in|la|din|pentru|spre)\s+([A-ZĂÂÎȘȚ][\w-]+(?:\s+[A-ZĂÂÎȘȚ][\w-]+)?)", question)
-    return m.group(1) if m else None
+    # „la Brașov”, „din alba Iulia”: textul după prepoziție, fără majuscule obligatorii (Whisper nu le pune mereu),
+    # până la punctuație sau un cuvânt de timp („azi”, „acum”...)
+    m = re.search(r"\b(?:în|in|la|din|pentru|spre)\s+(.+?)\s*(?:\b(?:azi|astăzi|astazi|acum|mâine|maine|diseară|"
+                  r"diseara|dimineață|dimineata|seara|weekend)\b|[,?!.]|$)", question, re.I)
+    place = m.group(1).strip() if m else ""
+    # „la noi”, „afară” nu sunt localități (geocodarea ar găsi „Noiștat”)
+    if not place or len(place.split()) > 3 or plain(place) in ("noi", "voi", "mine", "afara", "oras", "zona", "exterior"):
+        return None
+    return place
 
 
 def geocode(name):
-    """Localitate -> (nume, lat, lon), întâi în România, apoi oriunde (Open-Meteo, fără cheie)."""
+    """Localitate -> (nume, lat, lon), întâi în România, apoi oriunde (Open-Meteo, fără cheie).
+    „Scărișoara județul Alba”: județul alege dintre localitățile cu același nume."""
+    county = None
+    m = re.search(r"[\s,]+(?:jude[tț]ul|jud\.?)\s+(.+)$", name, re.I)
+    if m:
+        name, county = name[:m.start()], plain(m.group(1))
     for country in ("&countryCode=RO", ""):
-        r = http_json("https://geocoding-api.open-meteo.com/v1/search?count=1&language=ro"
+        r = http_json(f"https://geocoding-api.open-meteo.com/v1/search?count={10 if county else 1}&language=ro"
                       f"&name={urllib.parse.quote(name)}{country}").get("results")
         if r:
-            return r[0]["name"], r[0]["latitude"], r[0]["longitude"]
+            x = next((x for x in r if county and county in plain(x.get("admin1", ""))), r[0])
+            return x["name"], x["latitude"], x["longitude"]
     return None
 
 
@@ -380,8 +395,9 @@ def search_query(question):
         return dated(question)
 
 
-NO_SEARCH = ("Căutarea web nu a întors nimic acum. Nu ai date despre întrebare: spune pe scurt că nu poți afla "
-             "informația acum. NU ghici și nu folosi ce știi din memorie despre evenimente recente.")
+NO_SEARCH = ("Căutarea web nu a întors nimic acum. Dacă întrebarea e despre actualitate (evenimente, rezultate, "
+             "persoane în funcție, prețuri): spune pe scurt că nu poți afla informația acum, NU ghici. Dacă e o "
+             "întrebare de cunoștințe generale, răspunde din ce știi.")
 
 
 def search(query):
