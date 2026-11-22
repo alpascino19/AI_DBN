@@ -1,7 +1,7 @@
 """Virgil — asistentul vocal de informare, separat de executorul ML 2 (siguranța).
 
 „Hei Virgil, <întrebare>” -> date live (vreme: Open-Meteo; trafic: Waze; durata până la o destinație:
-Google Maps Routes; știri: RSS; orice altceva: căutare
+TomTom; știri: RSS; orice altceva: căutare
 Tavily prin OmniRoute) -> model prin OmniRoute -> voce. După răspuns ascultă și întrebările următoare.
 Tace imediat ce ML 2 are o alertă (vigil/decision cu severitate >= 1): siguranța are mereu prioritate.
 
@@ -17,6 +17,7 @@ import subprocess
 import threading
 import time
 import unicodedata
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
@@ -71,8 +72,13 @@ def plain(text):
 
 
 def route(question):
-    """Ce surse live cer întrebarea: subset din {weather, news, traffic, search}."""
+    """Ce surse live cer întrebarea: subset din {weather, news, traffic, eta, where, search}, sau {chat}."""
     q = plain(question)
+    # conversație cu Virgil, nu o întrebare despre lume: fără căutare (pe web nu există „ce face Virgil”)
+    if re.search(r"^\W*(ce (mai )?faci|cum (te )?(simti|esti)|cine esti|cum te (cheama|numesti)|ce (poti|stii) (sa )?"
+                 r"(faci|face)|cu ce (ma )?poti ajuta|salut|buna( ziua| dimineata| seara)?|neata|multumesc|mersi"
+                 r"|esti acolo|ma auzi)\b", q):
+        return {"chat"}
     topics = set()
     if re.search(r"vreme|ploua|ploaie|ninge|temperatur|grade|frig|cald|soare|umbrel", q):
         topics.add("weather")
@@ -84,11 +90,19 @@ def route(question):
                  r"|cat (imi )?ia|distanta|departe|pana la|pina la|pana in|ajung|merg la|drumul la", q) \
             and destination(question):
         topics.add("eta")
+    if re.search(r"unde (sunt|ma aflu|ne aflam|suntem)|locati|pozitia|adresa (mea|curenta)|coordonat", q):
+        topics.add("where")
     return topics or {"search"}
 
 
+PAIR = re.compile(r"\b(?:dintre|între|intre)\s+(.+?)\s+(?:și|si)\s+([^,?!]+?)\s*(?:[,?!]|\.?\s*$)", re.I)
+
+
 def destination(question):
-    """„Cât fac până la Gara Cluj?” -> „Gara Cluj” (textul după până la / spre / către / ajung la)."""
+    """„Cât fac până la Gara Cluj?” -> „Gara Cluj” (textul după până la / spre / către / ajung la / dintre X și)."""
+    pair = PAIR.search(question)
+    if pair:
+        return pair.group(2).strip()
     # Whisper scrie uneori „pînă” (ortografia veche); „ajung la” / „merg la” = aceeași întrebare
     m = re.search(r"\b(?:p[âîai]n[ăa]\s+(?:la|în|in)|spre|c[ăa]tre|ajung(?:e|em)?\s+la|merg(?:em)?\s+la|drumul\s+la)\s+"
                   r"([^,?!]+?)\s*(?:[,?!]|\.?\s*$)", question, re.I)
@@ -98,6 +112,9 @@ def destination(question):
 def origin(question):
     """„... de la strada Observatorului până la gară” -> „strada Observatorului”; None = plecăm din centru.
     Whisper strică uneori „de la” („de ina strada ...”): atunci recunoaștem plecarea după cuvântul strada/calea/..."""
+    pair = PAIR.search(question)
+    if pair:
+        return pair.group(1).strip()
     m = re.search(r"\bde\s+(?:la\s+(.+?)|\S+\s+((?:strada|str\.|bulevardul|calea|pia[țt]a|aleea)\s.+?))"
                   r"\s+(?:p[âîai]n[ăa]|spre|c[ăa]tre)\b", question, re.I)
     return (m.group(1) or m.group(2)).strip() if m else None
@@ -171,67 +188,121 @@ def summarize_waze(alerts, jams, limit=8):
 
 # Serviciul de localizare Windows (după rețelele Wi-Fi, ~100 m), fără cheie; InvariantCulture = punct zecimal
 HERE_PS = ("Add-Type -AssemblyName System.Device; $w = New-Object System.Device.Location.GeoCoordinateWatcher(1); "
-           "$w.Start(); $t = 0; while ($w.Status -ne 'Ready' -and $w.Permission -ne 'Denied' -and $t -lt 50) "
+           "$w.Start(); $t = 0; while ($w.Status -ne 'Ready' -and $w.Permission -ne 'Denied' -and $t -lt 100) "
            "{ Start-Sleep -Milliseconds 100; $t++ }; $c = $w.Position.Location; if (-not $c.IsUnknown) "
            "{ [string]::Format([cultureinfo]::InvariantCulture, '{0};{1}', $c.Latitude, $c.Longitude) }")
 _here = (0.0, None)
 
 
+def here_windows():
+    out = subprocess.run(["powershell", "-NoProfile", "-Command", HERE_PS], capture_output=True, text=True,
+                         timeout=15).stdout.strip()
+    return tuple(map(float, out.split(";")))
+
+
 def here(max_age=60):
-    """(lat, lon) curente de la Windows, păstrate `max_age` s; None dacă localizarea e oprită sau lipsește."""
+    """(lat, lon) curente de la Windows, păstrate `max_age` s; None = localizarea e oprită, plecăm din centru."""
     global _here
     if time.time() - _here[0] < max_age:
         return _here[1]
     try:
-        out = subprocess.run(["powershell", "-NoProfile", "-Command", HERE_PS], capture_output=True, text=True,
-                             timeout=15).stdout.strip()
-        pos = tuple(map(float, out.split(";")))
+        pos = here_windows()
     except Exception as e:
         log.warning("localizarea Windows: %r (plecăm din centrul orașului)", e)
         pos = None
-    _here = (time.time(), pos)
+    if pos:   # un eșec nu se memorează: următoarea întrebare reîncearcă
+        _here = (time.time(), pos)
     return pos
 
 
-def eta_google(question):
-    """Durata cu traficul de acum până la destinația din întrebare (Google Maps Routes API, GOOGLE_MAPS_API_KEY).
+TOMTOM = "https://api.tomtom.com"
+
+
+def tomtom_place(query, key, near):
+    """Text („gară”, „Iulius Mall”, o stradă scrisă greșit de Whisper) -> (lat, lon, nume), căutat lângă `near`."""
+    lat, lon = near
+    # „gară” simplu = gara mare, nu cea mai apropiată haltă (TomTom ar alege „Clujana”)
+    # shortcut: doar pentru Cluj-Napoca; de generalizat dacă se schimbă CITY
+    if re.fullmatch(r"gara( mare| centrala| cluj(-napoca)?| din cluj(-napoca)?)?", plain(query)):
+        query = "Stația CFR Cluj-Napoca"
+    r = http_json(f"{TOMTOM}/search/2/search/{urllib.parse.quote(query)}.json?key={key}&lat={lat}&lon={lon}"
+                  "&countrySet=RO&language=ro-RO&limit=1")["results"]
+    if not r:
+        return None
+    x = r[0]
+    return x["position"]["lat"], x["position"]["lon"], x.get("poi", {}).get("name") or query
+
+
+def eta_tomtom(question):
+    """Durata cu traficul de acum până la destinația din întrebare (TomTom Search + Routing, TOMTOM_API_KEY).
     Plecarea: „de la ...” din întrebare, altfel poziția curentă (Windows), altfel centrul orașului."""
-    key, dest, start = os.environ.get("GOOGLE_MAPS_API_KEY"), destination(question), origin(question)
+    key, dest, start = os.environ.get("TOMTOM_API_KEY"), destination(question), origin(question)
     if not key or not dest:
         return None
     pos = None if start else here()
-    lat, lon = pos or (LAT, LON)
-    d = http_json("https://routes.googleapis.com/directions/v2:computeRoutes", {
-        "origin": {"address": f"{start}, {CITY}, România"} if start
-        else {"location": {"latLng": {"latitude": lat, "longitude": lon}}},
-        "destination": {"address": f"{dest}, {CITY}, România"},
-        "travelMode": "DRIVE", "routingPreference": "TRAFFIC_AWARE", "languageCode": "ro",
-    }, {"X-Goog-Api-Key": key, "X-Goog-FieldMask": "routes.duration,routes.staticDuration,routes.distanceMeters"})
-    return summarize_route(dest, d, start or ("locul în care sunteți acum" if pos else None))
+    near = pos or (LAT, LON)
+    a = tomtom_place(start, key, near) if start else (*near, None)
+    b = tomtom_place(dest, key, near)
+    if not a or not b:
+        return f"TomTom: nu am găsit {start if not a else dest}."
+    d = http_json(f"{TOMTOM}/routing/1/calculateRoute/{a[0]},{a[1]}:{b[0]},{b[1]}/json?key={key}"
+                  "&traffic=true&travelMode=car")
+    return summarize_route(b[2], d, start or ("locul în care sunteți acum" if pos else None))
+
+
+def where_tomtom():
+    """„Unde sunt?” -> adresa poziției curente (Windows + TomTom reverse geocoding)."""
+    pos = here()
+    if not pos:
+        return "Localizarea Windows e oprită: nu știu unde se află mașina acum."
+    key = os.environ.get("TOMTOM_API_KEY")
+    if not key:
+        return f"Poziția aproximativă a mașinii: latitudine {pos[0]:.4f}, longitudine {pos[1]:.4f}."
+    a = http_json(f"{TOMTOM}/search/2/reverseGeocode/{pos[0]},{pos[1]}.json?key={key}&language=ro-RO")
+    address = a["addresses"][0]["address"].get("freeformAddress") if a.get("addresses") else None
+    return (f"TomTom: mașina e aproximativ la adresa {address} (poziția are o precizie de circa 100 de metri)."
+            if address else "TomTom: nu am găsit adresa poziției curente.")
 
 
 def summarize_route(dest, d, start=None):
     routes = d.get("routes") or []
     if not routes:
-        return f"Google Maps: nu am găsit un traseu până la {dest}."
-    r = routes[0]
-    minutes = lambda key: round(int(str(r.get(key, "0s")).rstrip("s")) / 60)
-    now, free = minutes("duration"), minutes("staticDuration") or minutes("duration")
-    delay = f", cu {now - free} minute în plus din cauza traficului" if now - free >= 2 else ", fără întârzieri de trafic"
+        return f"TomTom: nu am găsit un traseu până la {dest}."
+    r = routes[0]["summary"]
+    now, late = round(r.get("travelTimeInSeconds", 0) / 60), round(r.get("trafficDelayInSeconds", 0) / 60)
+    delay = f", cu {late} minute în plus din cauza traficului" if late >= 2 else ", fără întârzieri de trafic"
     frm = f"de la {start}" if start else f"din centrul orașului {CITY}"
-    return (f"Google Maps: {frm} până la {dest} sunt {round(r.get('distanceMeters', 0) / 1000, 1)} kilometri, "
-            f"{now} minute cu traficul de acum{delay}.")
+    km = r.get("lengthInMeters", 0) / 1000
+    km = round(km) if km >= 20 else round(km, 1)   # „291.1” îl încurca pe model („douăzeci și nouă”)
+    when = f"{now // 60} ore și {now % 60} minute" if now >= 60 else f"{now} minute"
+    return f"TomTom: {frm} până la {dest} sunt {km} kilometri, {when} cu traficul de acum{delay}."
 
 
-def search_omniroute(query, limit=5):
-    """Căutare web prin OmniRoute cu Tavily (cheia Tavily stă în OmniRoute; ~1000 de căutări gratuite/lună)."""
-    r = http_json(f"{OMNIROUTE}/api/v1/search", {"query": query, "provider": "tavily", "max_results": limit},
-                  omniroute_headers(), timeout=30)
-    hits = []
-    for x in r.get("results", []):
-        text = re.sub(r"\s+", " ", x.get("snippet") or "")[:500]  # textul relevant al paginii, scurtat
-        hits.append(f"{x.get('title', '')}: {text}")
-    return ("Căutare web (Tavily): " + " | ".join(hits)) if hits else None
+def search_omniroute(query, limit=5, recent=False):
+    """Căutare web prin OmniRoute cu Tavily (cheia Tavily stă în OmniRoute; ~1000 de căutări gratuite/lună).
+    recent=True: doar știrile din ultima zi (topic news). Pentru „meciurile de ieri” aduce articolele cu scorul,
+    nu paginile de clasament fără rezultate."""
+    body = {"query": query, "provider": "tavily", "max_results": limit}
+    if recent:
+        body.update(topic="news", time_range="day")
+    r = http_json(f"{OMNIROUTE}/api/v1/search", body, omniroute_headers(), timeout=30)
+    hits = [f"{x.get('title', '')}: {clean_snippet(x.get('snippet') or '')}" for x in r.get("results", [])]
+    hits = [h for h in hits if len(h) > 40]
+    # rezultatele cu scoruri („Dinamo - Petrolul 0-1”) primele: altfel se pierdeau după paginile de lot și clasament
+    hits.sort(key=lambda h: -len(SCORE.findall(h)))
+    label = "Știri din ultimele 24 de ore (Tavily)" if recent else "Căutare web (Tavily)"
+    return (f"{label}: " + " || ".join(hits)) if hits else None
+
+
+SCORE = re.compile(r"\b\d{1,2}-\d{1,2}\b")
+
+
+def clean_snippet(text):
+    """Fără zgomotul de tabel din pagini („| 16 | 5 | 4 | ---”), care îngropa scorurile; scurtat la 1200 caractere
+    (la 500 se tăiau scorurile din tabelul LPF)."""
+    text = re.sub(r"(?:\|\s*(?:\\?-+|\d{1,3})?\s*)+(?=\||$)", " ", text)   # celule goale sau doar cu numere
+    text = re.sub(r"\s*(?:#+|---+|\[\.\.\.\])\s*", " ", text)
+    return re.sub(r"\s+", " ", text).strip()[:1200]
 
 
 def dated(question):
@@ -241,9 +312,38 @@ def dated(question):
     return question
 
 
+QUERY_PROMPT = """Transformă întrebarea șoferului într-o căutare web scurtă în română, 3-7 cuvinte, fără politețuri.
+Dacă întrebarea se referă la o zi, pune data exactă (zz.ll.aaaa). Azi este {today}, ieri a fost {yesterday}.
+„Azi noapte”, „aseară” = ieri. „În România” la sport = Superliga. Răspunde DOAR cu textul căutării."""
+
+
+def search_query(question):
+    """„Spune-mi te rog rezultatele meciurilor din România de azi noapte” -> „rezultate Superliga 21.11.2026”.
+    Propoziția vorbită întreagă dădea timeout (504) la Tavily; o căutare scurtă răspunde în ~3 s."""
+    day = 86400
+    body = {"model": MODEL, "max_tokens": 40, "stream": False, "messages": [
+        {"role": "system", "content": QUERY_PROMPT.format(today=time.strftime("%d.%m.%Y"),
+                                                          yesterday=time.strftime("%d.%m.%Y", time.localtime(time.time() - day)))},
+        {"role": "user", "content": question}]}
+    try:
+        text = http_json(f"{OMNIROUTE}/v1/chat/completions", body, omniroute_headers(), timeout=8)
+        query = (text["choices"][0]["message"].get("content") or "").strip().strip('"„”').splitlines()[0]
+        return query if 2 <= len(query.split()) <= 12 else dated(question)
+    except Exception as e:
+        log.warning("reformularea căutării: %r", e)
+        return dated(question)
+
+
+NO_SEARCH = ("Căutarea web nu a întors nimic acum. Nu ai date despre întrebare: spune pe scurt că nu poți afla "
+             "informația acum. NU ghici și nu folosi ce știi din memorie despre evenimente recente.")
+
+
 def search(query):
     """Căutarea web: doar Tavily prin OmniRoute. None dacă nu răspunde (Virgil spune atunci că nu știe)."""
-    return search_omniroute(query)
+    # o dată anume, „azi/ieri”, scoruri, meciuri: întâi știrile din ultima zi, apoi căutarea obișnuită
+    recent = bool(re.search(r"\d{2}\.\d{2}\.\d{4}|\b(azi|astazi|ieri|aseara|acum|diseara|rezultat|scor|meci)", plain(query)))
+    log.info("caut%s: %s", " (știri recente)" if recent else "", query)
+    return (recent and search_omniroute(query, recent=True)) or search_omniroute(query)
 
 
 def safe(source):
@@ -255,6 +355,12 @@ def safe(source):
         return None
 
 
+ABOUT = ("Despre tine, Virgil (folosește doar dacă șoferul te salută sau te întreabă de tine): ești bine și atent "
+         "la drum. Ce poți face, la cerere: spui vremea, traficul din jur, cât face șoferul până la o destinație, "
+         "unde se află mașina acum, știrile zilei și orice informație căutată pe internet. Siguranța are prioritate: "
+         "taci imediat ce apare o alertă. Răspunde cald, într-o propoziție sau două.")
+
+
 def gather(question):
     """Datele live pentru întrebare; o sursă căzută nu oprește răspunsul."""
     topics = route(question)
@@ -263,16 +369,20 @@ def gather(question):
         "news": news,
         # Waze = starea live; știrile adaugă accidentele mari de pe drumurile din jur
         "traffic": lambda: "\n".join(filter(None, (safe(traffic_waze), safe(lambda: search(f"trafic {CITY}"))))),
-        "eta": lambda: eta_google(question),
-        "search": lambda: search(dated(question)),
+        "eta": lambda: eta_tomtom(question),
+        "where": where_tomtom,
+        "chat": lambda: ABOUT,
+        "search": lambda: safe(lambda: search(search_query(question))) or NO_SEARCH,
     }
-    texts = (safe(sources[name]) for name in ("weather", "news", "traffic", "eta", "search") if name in topics)
+    texts = (safe(sources[name]) for name in ("chat", "weather", "news", "traffic", "eta", "where", "search") if name in topics)
     return "\n".join(t for t in texts if t)
 
 
 def speakable(text):
-    """fără markdown și trimiteri de tip [1] la voce"""
-    return re.sub(r"\s*\[\d+(?:,\s*\d+)*\]|[*#_`]+", "", text).strip() or None
+    """fără markdown, trimiteri de tip [1] și cuvinte în alt alfabet (qwen strecoară rar arabă/chineză) la voce"""
+    text = re.sub(r"\s*\[\d+(?:,\s*\d+)*\]|[*#_`]+", "", text)
+    text = re.sub(r"\S*[^\s\x00-\u024F\u2000-\u206F]\S*", "", text)   # păstrăm latina (cu ș, ț) și „ ” – …
+    return re.sub(r"\s{2,}", " ", text).strip() or None
 
 
 def chat_lines(body):
@@ -373,7 +483,7 @@ def connect_mqtt(safety):
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     for name, what in (("OMNIROUTE_API_KEY", "modelul și căutarea Tavily"), ("OPENWEBNINJA_API_KEY", "traficul Waze"),
-                      ("GOOGLE_MAPS_API_KEY", "durata până la o destinație")):
+                      ("TOMTOM_API_KEY", "durata până la o destinație")):
         if not os.environ.get(name):
             log.warning("lipsește %s (%s): deschideți un terminal nou după ce ați setat-o", name, what)
     safety = Safety()

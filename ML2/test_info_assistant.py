@@ -27,14 +27,128 @@ def test_destination():
 
 
 def test_summarize_route():
-    d = {"routes": [{"duration": "1080s", "staticDuration": "720s", "distanceMeters": 6420}]}
-    assert ia.summarize_route("gară", d) == ("Google Maps: din centrul orașului Cluj-Napoca până la gară sunt "
+    d = {"routes": [{"summary": {"lengthInMeters": 6420, "travelTimeInSeconds": 1080, "trafficDelayInSeconds": 360}}]}
+    assert ia.summarize_route("gară", d) == ("TomTom: din centrul orașului Cluj-Napoca până la gară sunt "
                                              "6.4 kilometri, 18 minute cu traficul de acum, "
                                              "cu 6 minute în plus din cauza traficului.")
-    assert "fără întârzieri" in ia.summarize_route("gară", {"routes": [{"duration": "600s", "staticDuration": "590s"}]})
+    calm = {"routes": [{"summary": {"travelTimeInSeconds": 600, "trafficDelayInSeconds": 30}}]}
+    assert "fără întârzieri" in ia.summarize_route("gară", calm)
     assert "nu am găsit" in ia.summarize_route("Marte", {})
+    far = {"routes": [{"summary": {"lengthInMeters": 291100, "travelTimeInSeconds": 12540}}]}
+    assert "sunt 291 kilometri, 3 ore și 29 minute" in ia.summarize_route("Târgu Jiu", far)
     assert ia.summarize_route("gară", d, "strada Observatorului").startswith(
-        "Google Maps: de la strada Observatorului până la gară")
+        "TomTom: de la strada Observatorului până la gară")
+
+
+def test_eta_tomtom_searches_both_ends():
+    urls = []
+
+    def fake(url, *a, **k):
+        urls.append(url)
+        if "/search/" in url:
+            return {"results": [{"position": {"lat": 46.78, "lon": 23.58}, "poi": {"name": "Stația CFR Cluj-Napoca"}}]}
+        return {"routes": [{"summary": {"lengthInMeters": 2900, "travelTimeInSeconds": 420}}]}
+
+    real = ia.http_json
+    ia.http_json = fake
+    ia.os.environ.setdefault("TOMTOM_API_KEY", "test")
+    try:
+        r = ia.eta_tomtom("Cât fac de la strada Observatorului până la gară?")
+        assert r.startswith("TomTom: de la strada Observatorului până la Stația CFR Cluj-Napoca sunt 2.9 kilometri")
+        assert sum("/search/" in u for u in urls) == 2 and "/routing/" in urls[-1]
+    finally:
+        ia.http_json = real
+        if ia.os.environ.get("TOMTOM_API_KEY") == "test":
+            del ia.os.environ["TOMTOM_API_KEY"]
+
+
+def test_tomtom_place_main_station():
+    asked = []
+    real = ia.http_json
+    ia.http_json = lambda url, *a, **k: asked.append(url) or {"results": []}
+    try:
+        ia.tomtom_place("gară", "k", (46.77, 23.59))
+        ia.tomtom_place("Piața Gării", "k", (46.77, 23.59))
+    finally:
+        ia.http_json = real
+    assert "Sta%C8%9Bia%20CFR" in asked[0] and "Sta%C8%9Bia" not in asked[1]
+
+
+def test_between_two_places():
+    q = "Care e distanța dintre Cluj-Napoca și Bacău?"
+    assert ia.route(q) == {"eta"}
+    assert (ia.origin(q), ia.destination(q)) == ("Cluj-Napoca", "Bacău")
+
+
+def test_speakable_drops_other_scripts():
+    assert ia.speakable("din etapa a șasea عشرi a Ligii 1, la 20:30 „azi” – ok") ==         "din etapa a șasea a Ligii 1, la 20:30 „azi” – ok"
+    assert ia.speakable("**Bună** ziua [1]") == "Bună ziua"
+
+
+def test_search_query_short_and_fallback():
+    real = ia.http_json
+    ia.http_json = lambda *a, **k: {"choices": [{"message": {"content": '"rezultate Superliga 21.11.2026"'}}]}
+    try:
+        assert ia.search_query("Spune-mi te rog rezultatele de azi noapte") == "rezultate Superliga 21.11.2026"
+        ia.http_json = lambda *a, **k: (_ for _ in ()).throw(TimeoutError())
+        assert ia.search_query("Cine a câștigat aseară?") == "Cine a câștigat aseară?"   # fără model: întrebarea
+    finally:
+        ia.http_json = real
+
+
+def test_search_recent_news_first():
+    calls = []
+    real = ia.search_omniroute
+    ia.search_omniroute = lambda q, limit=5, recent=False: calls.append(recent) or ("știri" if recent else "web")
+    try:
+        assert ia.search("rezultate Superliga 21.11.2026") == "știri" and calls == [True]
+        calls.clear()
+        assert ia.search("Președintele României") == "web" and calls == [False]
+        calls.clear()
+        ia.search_omniroute = lambda q, limit=5, recent=False: calls.append(recent) or (None if recent else "web")
+        assert ia.search("meciuri azi") == "web" and calls == [True, False]   # fără știri: căutarea obișnuită
+    finally:
+        ia.search_omniroute = real
+
+
+def test_recent_results_scores_first_and_clean():
+    real = ia.http_json
+    ia.http_json = lambda *a, **k: {"results": [
+        {"title": "Dinamo București", "snippet": "## Fundași | NR. | JUCĂTOR | --- | 3 | | 16 | | 5 | | \\- | | 0 | lot"},
+        {"title": "Digi Sport", "snippet": "SuperLiga Video Dinamo - Petrolul 0-1. Golul lui N'Lundulu din penalty"}]}
+    try:
+        r = ia.search_omniroute("rezultate Superliga 21.11.2026", recent=True)
+    finally:
+        ia.http_json = real
+    assert r.startswith("Știri din ultimele 24 de ore (Tavily): Digi Sport: SuperLiga Video Dinamo - Petrolul 0-1")
+    assert "| 16 |" not in r
+
+
+def test_failed_search_tells_model_not_to_guess():
+    real_search, real_query = ia.search, ia.search_query
+    ia.search_query = lambda q: q
+    ia.search = lambda q: (_ for _ in ()).throw(TimeoutError("504"))
+    try:
+        assert ia.gather("Cine e președintele României?") == ia.NO_SEARCH
+    finally:
+        ia.search, ia.search_query = real_search, real_query
+
+
+def test_where():
+    assert ia.route("dăm locație exactă Așa") == {"where"}
+    assert ia.route("Unde mă aflu?") == {"where"}
+    real_here, real_http = ia.here, ia.http_json
+    ia.here = lambda: (46.77, 23.6)
+    ia.http_json = lambda url, *a, **k: {"addresses": [{"address": {"freeformAddress": "Strada Observatorului 34"}}]}
+    ia.os.environ.setdefault("TOMTOM_API_KEY", "test")
+    try:
+        assert "Strada Observatorului 34" in ia.where_tomtom()
+        ia.here = lambda: None
+        assert "oprită" in ia.where_tomtom()
+    finally:
+        ia.here, ia.http_json = real_here, real_http
+        if ia.os.environ.get("TOMTOM_API_KEY") == "test":
+            del ia.os.environ["TOMTOM_API_KEY"]
 
 
 def test_here_falls_back_to_none():
@@ -42,7 +156,7 @@ def test_here_falls_back_to_none():
     real = ia.subprocess.run
     ia.subprocess.run = lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError("powershell"))
     try:
-        assert ia.here() is None   # fără localizare: eta_google pleacă din centrul orașului
+        assert ia.here() is None   # fără localizare: eta_tomtom pleacă din centrul orașului
     finally:
         ia.subprocess.run, ia._here = real, (0.0, None)
 
@@ -55,6 +169,14 @@ def test_origin():
     assert ia.origin("Cât fac de la Iulius Mall până la gară?") == "Iulius Mall"
     assert ia.origin("Cât de departe e până la gară?") is None
     assert ia.origin("Cât fac până la gară?") is None
+
+
+def test_chat_skips_search():
+    for q in ("Ce faci?", "Ce mai faci, Virgil?", "Cine ești?", "Ce poți să faci?", "Bună ziua", "Mulțumesc!"):
+        assert ia.route(q) == {"chat"}, q
+    assert ia.gather("Ce faci?") == ia.ABOUT          # fără căutare și fără „nu pot afla” (NO_SEARCH)
+    assert ia.route("Ce faci dacă plouă?") == {"chat"}  # shortcut acceptat: începe ca o conversație
+    assert ia.route("Ce face Dinamo diseară?") == {"search"}
 
 
 def test_strip_wake():
@@ -93,8 +215,10 @@ def test_search_omniroute_tavily_format():
     try:
         ia.http_json = lambda url, body=None, headers=None, timeout=10: sent.append((url, body)) or {"results": [
             {"title": "LPF", "snippet": "Sâmbătă, 21 nov:\n CFR Cluj - Oțelul 17:30"}]}
-        assert ia.search("ce meciuri sunt azi") == "Căutare web (Tavily): LPF: Sâmbătă, 21 nov: CFR Cluj - Oțelul 17:30"
+        assert ia.search("ce meciuri sunt azi") == \
+            "Știri din ultimele 24 de ore (Tavily): LPF: Sâmbătă, 21 nov: CFR Cluj - Oțelul 17:30"
         assert sent[0][0].endswith("/api/v1/search") and sent[0][1]["provider"] == "tavily"
+        assert sent[0][1]["topic"] == "news" and sent[0][1]["time_range"] == "day"
 
         ia.http_json = lambda *a, **k: {"results": []}
         assert ia.search("ceva fără rezultate") is None
