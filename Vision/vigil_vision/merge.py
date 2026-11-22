@@ -15,6 +15,10 @@ respirația, postura, scheletul corpului. Evenimentele ambelor se adună, `head_
 oricare. O cameră care tace mai mult de STALE_SEC e tratată ca pierdută: câmpurile ei lipsesc, iar
 `face_detected` / `body_detected` devin false (ML1 scade încrederea, nu inventează valori). Nu publică nimic
 până nu a sosit primul mesaj de la o cameră.
+
+`cameras` = {"face": bool, "body": bool}: care laptop trimite acum. Așa ML1 deosebește „laptopul feței a
+pierdut Wi-Fi-ul” (nu știm unde privește șoferul) de „camera merge, dar fața nu se vede” (șoferul nu
+privește drumul). Câmp nou, opțional: cine nu îl citește vede același mesaj ca înainte.
 """
 from __future__ import annotations
 
@@ -60,6 +64,7 @@ def merge(latest: dict, now: float, wall: float | None = None) -> dict:
         if m is not None and now - t <= STALE_SEC:
             fresh[role] = m
     out: dict = {"ts": round(time.time() if wall is None else wall, 3), "camera_on": bool(fresh),
+                 "cameras": {"face": "face" in fresh, "body": "body" in fresh},
                  "face_detected": False, "body_detected": False, "head_drop": False, "events": []}
     for role, keys in (("face", FACE_KEYS), ("body", BODY_KEYS)):
         m = fresh.get(role)

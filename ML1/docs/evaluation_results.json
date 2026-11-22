@@ -9,167 +9,194 @@
   },
   "hz": 5,
   "frames": {
-   "train": 38039,
-   "val": 15078,
-   "test": 18930,
-   "shift": 15330
+   "train": 57714,
+   "val": 24241,
+   "test": 29962,
+   "shift": 23542
   }
  },
  "profile_val": {
   "legacy": {
-   "macro_f1": 0.729592142740715,
-   "cost": 0.1719446579554189,
-   "false_alarms_per_hour": 24.161073825503358,
+   "macro_f1": 0.7605924239012986,
+   "cost": 0.11997462919594067,
+   "false_alarms_per_hour": 12.918042198937849,
    "calls_112": {
-    "tp": 4,
+    "tp": 7,
     "fn": 0,
     "fp": 0,
-    "tn": 4
+    "tn": 1
    }
   },
   "cv": {
-   "macro_f1": 0.8102899283468771,
-   "cost": 0.11621829362029208,
-   "false_alarms_per_hour": 15.633636004737467,
+   "macro_f1": 0.835116022920802,
+   "cost": 0.07889344262295082,
+   "false_alarms_per_hour": 8.612028132625234,
    "calls_112": {
-    "tp": 4,
+    "tp": 7,
     "fn": 0,
     "fp": 0,
-    "tn": 4
+    "tn": 1
    }
   },
   "cv_signs": {
-   "macro_f1": 0.8102899283468771,
-   "cost": 0.11621829362029208,
-   "false_alarms_per_hour": 15.633636004737467,
+   "macro_f1": 0.8321218780321229,
+   "cost": 0.0779664324746292,
+   "false_alarms_per_hour": 10.33443375915028,
    "calls_112": {
-    "tp": 4,
+    "tp": 7,
     "fn": 0,
     "fp": 0,
-    "tn": 4
+    "tn": 1
    }
   }
  },
- "profile_chosen": "cv",
+ "profile_chosen": "cv_signs",
  "a_cuts_from_val": [
+  0.8,
   0.75,
-  0.7,
-  0.65
+  0.7
  ],
  "tree_rules": [
-  "dacă dur_phone_in_hand <= 0:",
-  "    dacă a_raw <= 0.891:",
-  "        dacă blink <= 13:",
-  "            dacă dur_hand_on_chest <= 0:",
-  "                -> severitate 2  (n=1761, distribuție [0.012, 0.0, 0.95, 0.038])",
-  "            altfel (dur_hand_on_chest > 0):",
-  "                -> severitate 3  (n=175, distribuție [0.0, 0.0, 0.0, 1.0])",
-  "        altfel (blink > 13):",
-  "            dacă a <= 0.653:",
-  "                -> severitate 3  (n=1732, distribuție [0.013, 0.0, 0.036, 0.951])",
-  "            altfel (a > 0.653):",
-  "                -> severitate 0  (n=1132, distribuție [0.921, 0.0, 0.079, 0.0])",
-  "    altfel (a_raw > 0.891):",
-  "        dacă ear_ratio <= 0.93:",
-  "            dacă blink <= 13.5:",
-  "                -> severitate 2  (n=286, distribuție [0.143, 0.0, 0.857, 0.0])",
-  "            altfel (blink > 13.5):",
-  "                -> severitate 0  (n=1082, distribuție [0.983, 0.0, 0.017, 0.0])",
-  "        altfel (ear_ratio > 0.93):",
-  "            dacă blink <= 10.8:",
-  "                -> severitate 0  (n=1372, distribuție [0.887, 0.0, 0.113, 0.0])",
-  "            altfel (blink > 10.8):",
-  "                -> severitate 0  (n=24450, distribuție [0.997, 0.0, 0.003, 0.0])",
-  "altfel (dur_phone_in_hand > 0):",
-  "    -> severitate 1  (n=426, distribuție [0.0, 1.0, 0.0, 0.0])"
+  "dacă a_raw <= 0.945:",
+  "    dacă blink <= 11.3:",
+  "        dacă ear_ratio <= 0.943:",
+  "            dacă perclos <= 0.0418:",
+  "                -> severitate 2  (n=81, distribuție [0.081, 0.09, 0.73, 0.099])",
+  "            altfel (perclos > 0.0418):",
+  "                -> severitate 2  (n=1536, distribuție [0.002, 0.003, 0.994, 0.001])",
+  "        altfel (ear_ratio > 0.943):",
+  "            dacă a <= 0.61:",
+  "                -> severitate 2  (n=72, distribuție [0.03, 0.0, 0.871, 0.099])",
+  "            altfel (a > 0.61):",
+  "                -> severitate 1  (n=214, distribuție [0.035, 0.596, 0.04, 0.329])",
+  "    altfel (blink > 11.3):",
+  "        dacă dur_phone_in_hand <= 0:",
+  "            dacă a_raw <= 0.778:",
+  "                -> severitate 3  (n=2308, distribuție [0.018, 0.0, 0.091, 0.891])",
+  "            altfel (a_raw > 0.778):",
+  "                -> severitate 1  (n=2813, distribuție [0.138, 0.85, 0.011, 0.0])",
+  "        altfel (dur_phone_in_hand > 0):",
+  "            -> severitate 1  (n=422, distribuție [0.0, 1.0, 0.0, 0.0])",
+  "altfel (a_raw > 0.945):",
+  "    dacă ear_ratio <= 0.933:",
+  "        dacă blink <= 12.6:",
+  "            dacă a_raw <= 0.993:",
+  "                -> severitate 2  (n=67, distribuție [0.06, 0.0, 0.94, 0.0])",
+  "            altfel (a_raw > 0.993):",
+  "                -> severitate 2  (n=147, distribuție [0.472, 0.0, 0.528, 0.0])",
+  "        altfel (blink > 12.6):",
+  "            -> severitate 0  (n=1905, distribuție [1.0, 0.0, 0.0, 0.0])",
+  "    altfel (ear_ratio > 0.933):",
+  "        dacă blink <= 10.8:",
+  "            dacă a_raw <= 0.985:",
+  "                -> severitate 0  (n=219, distribuție [0.733, 0.0, 0.267, 0.0])",
+  "            altfel (a_raw > 0.985):",
+  "                -> severitate 0  (n=1879, distribuție [0.986, 0.0, 0.014, 0.0])",
+  "        altfel (blink > 10.8):",
+  "            dacă a <= 0.852:",
+  "                -> severitate 0  (n=1879, distribuție [0.986, 0.0, 0.014, 0.0])",
+  "            altfel (a > 0.852):",
+  "                -> severitate 0  (n=35701, distribuție [1.0, 0.0, 0.0, 0.0])"
  ],
  "prob_model": {
-  "fit_s": 0.015,
+  "fit_s": 0.104,
   "meta": {
    "source": "învățat pe train",
-   "frames": 35280,
+   "frames": 55101,
+   "partial_frames": 2277,
    "trips": 20,
    "hz": 5,
+   "evidence": "pe secundă, ponderată cu acoperirea camerei",
+   "evidence_hz": 1.0,
    "seed": 0
   },
   "dwell_s": [
-   111.5,
-   7.7,
+   105.9,
+   5.9,
    30.2,
-   251.4
+   208.2
   ],
   "transition_1s": [
    [
-    0.9913,
-    0.003,
-    0.0031,
-    0.0026
+    0.991,
+    0.0055,
+    0.002,
+    0.0015
    ],
    [
-    0.1164,
-    0.8776,
-    0.003,
-    0.003
+    0.1546,
+    0.8427,
+    0.0014,
+    0.0014
    ],
    [
-    0.031,
+    0.0311,
     0.0008,
     0.9674,
     0.0008
    ],
    [
-    0.0014,
-    0.0013,
-    0.0013,
-    0.996
+    0.0017,
+    0.0015,
+    0.0016,
+    0.9952
    ]
   ],
   "emission": [
    [
-    0.92,
-    0.032,
+    0.93,
+    0.029,
     0.0,
-    0.0,
-    0.02,
-    0.0,
-    0.0,
+    0.004,
     0.011,
-    0.014,
+    0.0,
+    0.001,
+    0.008,
+    0.01,
     0.0,
     0.0,
-    0.002
+    0.001,
+    0.004,
+    0.002,
+    0.0
    ],
    [
     0.001,
     0.001,
     0.001,
-    0.143,
-    0.844,
+    0.572,
+    0.421,
     0.001,
     0.001,
-    0.002,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
     0.001,
     0.001,
     0.001,
     0.001
    ],
    [
-    0.175,
-    0.05,
+    0.124,
+    0.04,
     0.0,
     0.0,
-    0.02,
+    0.017,
     0.0,
-    0.002,
-    0.08,
-    0.655,
+    0.004,
+    0.114,
+    0.692,
+    0.0,
+    0.001,
+    0.006,
     0.0,
     0.0,
-    0.016
+    0.0
    ],
    [
-    0.054,
-    0.02,
+    0.077,
+    0.018,
     0.001,
     0.001,
     0.001,
@@ -177,70 +204,83 @@
     0.001,
     0.001,
     0.001,
-    0.001,
-    0.366,
-    0.555
+    0.013,
+    0.595,
+    0.214,
+    0.033,
+    0.044,
+    0.001
    ]
   ],
+  "evidence_hz": {
+   "chosen": 1.0,
+   "val_logloss": {
+    "0.5": 0.1888,
+    "1.0": 0.1811,
+    "2.0": 0.2063,
+    "3.0": 0.2372,
+    "5.0": 0.2927
+   }
+  },
   "saved": "prob_matrix.json"
  },
  "prob_stats": {
   "test": {
    "rules+calibrare": {
-    "n": 16160,
-    "accuracy": 0.9532797029702971,
-    "balanced_accuracy": 0.9430150546274287,
-    "kappa": 0.7755401951715608,
-    "mcc": 0.7880089514238048,
-    "cost_per_frame": 0.09047029702970297,
+    "n": 25335,
+    "accuracy": 0.9673968817840931,
+    "balanced_accuracy": 0.9596134370709667,
+    "kappa": 0.788997595122043,
+    "mcc": 0.8026472429378237,
+    "cost_per_frame": 0.09855930530886126,
     "per_class": [
      {
       "state": "atent",
-      "support": 14637,
-      "sensitivity": 0.957983193277311,
-      "specificity": 0.9875246224556796,
-      "ppv": 0.9986468200270636,
-      "npv": 0.7097687588485134,
-      "lr_pos": 76.78991596638683,
-      "lr_neg": 0.04254760414804216
+      "support": 23619,
+      "sensitivity": 0.9682882425166179,
+      "specificity": 0.9726107226107226,
+      "ppv": 0.9979491207400619,
+      "npv": 0.6902398676592225,
+      "lr_pos": 35.352821790606676,
+      "lr_neg": 0.032604778814549804
      },
      {
       "state": "distras",
-      "support": 215,
+      "support": 418,
       "sensitivity": 1.0,
-      "specificity": 0.992285983066792,
-      "ppv": 0.636094674556213,
+      "specificity": 0.9951840109162419,
+      "ppv": 0.7769516728624535,
       "npv": 1.0,
-      "lr_pos": 129.6341463414627,
+      "lr_pos": 207.6416666666643,
       "lr_neg": 0.0
      },
      {
       "state": "obosit",
-      "support": 753,
-      "sensitivity": 0.8140770252324038,
-      "specificity": 0.9709223080417991,
-      "ppv": 0.5777568331762488,
-      "npv": 0.990727862772369,
-      "lr_pos": 27.99661769588309,
-      "lr_neg": 0.19149109380602683
+      "support": 513,
+      "sensitivity": 0.9083820662768031,
+      "specificity": 0.9754250261864476,
+      "ppv": 0.43308550185873607,
+      "npv": 0.998062574714539,
+      "lr_pos": 36.96370434282434,
+      "lr_neg": 0.09392616681303462
      },
      {
       "state": "urgență",
-      "support": 555,
-      "sensitivity": 1.0,
-      "specificity": 0.9894264658763217,
-      "ppv": 0.7708333333333334,
-      "npv": 1.0,
-      "lr_pos": 94.57575757575728,
-      "lr_neg": 0.0
+      "support": 785,
+      "sensitivity": 0.9617834394904459,
+      "specificity": 0.9980040733197556,
+      "ppv": 0.9390547263681592,
+      "npv": 0.998777057600587,
+      "lr_pos": 481.87313141817276,
+      "lr_neg": 0.038292990510981346
      }
     ],
     "p_pred_given_true": [
      [
-      0.957983193277311,
-      0.008403361344537815,
-      0.030607364897178385,
-      0.003006080480972877
+      0.9682882425166179,
+      0.0050806554045471864,
+      0.025826664973114866,
+      0.0008044371057199712
      ],
      [
       0.0,
@@ -249,106 +289,106 @@
       0.0
      ],
      [
-      0.025232403718459494,
+      0.03313840155945419,
       0.0,
-      0.8140770252324038,
-      0.16069057104913678
+      0.9083820662768031,
+      0.05847953216374269
      ],
      [
+      0.03821656050955414,
       0.0,
       0.0,
-      0.0,
-      1.0
+      0.9617834394904459
      ]
     ],
     "p_true_given_pred": [
      [
-      0.9986468200270636,
+      0.997949120740062,
       0.0,
-      0.0013531799729364004,
+      0.0007418073918924817,
+      0.0013090718680455558
+     ],
+     [
+      0.22304832713754644,
+      0.7769516728624535,
+      0.0,
       0.0
      ],
      [
-      0.363905325443787,
-      0.636094674556213,
+      0.5669144981412639,
       0.0,
+      0.43308550185873607,
       0.0
      ],
      [
-      0.4222431668237512,
+      0.023631840796019897,
       0.0,
-      0.5777568331762488,
-      0.0
-     ],
-     [
-      0.0611111111111111,
-      0.0,
-      0.16805555555555554,
-      0.7708333333333333
+      0.03731343283582089,
+      0.9390547263681592
      ]
     ],
     "prevalence": [
-     0.9057549504950495,
-     0.013304455445544554,
-     0.046596534653465346,
-     0.0343440594059406
+     0.9322676139727649,
+     0.01649891454509572,
+     0.02024866785079929,
+     0.030984803631340044
     ]
    },
    "HMM (cost așteptat minim)": {
-    "n": 16160,
-    "accuracy": 0.9785272277227722,
-    "balanced_accuracy": 0.9833657785337437,
-    "kappa": 0.8877008125605775,
-    "mcc": 0.8917528901164117,
-    "cost_per_frame": 0.0567450495049505,
+    "n": 25335,
+    "accuracy": 0.9894217485691731,
+    "balanced_accuracy": 0.9804772349746178,
+    "kappa": 0.9223980373176273,
+    "mcc": 0.9239380352545989,
+    "cost_per_frame": 0.036550226958752714,
     "per_class": [
      {
       "state": "atent",
-      "support": 14637,
-      "sensitivity": 0.9786158365785339,
-      "specificity": 0.9809586342744583,
-      "ppv": 0.9979795164773915,
-      "npv": 0.8267847260653016,
-      "lr_pos": 51.394204107210534,
-      "lr_neg": 0.021799250930985854
+      "support": 23619,
+      "sensitivity": 0.9901350607561709,
+      "specificity": 0.9796037296037297,
+      "ppv": 0.9985056146193587,
+      "npv": 0.8782654127481714,
+      "lr_pos": 48.54490755021696,
+      "lr_neg": 0.010070336551106963
      },
      {
       "state": "distras",
-      "support": 215,
+      "support": 418,
       "sensitivity": 1.0,
-      "specificity": 0.9991219818124804,
-      "ppv": 0.9388646288209607,
+      "specificity": 0.9997592005458121,
+      "ppv": 0.9858490566037735,
       "npv": 1.0,
-      "lr_pos": 1138.9285714285088,
+      "lr_pos": 4152.833333333956,
       "lr_neg": 0.0
      },
      {
       "state": "obosit",
-      "support": 753,
-      "sensitivity": 0.9548472775564409,
-      "specificity": 0.9804634257155839,
-      "ppv": 0.7049019607843138,
-      "npv": 0.9977542932628798,
-      "lr_pos": 48.87485716050538,
-      "lr_neg": 0.04605242914655861
+      "support": 513,
+      "sensitivity": 0.9317738791423001,
+      "specificity": 0.9955281605027798,
+      "ppv": 0.8115449915110357,
+      "npv": 0.9985856300008082,
+      "lr_pos": 208.36478583847102,
+      "lr_neg": 0.06853258758973031
      },
      {
       "state": "urgență",
-      "support": 555,
+      "support": 785,
       "sensitivity": 1.0,
-      "specificity": 0.9998077539250241,
-      "ppv": 0.9946236559139785,
+      "specificity": 0.995274949083503,
+      "ppv": 0.8712541620421753,
       "npv": 1.0,
-      "lr_pos": 5201.666666667961,
+      "lr_pos": 211.6379310344804,
       "lr_neg": 0.0
      }
     ],
     "p_pred_given_true": [
      [
-      0.9786158365785339,
-      0.000819840131174421,
-      0.020564323290291727,
-      0.0
+      0.9901350607561709,
+      0.00025403277022735933,
+      0.004699606249206147,
+      0.004911300224395614
      ],
      [
       0.0,
@@ -357,10 +397,10 @@
       0.0
      ],
      [
-      0.03851261620185923,
-      0.0026560424966799467,
-      0.9548472775564409,
-      0.00398406374501992
+      0.0682261208576998,
+      0.0,
+      0.9317738791423001,
+      0.0
      ],
      [
       0.0,
@@ -371,94 +411,104 @@
     ],
     "p_true_given_pred": [
      [
-      0.9979795164773915,
+      0.9985056146193587,
       0.0,
-      0.002020483522608514,
+      0.0014943853806413047,
       0.0
      ],
      [
-      0.05240174672489083,
-      0.9388646288209607,
-      0.008733624454148471,
+      0.014150943396226415,
+      0.9858490566037736,
+      0.0,
       0.0
      ],
      [
-      0.2950980392156863,
+      0.18845500848896432,
       0.0,
-      0.7049019607843138,
+      0.8115449915110357,
       0.0
      ],
      [
+      0.12874583795782463,
       0.0,
       0.0,
-      0.005376344086021505,
-      0.9946236559139785
+      0.8712541620421754
      ]
     ],
     "prevalence": [
-     0.9057549504950495,
-     0.013304455445544554,
-     0.046596534653465346,
-     0.0343440594059406
+     0.9322676139727649,
+     0.01649891454509572,
+     0.02024866785079929,
+     0.030984803631340044
     ]
    },
-   "hmm_us_per_frame": 3.7247543574969604
+   "hmm_us_per_frame": 5.572344970016379,
+   "rate_10hz": {
+    "nou": {
+     "max_abs_dp": 0.02356890356607222,
+     "cost_per_frame_10hz": 0.036392342609038876
+    },
+    "vechi": {
+     "max_abs_dp": 0.8801228845126744,
+     "cost_per_frame_10hz": 0.2684428656009473
+    }
+   }
   },
   "shift": {
    "rules+calibrare": {
-    "n": 13040,
-    "accuracy": 0.9467791411042945,
-    "balanced_accuracy": 0.9444297564615589,
-    "kappa": 0.7836471337959695,
-    "mcc": 0.7959352606629047,
-    "cost_per_frame": 0.10145705521472392,
+    "n": 20082,
+    "accuracy": 0.9496066128871626,
+    "balanced_accuracy": 0.9307160233654624,
+    "kappa": 0.7072873874655012,
+    "mcc": 0.7290652347921384,
+    "cost_per_frame": 0.12244796335026392,
     "per_class": [
      {
       "state": "atent",
-      "support": 11555,
-      "sensitivity": 0.9495456512332323,
-      "specificity": 0.9831649831649831,
-      "ppv": 0.99772665272347,
-      "npv": 0.714635340186001,
-      "lr_pos": 56.40301168325389,
-      "lr_neg": 0.051318293094965765
+      "support": 18655,
+      "sensitivity": 0.953256499597963,
+      "specificity": 0.9656622284512965,
+      "ppv": 0.9972521310004486,
+      "npv": 0.6124444444444445,
+      "lr_pos": 27.761163774006008,
+      "lr_neg": 0.04840564228861162
      },
      {
       "state": "distras",
-      "support": 204,
+      "support": 331,
       "sensitivity": 1.0,
-      "specificity": 0.9860548457463384,
-      "ppv": 0.5326370757180157,
+      "specificity": 0.9966583970431877,
+      "ppv": 0.8337531486146096,
       "npv": 1.0,
-      "lr_pos": 71.70949720670376,
+      "lr_pos": 299.2575757575774,
       "lr_neg": 0.0
      },
      {
       "state": "obosit",
-      "support": 646,
-      "sensitivity": 0.8281733746130031,
-      "specificity": 0.9674035823785703,
-      "ppv": 0.56975505857295,
-      "npv": 0.9908272043632758,
-      "lr_pos": 25.406883180578117,
-      "lr_neg": 0.17761627982038694
+      "support": 621,
+      "sensitivity": 0.7906602254428341,
+      "specificity": 0.9585838343353373,
+      "ppv": 0.37856592135697764,
+      "npv": 0.9930795847750865,
+      "lr_pos": 19.09061866916004,
+      "lr_neg": 0.21838441986904344
      },
      {
       "state": "urgență",
-      "support": 635,
-      "sensitivity": 1.0,
-      "specificity": 0.9930673115679162,
-      "ppv": 0.8807212205270458,
-      "npv": 1.0,
-      "lr_pos": 144.24418604651171,
-      "lr_neg": 0.0
+      "support": 475,
+      "sensitivity": 0.9789473684210527,
+      "specificity": 0.9953588004284184,
+      "ppv": 0.8363309352517986,
+      "npv": 0.9994878623373963,
+      "lr_pos": 210.9255060728735,
+      "lr_neg": 0.02115079664728531
      }
     ],
     "p_pred_given_true": [
      [
-      0.9495456512332323,
-      0.01549112938122025,
-      0.03496321938554738,
+      0.953256499597963,
+      0.0035379254891450013,
+      0.04320557491289199,
       0.0
      ],
      [
@@ -468,106 +518,106 @@
       0.0
      ],
      [
-      0.03869969040247678,
+      0.06280193236714976,
       0.0,
-      0.8281733746130031,
-      0.13312693498452013
+      0.7906602254428341,
+      0.14653784219001612
      ],
      [
+      0.021052631578947368,
       0.0,
       0.0,
-      0.0,
-      1.0
+      0.9789473684210527
      ]
     ],
     "p_true_given_pred": [
      [
-      0.99772665272347,
+      0.9972521310004486,
       0.0,
-      0.002273347276529963,
+      0.002187079407806191,
+      0.0005607895917451772
+     ],
+     [
+      0.16624685138539044,
+      0.8337531486146096,
+      0.0,
       0.0
      ],
      [
-      0.46736292428198434,
-      0.5326370757180157,
+      0.6214340786430224,
       0.0,
-      0.0
-     ],
-     [
-      0.43024494142705005,
-      0.0,
-      0.56975505857295,
+      0.37856592135697764,
       0.0
      ],
      [
       0.0,
       0.0,
-      0.11927877947295423,
-      0.8807212205270458
+      0.16366906474820142,
+      0.8363309352517986
      ]
     ],
     "prevalence": [
-     0.8861196319018405,
-     0.015644171779141104,
-     0.049539877300613495,
-     0.04869631901840491
+     0.9289413405039338,
+     0.016482422069514988,
+     0.03092321481924111,
+     0.023653022607310028
     ]
    },
    "HMM (cost așteptat minim)": {
-    "n": 13040,
-    "accuracy": 0.9732361963190184,
-    "balanced_accuracy": 0.9687006750592468,
-    "kappa": 0.8808386030181585,
-    "mcc": 0.8838329020219817,
-    "cost_per_frame": 0.08796012269938651,
+    "n": 20082,
+    "accuracy": 0.9871526740364506,
+    "balanced_accuracy": 0.975527018050878,
+    "kappa": 0.9095354073272195,
+    "mcc": 0.9108095043131693,
+    "cost_per_frame": 0.048949307837864754,
     "per_class": [
      {
       "state": "atent",
-      "support": 11555,
-      "sensitivity": 0.975421895283427,
-      "specificity": 0.9643097643097643,
-      "ppv": 0.9953196750264924,
-      "npv": 0.8344988344988346,
-      "lr_pos": 27.33021725463944,
-      "lr_neg": 0.025487769206781315
+      "support": 18655,
+      "sensitivity": 0.9890645939426427,
+      "specificity": 0.9621583742116327,
+      "ppv": 0.9970818697649284,
+      "npv": 0.8706404565630945,
+      "lr_pos": 26.13694769548425,
+      "lr_neg": 0.011365494860778513
      },
      {
       "state": "distras",
-      "support": 204,
+      "support": 331,
       "sensitivity": 1.0,
-      "specificity": 0.998208164537239,
-      "ppv": 0.8986784140969163,
+      "specificity": 0.9993418054782036,
+      "ppv": 0.9622093023255814,
       "npv": 1.0,
-      "lr_pos": 558.0869565217469,
+      "lr_pos": 1519.3076923076462,
       "lr_neg": 0.0
      },
      {
       "state": "obosit",
-      "support": 646,
-      "sensitivity": 0.8993808049535603,
-      "specificity": 0.977973212844925,
-      "ppv": 0.680327868852459,
-      "npv": 0.9946660101756114,
-      "lr_pos": 40.83122965785511,
-      "lr_neg": 0.10288543052599401
+      "support": 621,
+      "sensitivity": 0.9130434782608695,
+      "specificity": 0.9926519706078825,
+      "ppv": 0.7985915492957747,
+      "npv": 0.9972124716085071,
+      "lr_pos": 124.25691699604792,
+      "lr_neg": 0.0876002106618293
      },
      {
       "state": "urgență",
-      "support": 635,
+      "support": 475,
       "sensitivity": 1.0,
-      "specificity": 1.0,
-      "ppv": 1.0,
+      "specificity": 0.9975518947314734,
+      "ppv": 0.9082217973231358,
       "npv": 1.0,
-      "lr_pos": null,
+      "lr_pos": 408.4791666666631,
       "lr_neg": 0.0
      }
     ],
     "p_pred_given_true": [
      [
-      0.975421895283427,
-      0.0009519688446559931,
-      0.02362613587191692,
-      0.0
+      0.9890645939426427,
+      0.0006968641114982578,
+      0.007665505226480836,
+      0.002573036719378183
      ],
      [
       0.0,
@@ -576,9 +626,9 @@
       0.0
      ],
      [
-      0.08204334365325078,
-      0.018575851393188854,
-      0.8993808049535603,
+      0.08695652173913043,
+      0.0,
+      0.9130434782608695,
       0.0
      ],
      [
@@ -590,94 +640,478 @@
     ],
     "p_true_given_pred": [
      [
-      0.9953196750264924,
+      0.9970818697649284,
       0.0,
-      0.0046803249735075944,
+      0.0029181302350716025,
       0.0
      ],
      [
-      0.04845814977973569,
-      0.8986784140969163,
-      0.05286343612334801,
+      0.03779069767441861,
+      0.9622093023255814,
+      0.0,
       0.0
      ],
      [
-      0.319672131147541,
+      0.2014084507042254,
       0.0,
-      0.680327868852459,
+      0.7985915492957747,
       0.0
      ],
      [
+      0.09177820267686423,
       0.0,
       0.0,
-      0.0,
-      1.0
+      0.9082217973231357
      ]
     ],
     "prevalence": [
-     0.8861196319018405,
-     0.015644171779141104,
-     0.049539877300613495,
-     0.04869631901840491
+     0.9289413405039338,
+     0.016482422069514988,
+     0.03092321481924111,
+     0.023653022607310028
     ]
    },
-   "hmm_us_per_frame": 3.333763861940628
+   "hmm_us_per_frame": 3.723069407437011,
+   "rate_10hz": {
+    "nou": {
+     "max_abs_dp": 0.02361781037059829,
+     "cost_per_frame_10hz": 0.04884971616372871
+    },
+    "vechi": {
+     "max_abs_dp": 0.877282190134284,
+     "cost_per_frame_10hz": 0.2320486007369784
+    }
+   }
   }
  },
  "ecu": {
   "test": {
    "speed_factor_by_state": [
-    0.9670915577445223,
-    0.8691060240963854,
-    0.6371701244813278,
-    0.19502666666666668
+    0.9699830130668716,
+    0.9235309917355371,
+    0.649664402173913,
+    0.24084216216216217
    ],
    "speed_ref_by_state_kmh": [
-    96.15315400644062,
-    92.92963855421688,
-    72.08333333333333,
-    34.16118518518518
+    97.00723289777093,
+    95.55061983471074,
+    71.79245923913044,
+    35.38227027027027
    ],
-   "normal_time_slowed_pct": 8.603433419500233,
-   "camera_off_slowed_pct": 65.2,
-   "steady_normal_slowed_pct": 2.859032779656034,
-   "mrm_reached": "6/6",
-   "mrm_delay_median_s": 8.599999999999966,
+   "normal_time_slowed_pct": 6.277578886021147,
+   "camera_off_slowed_pct": 70.92092092092092,
+   "steady_normal_slowed_pct": 2.45014245014245,
+   "mrm_reached": "7/7",
+   "mrm_delay_median_s": 11.0,
    "mrm_false_trips": 0,
    "speed_30s_after_emergency_kmh": 0.0,
-   "us_per_step": 60.098166928977875
+   "us_per_step": 57.46739536741279
   },
   "shift": {
    "speed_factor_by_state": [
-    0.9678280463443866,
-    0.8632142857142858,
-    0.6294725,
-    0.18714322580645162
+    0.9698284895023328,
+    0.9232399481193255,
+    0.6629614065180103,
+    0.24163478260869564
    ],
    "speed_ref_by_state_kmh": [
-    96.74894926088695,
-    91.72554945054947,
-    68.56258333333334,
-    35.02748387096774
+    97.1232601088647,
+    95.3513618677043,
+    73.64493996569469,
+    38.48226086956521
    ],
-   "normal_time_slowed_pct": 8.24171212757029,
-   "camera_off_slowed_pct": 64.16666666666667,
-   "steady_normal_slowed_pct": 2.068772714565278,
-   "mrm_reached": "7/7",
-   "mrm_delay_median_s": 8.199999999999989,
+   "normal_time_slowed_pct": 6.52390177496204,
+   "camera_off_slowed_pct": 64.59038591740014,
+   "steady_normal_slowed_pct": 2.7256425582785417,
+   "mrm_reached": "5/5",
+   "mrm_delay_median_s": 10.0,
    "mrm_false_trips": 0,
    "speed_30s_after_emergency_kmh": 0.0,
-   "us_per_step": 60.76110893821274
+   "us_per_step": 58.58528162396059
+  },
+  "urgențe dedicate": {
+   "speed_factor_by_state": [
+    0.9905908999999999,
+    null,
+    null,
+    0.261936
+   ],
+   "speed_ref_by_state_kmh": [
+    99.54938,
+    null,
+    null,
+    41.84958
+   ],
+   "normal_time_slowed_pct": 0.79,
+   "camera_off_slowed_pct": null,
+   "steady_normal_slowed_pct": 0.79,
+   "mrm_reached": "50/50",
+   "mrm_delay_median_s": 10.0,
+   "mrm_false_trips": 0,
+   "speed_30s_after_emergency_kmh": null,
+   "us_per_step": 58.49797332969805
+  }
+ },
+ "ecu_old_filter": {
+  "test": {
+   "speed_factor_by_state": [
+    0.9691175249807841,
+    0.923849173553719,
+    0.6462330163043477,
+    0.2557091891891892
+   ],
+   "speed_ref_by_state_kmh": [
+    96.98416218293622,
+    95.55061983471074,
+    71.79809782608696,
+    37.38064864864865
+   ],
+   "normal_time_slowed_pct": 7.25168595454167,
+   "camera_off_slowed_pct": 70.92092092092092,
+   "steady_normal_slowed_pct": 3.3903133903133904,
+   "mrm_reached": "7/7",
+   "mrm_delay_median_s": 11.0,
+   "mrm_false_trips": 0,
+   "speed_30s_after_emergency_kmh": 0.0,
+   "us_per_step": 60.363200054577085
+  },
+  "shift": {
+   "speed_factor_by_state": [
+    0.9682296850699845,
+    0.9232399481193255,
+    0.6585171526586621,
+    0.24987999999999996
+   ],
+   "speed_ref_by_state_kmh": [
+    96.99874611197511,
+    95.3513618677043,
+    73.58842195540309,
+    39.70660869565217
+   ],
+   "normal_time_slowed_pct": 8.105136394575633,
+   "camera_off_slowed_pct": 65.19972918077184,
+   "steady_normal_slowed_pct": 4.42916915720263,
+   "mrm_reached": "5/5",
+   "mrm_delay_median_s": 10.0,
+   "mrm_false_trips": 0,
+   "speed_30s_after_emergency_kmh": 0.0,
+   "us_per_step": 58.39681845323027
+  },
+  "urgențe dedicate": {
+   "speed_factor_by_state": [
+    0.9887934000000002,
+    null,
+    null,
+    0.2732886
+   ],
+   "speed_ref_by_state_kmh": [
+    99.46748000000001,
+    null,
+    null,
+    43.23352
+   ],
+   "normal_time_slowed_pct": 1.8,
+   "camera_off_slowed_pct": null,
+   "steady_normal_slowed_pct": 1.8,
+   "mrm_reached": "50/50",
+   "mrm_delay_median_s": 10.0,
+   "mrm_false_trips": 0,
+   "speed_30s_after_emergency_kmh": null,
+   "us_per_step": 58.91511332980978
+  }
+ },
+ "scenarios": {
+  "test": {
+   "aplecat / cocoșat (bad_posture)": {
+    "target": 1,
+    "n": 10,
+    "detected": 10,
+    "latency_median_s": 0.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 0,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": null,
+    "p_emerg_latency_median_s_old": null
+   },
+   "căzut într-o parte (slumped_side), doar camera corpului": {
+    "target": 3,
+    "n": 2,
+    "detected": 2,
+    "latency_median_s": 2.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 2,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": 3.6,
+    "p_emerg_latency_median_s_old": null
+   },
+   "ieșit din poziție (out_of_position)": {
+    "target": 1,
+    "n": 10,
+    "detected": 10,
+    "latency_median_s": 0.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 0,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": null,
+    "p_emerg_latency_median_s_old": null
+   },
+   "laptopul corpului nu trimite (8–40 s)": {
+    "target": 0,
+    "n": 10,
+    "detected": 0,
+    "latency_median_s": null,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": 0,
+    "p_emerg_reached": 0,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": null,
+    "p_emerg_latency_median_s_old": null
+   },
+   "laptopul feței nu trimite (8–40 s)": {
+    "target": 0,
+    "n": 10,
+    "detected": 0,
+    "latency_median_s": null,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": 7,
+    "p_emerg_reached": 0,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": null,
+    "p_emerg_latency_median_s_old": null
+   },
+   "mână pe piept, respirație măsurată": {
+    "target": 3,
+    "n": 1,
+    "detected": 1,
+    "latency_median_s": 3.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 1,
+    "p_emerg_reached_old": 1,
+    "p_emerg_latency_median_s": 3.4,
+    "p_emerg_latency_median_s_old": 3.0
+   },
+   "mână pe piept, respirație nemăsurată (implicit în Vision)": {
+    "target": 3,
+    "n": 3,
+    "detected": 3,
+    "latency_median_s": 6.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 3,
+    "p_emerg_reached_old": 3,
+    "p_emerg_latency_median_s": 4.8,
+    "p_emerg_latency_median_s_old": 6.0
+   },
+   "prăbușit în față (head_on_wheel)": {
+    "target": 3,
+    "n": 1,
+    "detected": 1,
+    "latency_median_s": 0.6,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 1,
+    "p_emerg_reached_old": 1,
+    "p_emerg_latency_median_s": 1.6,
+    "p_emerg_latency_median_s_old": 0.8
+   }
+  },
+  "shift": {
+   "aplecat / cocoșat (bad_posture)": {
+    "target": 1,
+    "n": 8,
+    "detected": 8,
+    "latency_median_s": 0.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 0,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": null,
+    "p_emerg_latency_median_s_old": null
+   },
+   "căzut într-o parte (slumped_side)": {
+    "target": 3,
+    "n": 1,
+    "detected": 1,
+    "latency_median_s": 2.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 1,
+    "p_emerg_reached_old": 1,
+    "p_emerg_latency_median_s": 2.8,
+    "p_emerg_latency_median_s_old": 2.0
+   },
+   "ieșit din poziție (out_of_position)": {
+    "target": 1,
+    "n": 8,
+    "detected": 8,
+    "latency_median_s": 0.1,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 0,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": null,
+    "p_emerg_latency_median_s_old": null
+   },
+   "laptopul corpului nu trimite (8–40 s)": {
+    "target": 0,
+    "n": 8,
+    "detected": 0,
+    "latency_median_s": null,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": 0,
+    "p_emerg_reached": 0,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": null,
+    "p_emerg_latency_median_s_old": null
+   },
+   "laptopul feței nu trimite (8–40 s)": {
+    "target": 0,
+    "n": 8,
+    "detected": 0,
+    "latency_median_s": null,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": 5,
+    "p_emerg_reached": 0,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": null,
+    "p_emerg_latency_median_s_old": null
+   },
+   "mână pe piept, respirație măsurată": {
+    "target": 3,
+    "n": 1,
+    "detected": 1,
+    "latency_median_s": 3.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 1,
+    "p_emerg_reached_old": 1,
+    "p_emerg_latency_median_s": 3.4,
+    "p_emerg_latency_median_s_old": 3.0
+   },
+   "mână pe piept, respirație nemăsurată (implicit în Vision)": {
+    "target": 3,
+    "n": 1,
+    "detected": 1,
+    "latency_median_s": 6.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 1,
+    "p_emerg_reached_old": 1,
+    "p_emerg_latency_median_s": 5.0,
+    "p_emerg_latency_median_s_old": 6.2
+   },
+   "prăbușit în față (head_on_wheel)": {
+    "target": 3,
+    "n": 1,
+    "detected": 1,
+    "latency_median_s": 0.6,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 1,
+    "p_emerg_reached_old": 1,
+    "p_emerg_latency_median_s": 1.6,
+    "p_emerg_latency_median_s_old": 0.8
+   },
+   "prăbușit în față (head_on_wheel), doar camera corpului": {
+    "target": 3,
+    "n": 1,
+    "detected": 1,
+    "latency_median_s": 3.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 1,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": 4.0,
+    "p_emerg_latency_median_s_old": null
+   }
+  },
+  "urgențe dedicate": {
+   "căzut într-o parte (slumped_side)": {
+    "target": 3,
+    "n": 10,
+    "detected": 10,
+    "latency_median_s": 2.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 10,
+    "p_emerg_reached_old": 10,
+    "p_emerg_latency_median_s": 2.8,
+    "p_emerg_latency_median_s_old": 2.0
+   },
+   "căzut într-o parte (slumped_side), doar camera corpului": {
+    "target": 3,
+    "n": 10,
+    "detected": 10,
+    "latency_median_s": 2.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 10,
+    "p_emerg_reached_old": 0,
+    "p_emerg_latency_median_s": 3.6,
+    "p_emerg_latency_median_s_old": null
+   },
+   "mână pe piept, respirație măsurată": {
+    "target": 3,
+    "n": 7,
+    "detected": 7,
+    "latency_median_s": 3.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 7,
+    "p_emerg_reached_old": 7,
+    "p_emerg_latency_median_s": 3.4,
+    "p_emerg_latency_median_s_old": 3.0
+   },
+   "mână pe piept, respirație nemăsurată (implicit în Vision)": {
+    "target": 3,
+    "n": 3,
+    "detected": 3,
+    "latency_median_s": 6.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 3,
+    "p_emerg_reached_old": 3,
+    "p_emerg_latency_median_s": 4.8,
+    "p_emerg_latency_median_s_old": 6.0
+   },
+   "prăbușit în față (head_on_wheel)": {
+    "target": 3,
+    "n": 10,
+    "detected": 10,
+    "latency_median_s": 0.6,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 10,
+    "p_emerg_reached_old": 10,
+    "p_emerg_latency_median_s": 1.6,
+    "p_emerg_latency_median_s_old": 0.8
+   },
+   "prăbușit în față (head_on_wheel), doar camera corpului": {
+    "target": 3,
+    "n": 10,
+    "detected": 10,
+    "latency_median_s": 3.0,
+    "false_alarm_segments": 0,
+    "false_alarm_segments_without_cameras": null,
+    "p_emerg_reached": 10,
+    "p_emerg_reached_old": 2,
+    "p_emerg_latency_median_s": 4.0,
+    "p_emerg_latency_median_s_old": 3.0
+   }
   }
  },
  "test": {
   "clasa majoritară (0)": {
    "name": "majoritar",
    "scores": {
-    "accuracy": 0.9057549504950495,
-    "macro_f1": 0.23763678280351982,
+    "accuracy": 0.9322676139727649,
+    "macro_f1": 0.24123667116068143,
     "precision": [
-     0.906,
+     0.932,
      0.0,
      0.0,
      0.0
@@ -689,43 +1123,43 @@
      0.0
     ],
     "f1": [
-     0.951,
+     0.965,
      0.0,
      0.0,
      0.0
     ],
-    "cost_per_frame": 1.5628094059405941,
-    "n": 16160
+    "cost_per_frame": 1.2145253601736727,
+    "n": 25335
    },
    "cm": [
     [
-     14637,
+     23619,
      0,
      0,
      0
     ],
     [
-     215,
+     418,
      0,
      0,
      0
     ],
     [
-     753,
+     513,
      0,
      0,
      0
     ],
     [
-     555,
+     785,
      0,
      0,
      0
     ]
    ],
    "macro_f1_ci": [
-    0.23585331077154104,
-    0.23925719409053317
+    0.2381116252804481,
+    0.24462490615634608
    ],
    "recall3_ci": [
     0.0,
@@ -736,123 +1170,123 @@
   "prag pe a": {
    "name": "prag pe a",
    "scores": {
-    "accuracy": 0.9165841584158416,
-    "macro_f1": 0.3876408875743639,
+    "accuracy": 0.9166370633510953,
+    "macro_f1": 0.35670281674644416,
     "precision": [
-     0.998,
-     0.008,
-     0.059,
-     0.361
+     0.992,
+     0.003,
+     0.026,
+     0.308
     ],
     "recall": [
-     0.973,
-     0.005,
-     0.019,
-     1.0
+     0.96,
+     0.002,
+     0.021,
+     0.684
     ],
     "f1": [
-     0.986,
-     0.006,
-     0.028,
-     0.531
+     0.976,
+     0.003,
+     0.024,
+     0.425
     ],
-    "cost_per_frame": 0.13521039603960397,
-    "n": 16160
+    "cost_per_frame": 0.25932504440497334,
+    "n": 25335
    },
    "cm": [
     [
-     14242,
-     105,
-     82,
-     208
+     22674,
+     307,
+     165,
+     473
     ],
     [
-     0,
+     168,
      1,
-     143,
-     71
+     1,
+     248
     ],
     [
-     24,
-     13,
+     1,
      14,
-     702
+     11,
+     487
     ],
     [
-     0,
-     0,
-     0,
-     555
+     4,
+     5,
+     239,
+     537
     ]
    ],
    "macro_f1_ci": [
-    0.33004340723332326,
-    0.43455877725147096
+    0.3247847656430825,
+    0.39000993758394376
    ],
    "recall3_ci": [
-    1.0,
-    1.0
+    0.531875,
+    0.9621749999999998
    ],
    "trips": 10
   },
   "softmax": {
    "name": "softmax",
    "scores": {
-    "accuracy": 0.9801361386138614,
-    "macro_f1": 0.9528791341881597,
+    "accuracy": 0.9679100059206631,
+    "macro_f1": 0.8348275946077499,
     "precision": [
-     1.0,
-     1.0,
-     0.703,
-     0.998
+     0.999,
+     0.485,
+     0.632,
+     0.906
     ],
     "recall": [
-     0.978,
-     1.0,
-     0.997,
-     0.998
+     0.967,
+     0.909,
+     0.998,
+     0.999
     ],
     "f1": [
-     0.989,
-     1.0,
-     0.824,
-     0.998
+     0.983,
+     0.632,
+     0.774,
+     0.95
     ],
-    "cost_per_frame": 0.04127475247524753,
-    "n": 16160
+    "cost_per_frame": 0.05514110913755674,
+    "n": 25335
    },
    "cm": [
     [
-     14319,
-     0,
-     317,
-     1
+     22846,
+     404,
+     288,
+     81
     ],
     [
-     0,
-     215,
-     0,
+     29,
+     380,
+     9,
      0
     ],
     [
-     2,
+     1,
      0,
-     751,
+     512,
      0
     ],
     [
      0,
      0,
      1,
-     554
+     784
     ]
    ],
    "macro_f1_ci": [
-    0.8926566485759856,
-    0.9876202531945627
+    0.7675043616251342,
+    0.8767250490647752
    ],
    "recall3_ci": [
-    0.995,
+    0.996,
     1.0
    ],
    "trips": 10
@@ -860,61 +1294,61 @@
   "arbore": {
    "name": "arbore",
    "scores": {
-    "accuracy": 0.969059405940594,
-    "macro_f1": 0.916422059597245,
+    "accuracy": 0.9147424511545293,
+    "macro_f1": 0.6874435855284573,
     "precision": [
      1.0,
-     1.0,
-     0.648,
-     0.844
+     0.238,
+     0.537,
+     0.617
     ],
     "recall": [
-     0.968,
-     1.0,
-     0.973,
-     0.973
+     0.914,
+     0.981,
+     0.889,
+     0.931
     ],
     "f1": [
-     0.984,
-     1.0,
-     0.778,
-     0.904
+     0.955,
+     0.383,
+     0.67,
+     0.743
     ],
-    "cost_per_frame": 0.07425742574257425,
-    "n": 16160
+    "cost_per_frame": 0.15081902506414052,
+    "n": 25335
    },
    "cm": [
     [
-     14172,
-     0,
-     383,
-     82
+     21578,
+     1307,
+     339,
+     395
     ],
     [
      0,
-     215,
-     0,
-     0
-    ],
-    [
+     410,
      2,
-     0,
-     733,
-     18
+     6
     ],
     [
      0,
+     5,
+     456,
+     52
+    ],
+    [
      0,
-     15,
-     540
+     2,
+     52,
+     731
     ]
    ],
    "macro_f1_ci": [
-    0.852228301726443,
-    0.9569388071730399
+    0.6093653866369095,
+    0.7571335284792594
    ],
    "recall3_ci": [
-    0.936,
+    0.775975,
     1.0
    ],
    "trips": 10
@@ -922,66 +1356,66 @@
   "reguli, praguri vechi (legacy)": {
    "name": "legacy",
    "scores": {
-    "accuracy": 0.9259282178217821,
-    "macro_f1": 0.7526100335793023,
+    "accuracy": 0.9429642786658773,
+    "macro_f1": 0.7413039695095534,
     "precision": [
-     0.996,
-     0.546,
-     0.39,
-     1.0
+     0.997,
+     0.493,
+     0.337,
+     0.855
     ],
     "recall": [
-     0.931,
-     0.47,
-     0.894,
-     1.0
+     0.946,
+     0.754,
+     0.918,
+     0.962
     ],
     "f1": [
-     0.962,
-     0.505,
-     0.543,
-     1.0
+     0.971,
+     0.596,
+     0.493,
+     0.905
     ],
-    "cost_per_frame": 0.17054455445544556,
-    "n": 16160
+    "cost_per_frame": 0.14655614762186697,
+    "n": 25335
    },
    "cm": [
     [
-     13634,
-     64,
-     939,
-     0
+     22349,
+     318,
+     824,
+     128
     ],
     [
      0,
-     101,
-     114,
+     315,
+     103,
      0
     ],
     [
-     60,
-     20,
-     673,
+     42,
+     0,
+     471,
      0
     ],
     [
+     24,
+     6,
      0,
-     0,
-     0,
-     555
+     755
     ]
    ],
    "macro_f1_ci": [
-    0.6423772369516418,
-    0.8465299010817284
+    0.6646006053557856,
+    0.8103573931118727
    ],
    "recall3_ci": [
-    1.0,
-    1.0
+    0.943,
+    0.987
    ],
    "latency": {
     "1": {
-     "n": 10,
+     "n": 30,
      "missed": 0,
      "median_s": 0.0,
      "p90_s": 0.0
@@ -989,233 +1423,295 @@
     "2": {
      "n": 10,
      "missed": 0,
-     "median_s": 3.8,
-     "p90_s": 9.82
+     "median_s": 3.9,
+     "p90_s": 10.6
     },
     "3": {
-     "n": 6,
+     "n": 7,
      "missed": 0,
-     "median_s": 0.6,
-     "p90_s": 3.0
+     "median_s": 3.0,
+     "p90_s": 6.0
     }
    },
-   "false_alarms_per_hour": 18.18526236029551,
+   "false_alarms_per_hour": 20.061491160645662,
    "calls_112": {
-    "tp": 6,
+    "tp": 7,
     "fn": 0,
     "fp": 0,
-    "tn": 4
+    "tn": 3
    },
-   "t112_median_s": 8.599999999999966,
+   "t112_median_s": 11.0,
    "trips": 10
   },
   "rules fără calibrare": {
    "name": "rules fără calibrare",
    "scores": {
-    "accuracy": 0.9512376237623762,
-    "macro_f1": 0.8158048512442924,
+    "accuracy": 0.9620288138938228,
+    "macro_f1": 0.8186306239923569,
     "precision": [
-     0.999,
-     0.591,
-     0.574,
-     0.771
+     0.998,
+     0.636,
+     0.43,
+     0.922
     ],
     "recall": [
-     0.956,
-     1.0,
-     0.814,
-     1.0
+     0.963,
+     0.974,
+     0.908,
+     0.962
     ],
     "f1": [
-     0.977,
-     0.743,
-     0.673,
-     0.871
+     0.98,
+     0.769,
+     0.584,
+     0.941
     ],
-    "cost_per_frame": 0.09294554455445544,
-    "n": 16160
+    "cost_per_frame": 0.10499309255970002,
+    "n": 25335
    },
    "cm": [
     [
-     13989,
-     149,
-     455,
-     44
+     22745,
+     233,
+     607,
+     34
     ],
     [
      0,
-     215,
-     0,
+     407,
+     11,
      0
     ],
     [
-     19,
+     17,
      0,
-     613,
-     121
+     466,
+     30
     ],
     [
+     30,
      0,
      0,
-     0,
-     555
+     755
     ]
    ],
    "macro_f1_ci": [
-    0.7568921876425599,
-    0.8772159000439386
+    0.73156845744745,
+    0.8862861830096482
    ],
    "recall3_ci": [
-    1.0,
-    1.0
+    0.942,
+    0.9863499999999996
    ],
    "latency": {
     "1": {
-     "n": 10,
+     "n": 30,
      "missed": 0,
      "median_s": 0.0,
-     "p90_s": 0.0
+     "p90_s": 0.020000000000000285
     },
     "2": {
      "n": 10,
      "missed": 0,
-     "median_s": 2.3,
-     "p90_s": 7.88
+     "median_s": 3.8,
+     "p90_s": 10.4
     },
     "3": {
-     "n": 6,
+     "n": 7,
      "missed": 0,
-     "median_s": 0.6,
-     "p90_s": 3.0
+     "median_s": 3.0,
+     "p90_s": 6.0
     }
    },
-   "false_alarms_per_hour": 14.775525667740101,
+   "false_alarms_per_hour": 16.602613374327444,
    "calls_112": {
-    "tp": 6,
+    "tp": 7,
     "fn": 0,
     "fp": 0,
-    "tn": 4
+    "tn": 3
    },
-   "t112_median_s": 8.599999999999966,
+   "t112_median_s": 11.0,
    "trips": 10
   },
   "HMM (cea mai probabilă stare)": {
    "name": "HMM MAP",
    "scores": {
-    "accuracy": 0.9831683168316832,
-    "macro_f1": 0.9505365962440727,
+    "accuracy": 0.9936056838365896,
+    "macro_f1": 0.9656109797656423,
     "precision": [
      0.998,
-     0.935,
-     0.764,
-     0.998
+     0.998,
+     0.891,
+     0.936
     ],
     "recall": [
-     0.984,
+     0.995,
      1.0,
-     0.948,
-     1.0
+     0.922,
+     0.987
     ],
     "f1": [
-     0.991,
-     0.966,
-     0.846,
-     0.999
+     0.997,
+     0.999,
+     0.906,
+     0.961
     ],
-    "cost_per_frame": 0.050742574257425746,
-    "n": 16160
+    "cost_per_frame": 0.038523781330175644,
+    "n": 25335
    },
    "cm": [
     [
-     14404,
-     12,
-     221,
+     23507,
+     1,
+     58,
+     53
+    ],
+    [
+     0,
+     418,
+     0,
      0
     ],
     [
+     40,
      0,
-     215,
-     0,
+     473,
      0
     ],
     [
-     35,
-     3,
-     714,
-     1
-    ],
-    [
+     10,
      0,
      0,
-     0,
-     555
+     775
     ]
    ],
    "macro_f1_ci": [
-    0.8981229043101187,
-    0.9802532179577778
+    0.9194496743076591,
+    0.9872212599165759
    ],
    "recall3_ci": [
-    1.0,
-    1.0
+    0.98,
+    0.995
+   ],
+   "trips": 10
+  },
+  "HMM vechi (pe cadru, prag pe încredere, fără 0+)": {
+   "name": "HMM vechi",
+   "scores": {
+    "accuracy": 0.9733570159857904,
+    "macro_f1": 0.8814460211404284,
+    "precision": [
+     0.992,
+     0.954,
+     0.778,
+     0.653
+    ],
+    "recall": [
+     0.98,
+     0.998,
+     0.963,
+     0.763
+    ],
+    "f1": [
+     0.986,
+     0.975,
+     0.861,
+     0.704
+    ],
+    "cost_per_frame": 0.2718373791197948,
+    "n": 25335
+   },
+   "cm": [
+    [
+     23150,
+     20,
+     137,
+     312
+    ],
+    [
+     0,
+     417,
+     1,
+     0
+    ],
+    [
+     13,
+     0,
+     494,
+     6
+    ],
+    [
+     183,
+     0,
+     3,
+     599
+    ]
+   ],
+   "macro_f1_ci": [
+    0.7691389726458976,
+    0.9327486553517641
+   ],
+   "recall3_ci": [
+    0.42552500000000004,
+    0.9650249999999999
    ],
    "trips": 10
   },
   "HMM (cost așteptat minim)": {
    "name": "HMM Bayes",
    "scores": {
-    "accuracy": 0.9785272277227722,
-    "macro_f1": 0.9412576471930376,
+    "accuracy": 0.9894217485691731,
+    "macro_f1": 0.9464721359959865,
     "precision": [
-     0.998,
-     0.939,
-     0.705,
-     0.995
+     0.999,
+     0.986,
+     0.812,
+     0.871
     ],
     "recall": [
-     0.979,
+     0.99,
      1.0,
-     0.955,
+     0.932,
      1.0
     ],
     "f1": [
-     0.988,
-     0.968,
-     0.811,
-     0.997
+     0.994,
+     0.993,
+     0.868,
+     0.931
     ],
-    "cost_per_frame": 0.0567450495049505,
-    "n": 16160
+    "cost_per_frame": 0.036550226958752714,
+    "n": 25335
    },
    "cm": [
     [
-     14324,
-     12,
-     301,
+     23386,
+     6,
+     111,
+     116
+    ],
+    [
+     0,
+     418,
+     0,
+     0
+    ],
+    [
+     35,
+     0,
+     478,
      0
     ],
     [
      0,
-     215,
-     0,
-     0
-    ],
-    [
-     29,
-     2,
-     719,
-     3
-    ],
-    [
      0,
      0,
-     0,
-     555
+     785
     ]
    ],
    "macro_f1_ci": [
-    0.8823524107929596,
-    0.9760106265796222
+    0.8948302843299392,
+    0.969557498027491
    ],
    "recall3_ci": [
     1.0,
@@ -1226,58 +1722,58 @@
   "rules ∨ HMM Bayes": {
    "name": "max",
    "scores": {
-    "accuracy": 0.9443688118811882,
-    "macro_f1": 0.8120574717686577,
+    "accuracy": 0.9643576080521018,
+    "macro_f1": 0.8388510589725514,
     "precision": [
      0.999,
-     0.634,
-     0.509,
-     0.771
+     0.79,
+     0.433,
+     0.826
     ],
     "recall": [
-     0.948,
+     0.964,
      1.0,
-     0.822,
+     0.908,
      1.0
     ],
     "f1": [
-     0.973,
-     0.776,
-     0.629,
-     0.871
+     0.981,
+     0.883,
+     0.587,
+     0.905
     ],
-    "cost_per_frame": 0.105259900990099,
-    "n": 16160
+    "cost_per_frame": 0.07641602526149595,
+    "n": 25335
    },
    "cm": [
     [
-     13872,
-     124,
-     597,
-     44
+     22763,
+     111,
+     610,
+     135
     ],
     [
      0,
-     215,
+     418,
      0,
      0
     ],
     [
-     13,
+     17,
      0,
-     619,
-     121
+     466,
+     30
     ],
     [
      0,
      0,
      0,
-     555
+     785
     ]
    ],
    "macro_f1_ci": [
-    0.7501620221889939,
-    0.8705764601129213
+    0.7624871179037563,
+    0.886847862237466
    ],
    "recall3_ci": [
     1.0,
@@ -1288,91 +1784,91 @@
   "rules+calibrare": {
    "name": "rules+calibrare",
    "scores": {
-    "accuracy": 0.9532797029702971,
-    "macro_f1": 0.8254780038026205,
+    "accuracy": 0.9673968817840931,
+    "macro_f1": 0.8485468894468137,
     "precision": [
-     0.999,
-     0.636,
-     0.578,
-     0.771
+     0.998,
+     0.777,
+     0.433,
+     0.939
     ],
     "recall": [
-     0.958,
+     0.968,
      1.0,
-     0.814,
-     1.0
+     0.908,
+     0.962
     ],
     "f1": [
-     0.978,
-     0.778,
-     0.676,
-     0.871
+     0.983,
+     0.874,
+     0.587,
+     0.95
     ],
-    "cost_per_frame": 0.09047029702970297,
-    "n": 16160
+    "cost_per_frame": 0.09855930530886126,
+    "n": 25335
    },
    "cm": [
     [
-     14022,
-     123,
-     448,
-     44
+     22870,
+     120,
+     610,
+     19
     ],
     [
      0,
-     215,
+     418,
      0,
      0
     ],
     [
-     19,
+     17,
      0,
-     613,
-     121
+     466,
+     30
     ],
     [
+     30,
      0,
      0,
-     0,
-     555
+     755
     ]
    ],
    "macro_f1_ci": [
-    0.7682041786113138,
-    0.880906224458529
+    0.7735179649345909,
+    0.8966133794124044
    ],
    "recall3_ci": [
-    1.0,
+    0.943,
     1.0
    ],
    "latency": {
     "1": {
-     "n": 10,
+     "n": 30,
      "missed": 0,
      "median_s": 0.0,
-     "p90_s": 0.0
+     "p90_s": 0.020000000000000285
     },
     "2": {
      "n": 10,
      "missed": 0,
-     "median_s": 2.3,
-     "p90_s": 7.88
+     "median_s": 3.9,
+     "p90_s": 9.68
     },
     "3": {
-     "n": 6,
+     "n": 7,
      "missed": 0,
-     "median_s": 0.6,
-     "p90_s": 3.0
+     "median_s": 3.0,
+     "p90_s": 6.0
     }
    },
-   "false_alarms_per_hour": 13.638946770221633,
+   "false_alarms_per_hour": 14.527286702536513,
    "calls_112": {
-    "tp": 6,
+    "tp": 7,
     "fn": 0,
     "fp": 0,
-    "tn": 4
+    "tn": 3
    },
-   "t112_median_s": 8.599999999999966,
+   "t112_median_s": 11.0,
    "trips": 10
   }
  },
@@ -1380,10 +1876,10 @@
   "clasa majoritară (0)": {
    "name": "majoritar",
    "scores": {
-    "accuracy": 0.8861196319018405,
-    "macro_f1": 0.23490546859117706,
+    "accuracy": 0.9289413405039338,
+    "macro_f1": 0.2407904587345432,
     "precision": [
-     0.886,
+     0.929,
      0.0,
      0.0,
      0.0
@@ -1395,43 +1891,43 @@
      0.0
     ],
     "f1": [
-     0.94,
+     0.963,
      0.0,
      0.0,
      0.0
     ],
-    "cost_per_frame": 2.0345092024539877,
-    "n": 13040
+    "cost_per_frame": 1.1012349367592869,
+    "n": 20082
    },
    "cm": [
     [
-     11555,
+     18655,
      0,
      0,
      0
     ],
     [
-     204,
+     331,
      0,
      0,
      0
     ],
     [
-     646,
+     621,
      0,
      0,
      0
     ],
     [
-     635,
+     475,
      0,
      0,
      0
     ]
    ],
    "macro_f1_ci": [
-    0.2320071134569846,
-    0.23837427962195493
+    0.23813628919927737,
+    0.2432735196093553
    ],
    "recall3_ci": [
     0.0,
@@ -1442,61 +1938,61 @@
   "prag pe a": {
    "name": "prag pe a",
    "scores": {
-    "accuracy": 0.9006901840490797,
-    "macro_f1": 0.40775816402410603,
+    "accuracy": 0.893934867045115,
+    "macro_f1": 0.3321634712913446,
     "precision": [
-     0.995,
-     0.014,
-     0.085,
-     0.423
+     0.993,
+     0.0,
+     0.013,
+     0.226
     ],
     "recall": [
-     0.96,
-     0.01,
-     0.034,
-     0.997
+     0.941,
+     0.0,
+     0.005,
+     0.829
     ],
     "f1": [
-     0.977,
-     0.012,
-     0.049,
-     0.594
+     0.966,
+     0.0,
+     0.007,
+     0.355
     ],
-    "cost_per_frame": 0.19225460122699387,
-    "n": 13040
+    "cost_per_frame": 0.2895627925505428,
+    "n": 20082
    },
    "cm": [
     [
-     11088,
-     123,
-     102,
-     242
+     17555,
+     339,
+     219,
+     542
+    ],
+    [
+     115,
+     0,
+     1,
+     215
+    ],
+    [
+     16,
+     11,
+     3,
+     591
     ],
     [
      0,
+     79,
      2,
-     134,
-     68
-    ],
-    [
-     52,
-     18,
-     22,
-     554
-    ],
-    [
-     0,
-     0,
-     2,
-     633
+     394
     ]
    ],
    "macro_f1_ci": [
-    0.36676711881854407,
-    0.45120015387617474
+    0.29104945305761426,
+    0.36100951508051987
    ],
    "recall3_ci": [
-    0.991,
+    0.59,
     1.0
    ],
    "trips": 8
@@ -1504,61 +2000,61 @@
   "softmax": {
    "name": "softmax",
    "scores": {
-    "accuracy": 0.8986196319018405,
-    "macro_f1": 0.8551673342672702,
+    "accuracy": 0.8543969724131063,
+    "macro_f1": 0.6523627860913318,
     "precision": [
-     0.997,
-     1.0,
-     0.322,
-     1.0
+     0.995,
+     0.237,
+     0.226,
+     0.948
     ],
     "recall": [
-     0.888,
-     1.0,
-     0.949,
-     1.0
+     0.85,
+     0.713,
+     0.969,
+     0.994
     ],
     "f1": [
-     0.94,
-     1.0,
-     0.481,
-     1.0
+     0.916,
+     0.356,
+     0.367,
+     0.97
     ],
-    "cost_per_frame": 0.22300613496932514,
-    "n": 13040
+    "cost_per_frame": 0.27103874116123894,
+    "n": 20082
    },
    "cm": [
     [
-     10266,
-     0,
-     1289,
+     15848,
+     758,
+     2023,
+     26
+    ],
+    [
+     64,
+     236,
+     31,
+     0
+    ],
+    [
+     17,
+     2,
+     602,
      0
     ],
     [
      0,
-     204,
      0,
-     0
-    ],
-    [
-     33,
-     0,
-     613,
-     0
-    ],
-    [
-     0,
-     0,
-     0,
-     635
+     3,
+     472
     ]
    ],
    "macro_f1_ci": [
-    0.803519778473363,
-    0.9597894069578925
+    0.5816247893938347,
+    0.7766152490219548
    ],
    "recall3_ci": [
-    1.0,
+    0.985,
     1.0
    ],
    "trips": 8
@@ -1566,61 +2062,61 @@
   "arbore": {
    "name": "arbore",
    "scores": {
-    "accuracy": 0.8670245398773007,
-    "macro_f1": 0.7763661636933982,
+    "accuracy": 0.7440991933074395,
+    "macro_f1": 0.4799428855279352,
     "precision": [
-     0.997,
-     1.0,
-     0.238,
-     0.734
+     0.999,
+     0.086,
+     0.228,
+     0.438
     ],
     "recall": [
-     0.87,
-     1.0,
-     0.723,
-     0.924
+     0.742,
+     0.934,
+     0.638,
+     0.834
     ],
     "f1": [
-     0.929,
-     1.0,
-     0.358,
-     0.818
+     0.852,
+     0.157,
+     0.336,
+     0.574
     ],
-    "cost_per_frame": 0.3049846625766871,
-    "n": 13040
+    "cost_per_frame": 0.40907280151379344,
+    "n": 20082
    },
    "cm": [
     [
-     10048,
-     0,
-     1446,
-     61
+     13842,
+     3236,
+     1273,
+     304
     ],
     [
      0,
-     204,
-     0,
+     309,
+     22,
      0
     ],
     [
-     27,
-     0,
-     467,
-     152
+     8,
+     13,
+     396,
+     204
     ],
     [
      0,
-     0,
-     48,
-     587
+     36,
+     43,
+     396
     ]
    ],
    "macro_f1_ci": [
-    0.7367404010079975,
-    0.8164154337394086
+    0.4245709786932173,
+    0.5455628295670639
    ],
    "recall3_ci": [
-    0.8319249999999999,
+    0.675,
     1.0
    ],
    "trips": 8
@@ -1628,66 +2124,66 @@
   "reguli, praguri vechi (legacy)": {
    "name": "legacy",
    "scores": {
-    "accuracy": 0.9194785276073619,
-    "macro_f1": 0.7287840382051614,
+    "accuracy": 0.9326760282840355,
+    "macro_f1": 0.7425397276552835,
     "precision": [
-     0.993,
-     0.231,
-     0.491,
+     0.997,
+     0.456,
+     0.344,
      1.0
     ],
     "recall": [
-     0.923,
-     0.564,
-     0.881,
-     1.0
+     0.939,
+     0.595,
+     0.897,
+     0.979
     ],
     "f1": [
-     0.957,
-     0.328,
-     0.63,
-     1.0
+     0.967,
+     0.516,
+     0.498,
+     0.989
     ],
-    "cost_per_frame": 0.17216257668711657,
-    "n": 13040
+    "cost_per_frame": 0.1521262822428045,
+    "n": 20082
    },
    "cm": [
     [
-     10671,
-     382,
-     502,
+     17511,
+     217,
+     927,
      0
     ],
     [
      0,
-     115,
-     89,
+     197,
+     134,
      0
     ],
     [
-     77,
-     0,
-     569,
+     46,
+     18,
+     557,
      0
     ],
     [
+     10,
      0,
      0,
-     0,
-     635
+     465
     ]
    ],
    "macro_f1_ci": [
-    0.6372465491801663,
-    0.8083565699524766
+    0.6724044994862659,
+    0.8429307650103329
    ],
    "recall3_ci": [
-    1.0,
+    0.949,
     1.0
    ],
    "latency": {
     "1": {
-     "n": 8,
+     "n": 24,
      "missed": 0,
      "median_s": 0.0,
      "p90_s": 0.0
@@ -1695,174 +2191,236 @@
     "2": {
      "n": 8,
      "missed": 0,
-     "median_s": 2.0,
-     "p90_s": 11.42
+     "median_s": 7.3,
+     "p90_s": 11.58
     },
     "3": {
-     "n": 7,
+     "n": 5,
      "missed": 0,
-     "median_s": 0.6,
-     "p90_s": 3.0
+     "median_s": 3.0,
+     "p90_s": 4.800000000000001
     }
    },
-   "false_alarms_per_hour": 21.574111066719937,
+   "false_alarms_per_hour": 20.995334370139968,
    "calls_112": {
-    "tp": 7,
+    "tp": 5,
     "fn": 0,
     "fp": 0,
-    "tn": 1
+    "tn": 3
    },
-   "t112_median_s": 8.199999999999989,
+   "t112_median_s": 10.0,
    "trips": 8
   },
   "rules fără calibrare": {
    "name": "rules fără calibrare",
    "scores": {
-    "accuracy": 0.7572852760736196,
-    "macro_f1": 0.5794839112317125,
+    "accuracy": 0.7412608305945623,
+    "macro_f1": 0.5607410095825136,
     "precision": [
-     1.0,
-     0.153,
-     0.197,
-     0.816
+     0.999,
+     0.233,
+     0.112,
+     0.742
     ],
     "recall": [
-     0.74,
-     0.652,
-     0.867,
-     1.0
+     0.731,
+     0.767,
+     0.849,
+     0.979
     ],
     "f1": [
-     0.85,
-     0.248,
-     0.321,
-     0.899
+     0.844,
+     0.357,
+     0.198,
+     0.844
     ],
-    "cost_per_frame": 0.4213957055214724,
-    "n": 13040
+    "cost_per_frame": 0.48456329050891345,
+    "n": 20082
    },
    "cm": [
     [
-     8547,
-     735,
-     2216,
-     57
+     13640,
+     838,
+     4109,
+     68
     ],
     [
      0,
-     133,
-     71,
+     254,
+     77,
      0
     ],
     [
      0,
      0,
-     560,
-     86
+     527,
+     94
     ],
     [
+     10,
      0,
      0,
-     0,
-     635
+     465
     ]
    ],
    "macro_f1_ci": [
-    0.49655096627303713,
-    0.6699879522653565
+    0.5021187686978033,
+    0.6182243308921656
    ],
    "recall3_ci": [
-    1.0,
+    0.957,
     1.0
    ],
    "latency": {
     "1": {
-     "n": 8,
+     "n": 24,
      "missed": 0,
      "median_s": 0.0,
-     "p90_s": 0.05999999999999997
+     "p90_s": 0.0
     },
     "2": {
      "n": 8,
      "missed": 0,
      "median_s": 0.0,
-     "p90_s": 1.44
+     "p90_s": 2.5
     },
     "3": {
-     "n": 7,
+     "n": 5,
      "missed": 0,
-     "median_s": 0.6,
-     "p90_s": 3.0
+     "median_s": 3.0,
+     "p90_s": 4.800000000000001
     }
    },
-   "false_alarms_per_hour": 61.845785057930485,
+   "false_alarms_per_hour": 55.987558320373246,
    "calls_112": {
-    "tp": 7,
+    "tp": 5,
     "fn": 0,
     "fp": 0,
-    "tn": 1
+    "tn": 3
    },
-   "t112_median_s": 8.199999999999989,
+   "t112_median_s": 10.0,
    "trips": 8
   },
   "HMM (cea mai probabilă stare)": {
    "name": "HMM MAP",
    "scores": {
-    "accuracy": 0.9796779141104295,
-    "macro_f1": 0.9387421160223272,
+    "accuracy": 0.9900408325863957,
+    "macro_f1": 0.9575534324430135,
     "precision": [
-     0.995,
-     0.899,
-     0.758,
-     1.0
+     0.996,
+     0.982,
+     0.834,
+     0.973
     ],
     "recall": [
-     0.983,
+     0.993,
      1.0,
-     0.892,
-     1.0
+     0.895,
+     0.989
     ],
     "f1": [
-     0.989,
-     0.947,
-     0.819,
-     1.0
+     0.995,
+     0.991,
+     0.863,
+     0.981
     ],
-    "cost_per_frame": 0.07814417177914111,
-    "n": 13040
+    "cost_per_frame": 0.053132158151578526,
+    "n": 20082
    },
    "cm": [
     [
-     11360,
-     11,
-     184,
-     0
+     18525,
+     6,
+     111,
+     13
     ],
     [
      0,
-     204,
+     331,
      0,
      0
     ],
     [
-     58,
-     12,
-     576,
+     65,
+     0,
+     556,
      0
     ],
     [
+     5,
      0,
      0,
-     0,
-     635
+     470
     ]
    ],
    "macro_f1_ci": [
-    0.9069579556080801,
-    0.9629473827593528
+    0.926084049260581,
+    0.979040100267164
    ],
    "recall3_ci": [
-    1.0,
+    0.974,
+    1.0
+   ],
+   "trips": 8
+  },
+  "HMM vechi (pe cadru, prag pe încredere, fără 0+)": {
+   "name": "HMM vechi",
+   "scores": {
+    "accuracy": 0.9651927098894533,
+    "macro_f1": 0.8488435908953715,
+    "precision": [
+     0.993,
+     0.878,
+     0.731,
+     0.555
+    ],
+    "recall": [
+     0.969,
+     1.0,
+     0.936,
+     0.811
+    ],
+    "f1": [
+     0.981,
+     0.935,
+     0.821,
+     0.659
+    ],
+    "cost_per_frame": 0.22413106264316304,
+    "n": 20082
+   },
+   "cm": [
+    [
+     18086,
+     46,
+     214,
+     309
+    ],
+    [
+     0,
+     331,
+     0,
+     0
+    ],
+    [
+     40,
+     0,
+     581,
+     0
+    ],
+    [
+     90,
+     0,
+     0,
+     385
+    ]
+   ],
+   "macro_f1_ci": [
+    0.7707207637567777,
+    0.9006949811063609
+   ],
+   "recall3_ci": [
+    0.4,
     1.0
    ],
    "trips": 8
@@ -1870,58 +2428,58 @@
   "HMM (cost așteptat minim)": {
    "name": "HMM Bayes",
    "scores": {
-    "accuracy": 0.9732361963190184,
-    "macro_f1": 0.9266431831917651,
+    "accuracy": 0.9871526740364506,
+    "macro_f1": 0.9444231457925987,
     "precision": [
-     0.995,
-     0.899,
-     0.68,
-     1.0
+     0.997,
+     0.962,
+     0.799,
+     0.908
     ],
     "recall": [
-     0.975,
+     0.989,
      1.0,
-     0.899,
+     0.913,
      1.0
     ],
     "f1": [
-     0.985,
-     0.947,
-     0.775,
-     1.0
+     0.993,
+     0.981,
+     0.852,
+     0.952
     ],
-    "cost_per_frame": 0.08796012269938651,
-    "n": 13040
+    "cost_per_frame": 0.048949307837864754,
+    "n": 20082
    },
    "cm": [
     [
-     11271,
-     11,
-     273,
+     18451,
+     13,
+     143,
+     48
+    ],
+    [
+     0,
+     331,
+     0,
+     0
+    ],
+    [
+     54,
+     0,
+     567,
      0
     ],
     [
      0,
-     204,
-     0,
-     0
-    ],
-    [
-     53,
-     12,
-     581,
-     0
-    ],
-    [
      0,
      0,
-     0,
-     635
+     475
     ]
    ],
    "macro_f1_ci": [
-    0.8938023464755828,
-    0.9486686602269541
+    0.8991346928824783,
+    0.9733230300002292
    ],
    "recall3_ci": [
     1.0,
@@ -1932,58 +2490,58 @@
   "rules ∨ HMM Bayes": {
    "name": "max",
    "scores": {
-    "accuracy": 0.9350460122699387,
-    "macro_f1": 0.8056791974183657,
+    "accuracy": 0.9475151877303057,
+    "macro_f1": 0.8158139222569869,
     "precision": [
      0.998,
-     0.547,
-     0.486,
-     0.881
+     0.828,
+     0.378,
+     0.774
     ],
     "recall": [
-     0.936,
+     0.95,
      1.0,
-     0.831,
+     0.791,
      1.0
     ],
     "f1": [
-     0.966,
-     0.707,
-     0.613,
-     0.937
+     0.974,
+     0.906,
+     0.512,
+     0.872
     ],
-    "cost_per_frame": 0.12446319018404908,
-    "n": 13040
+    "cost_per_frame": 0.11492879195299273,
+    "n": 20082
    },
    "cm": [
     [
-     10817,
-     169,
-     569,
+     17731,
+     69,
+     807,
+     48
+    ],
+    [
+     0,
+     331,
+     0,
      0
     ],
     [
+     39,
      0,
-     204,
-     0,
-     0
-    ],
-    [
-     23,
-     0,
-     537,
-     86
+     491,
+     91
     ],
     [
      0,
      0,
      0,
-     635
+     475
     ]
    ],
    "macro_f1_ci": [
-    0.742026468534516,
-    0.8581708581778342
+    0.7401002902789975,
+    0.9023771114811586
    ],
    "recall3_ci": [
     1.0,
@@ -1994,100 +2552,100 @@
   "rules+calibrare": {
    "name": "rules+calibrare",
    "scores": {
-    "accuracy": 0.9467791411042945,
-    "macro_f1": 0.8199391864485694,
+    "accuracy": 0.9496066128871626,
+    "macro_f1": 0.8245318269428457,
     "precision": [
-     0.998,
-     0.533,
-     0.57,
-     0.881
+     0.997,
+     0.834,
+     0.379,
+     0.836
     ],
     "recall": [
-     0.95,
+     0.953,
      1.0,
-     0.828,
-     1.0
+     0.791,
+     0.979
     ],
     "f1": [
-     0.973,
-     0.695,
-     0.675,
-     0.937
+     0.975,
+     0.909,
+     0.512,
+     0.902
     ],
-    "cost_per_frame": 0.10145705521472392,
-    "n": 13040
+    "cost_per_frame": 0.12244796335026392,
+    "n": 20082
    },
    "cm": [
     [
-     10972,
-     179,
-     404,
+     17783,
+     66,
+     806,
      0
     ],
     [
      0,
-     204,
+     331,
      0,
      0
     ],
     [
-     25,
+     39,
      0,
-     535,
-     86
+     491,
+     91
     ],
     [
+     10,
      0,
      0,
-     0,
-     635
+     465
     ]
    ],
    "macro_f1_ci": [
-    0.7542008555603796,
-    0.8742924496026099
+    0.7516598129462662,
+    0.9004477628113157
    ],
    "recall3_ci": [
-    1.0,
+    0.952,
     1.0
    ],
    "latency": {
     "1": {
-     "n": 8,
+     "n": 24,
      "missed": 0,
      "median_s": 0.0,
-     "p90_s": 0.0
+     "p90_s": 0.33999999999999986
     },
     "2": {
      "n": 8,
      "missed": 0,
-     "median_s": 0.0,
-     "p90_s": 5.499999999999999
+     "median_s": 5.1,
+     "p90_s": 10.06
     },
     "3": {
-     "n": 7,
+     "n": 5,
      "missed": 0,
-     "median_s": 0.6,
-     "p90_s": 3.0
+     "median_s": 3.0,
+     "p90_s": 4.800000000000001
     }
    },
-   "false_alarms_per_hour": 20.135836995605274,
+   "false_alarms_per_hour": 13.996889580093312,
    "calls_112": {
-    "tp": 7,
+    "tp": 5,
     "fn": 0,
     "fp": 0,
-    "tn": 1
+    "tn": 3
    },
-   "t112_median_s": 8.199999999999989,
+   "t112_median_s": 10.0,
    "trips": 8
   }
  },
  "roc_attention": {
-  "auc": 0.9971113560010245,
-  "ap": 0.9733151024951995
+  "auc": 0.9902635658060028,
+  "ap": 0.8624198156405195
  },
  "softmax_calibration": {
-  "brier": 0.01728514718846288
+  "brier": 0.011294499068354079
  },
  "figures": [
   "confusion_test.png",
@@ -2095,5 +2653,5 @@
   "reliability_softmax.png",
   "trip_example.png"
  ],
- "elapsed_s": 40.8
+ "elapsed_s": 78.3
 }

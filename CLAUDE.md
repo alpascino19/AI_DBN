@@ -33,7 +33,8 @@ Severitate: 1 = distragere (memento vocal), 2 = oboseală (alarmă, pauză, conv
 - `ask_driver`: conversație scurtă (max 3 răspunsuri) în stil Jarvis — replicile le generează un LLM local (Ollama, modelul din `VIGIL_MODEL`, implicit `qwen2.5:1.5b`, ca ML 1; `gemma3:4b` dă o română mult mai bună, la ~4,4 s/replică). Microfonul pornește **după** ce TTS-ul termină și ascultă fix **4 s**. Fiecare răspuns sau tăcere pleacă imediat pe `vigil/driver_response`.
 - Asistentul vocal **Virgil** (`voice_test.py`, `actions.assistant`): în idle răspunde doar la „Hei Virgil”; în conversație, tăcere 4 s → alarmă + ESP32 nivel 2; când șoferul spune că e bine (LLM `end=true`) → înapoi în idle. ML 1 ar trebui să trimită întrebări deschise („Cum vă simțiți?”), nu da/nu: un „da” scurt e recunoscut prost.
 - TTS: `edge-tts`, voce `ro-RO-EmilNeural` (cere internet; pleacă doar textul rostit), rezervă automată Piper `ro_RO-mihai-medium`, apoi `pyttsx3`. STT: `faster-whisper` `small`, `language="ro"`, prompt cu vocabular, VAD strict, filtru de volum pentru vocea apropiată.
-- `call_112` este **doar simulat** (afișează raportul pe dashboard + avarii simulate). Nu suna și nu trimite nimic în afara laptopului.
+- `call_112` este **doar simulat** în executor (afișează raportul pe dashboard + avarii simulate). Nu suna niciodată la 112.
+- Excepție opțională: `emergency_notify.py` (proces separat) anunță la `call_112` **doar** persoana de contact din `ML2/.env` (mesaj Telegram prin CallMeBot, apel de pe Android prin `adb`). `.env` nu se urcă pe git.
 - Fișier de test `fake_llm.py` care publică decizii false pe `vigil/decision`.
 
 ## ESP32

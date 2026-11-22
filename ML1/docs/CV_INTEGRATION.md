@@ -19,6 +19,18 @@ Efect măsurat (simulatorul ML1 a fost rescris în semantica de mai sus, inclusi
 pe șoferi de test nevăzuți, macro-F1 **0.75 → 0.83**, costul erorilor aproape înjumătățit, toate apelurile
 112 corecte (detalii în [EVALUATION_RESULTS.md](EVALUATION_RESULTS.md)).
 
+## 1b. Ce trimite Vision acum (două laptopuri, postura, respirația oprită) și cum folosește ML1
+
+| Din Vision | Ce face ML1 |
+|---|---|
+| `merge.py`: câmpul nou `cameras: {"face": bool, "body": bool}` (care laptop trimite) | laptopul feței căzut ≠ „fața lipsește”: `face_detected` devine necunoscut, deci nu „șoferul nu privește drumul”; nici închiderea ochilor din ultimele 15 s nu mai e raportată ca actuală. Fără câmp (o singură cameră) totul e ca înainte. Alarme false la 8–40 s fără laptopul feței: 0/10 (fără câmp: 7/10) |
+| `slumped_side` (căzut într-o parte, nemișcat) | urgență (3), ca `head_on_wheel`; în raportul 112 „căzut într-o parte, nemișcat” |
+| `bad_posture` (aplecat / cocoșat > 10 s) | severitate 1, memento „Vă rugăm să vă îndreptați spatele...” |
+| `out_of_position` (corpul nu se vede sau s-a îndepărtat) | severitate 1, „Vă rugăm să reveniți în poziția de condus.” |
+| `breathing.enabled: false` (implicit): `breathing` = null | „mână pe piept + respirație grea” nu se poate confirma: mâna ținută pe piept **6 s** (în loc de 3) ajunge pentru alarma de urgență + „Sunteți bine?”; un „sunt bine” coboară la 2 |
+| `posture.direction` (`forward` / `side`) | trece în context (`posture=slumped_side` pentru LLM) |
+| 10 Hz de la `merge.py` | matricea de probabilitate numără evidența pe secundă, nu pe cadru (vezi [PROBABILITY_ECU.md](PROBABILITY_ECU.md)) |
+
 ## 2. Două surse de alarmă: de coordonat
 
 `face/alerts.py` + `face/monitor.py` (CV) bipăie local la nivelurile 1–3, independent de ML1/ML2. În mașină

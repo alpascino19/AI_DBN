@@ -21,6 +21,9 @@ EVENT_LABELS = {
     "heavy_breathing": "respirație grea",
     "head_drop": "cap căzut",
     "head_on_wheel": "prăbușit pe volan, nemișcat",
+    "slumped_side": "căzut într-o parte, nemișcat",
+    "bad_posture": "postură aplecată prelungit",
+    "out_of_position": "ieșit din poziția de condus",
     "phone_use": "telefon în mână",
     "eyes_closed": "ochi închiși",
     "microsleep": "micro-somn",
@@ -59,8 +62,10 @@ def _signs(ctx: dict) -> dict[str, dict]:
 
 
 def _suspicion(signs: dict) -> str:
-    chest = "hand_on_chest" in signs and ("heavy_breathing" in signs or signs["hand_on_chest"].get("breathing") == "heavy")
-    unconscious = ("head_on_wheel" in signs
+    # respirația grea confirmă; cu analiza respirației oprită în Vision ajunge mâna ținută mult pe piept (rules)
+    chest = "hand_on_chest" in signs and ("heavy_breathing" in signs or signs["hand_on_chest"].get("breathing") == "heavy"
+                                          or signs["hand_on_chest"]["dur"] >= 6.0)
+    unconscious = ("head_on_wheel" in signs or "slumped_side" in signs
                    or ("head_drop" in signs and ("eyes_closed" in signs or "microsleep" in signs)))
     if chest and unconscious:
         return "posibilă urgență cardiacă urmată de pierderea cunoștinței"
@@ -85,7 +90,7 @@ def _answer(ctx: dict) -> str:
 def build_112_report(ctx: dict, location: dict | None = None, now: float | None = None) -> str:
     loc = location or SIM_LOCATION
     signs = _signs(ctx)
-    order = ["hand_on_chest", "heavy_breathing", "head_drop", "head_on_wheel", "eyes_closed", "microsleep"]
+    order = ["hand_on_chest", "heavy_breathing", "head_drop", "head_on_wheel", "slumped_side", "eyes_closed", "microsleep"]
     names = sorted(signs, key=lambda n: order.index(n) if n in order else 99)
     lines = []
     for n in names:

@@ -8,7 +8,9 @@
      * curățare (Curs 2): valori ne-finite -> None, decupare la intervale fizice (EAR, PERCLOS...);
      * `landmarks` / `body_landmarks` și panourile ferestrelor (`face_panel` / `body_panel`, doar pentru
        dashboard) eliminate: nu ajung la LLM, nu ocupă memorie;
-     * fața lipsă (`face_detected: false`) e păstrată explicit: lipsa e informație (MNAR, Curs 2).
+     * fața lipsă (`face_detected: false`) e păstrată explicit: lipsa e informație (MNAR, Curs 2);
+       DAR dacă `cameras.face` e false (laptopul feței nu mai trimite) fața devine necunoscută (None);
+     * evenimentele noi de postură ale CV2 (`slumped_side`, `bad_posture`, `out_of_position`) trec neschimbate.
 2. `cv_demo_messages()`: rulează generatorul fals al echipei CV (`vigil_vision.fake`) determinist,
    ca ML1 să fie testat pe exact forma mesajelor reale.
 """
@@ -131,9 +133,22 @@ def normalize_vision(msg: Any) -> dict:
     po = msg.get("posture")
     if isinstance(po, dict) and isinstance(po.get("state"), str):
         out["posture_state"] = po["state"]
+        if isinstance(po.get("direction"), str):       # "forward" (pe volan) | "side" (căzut într-o parte)
+            out["posture_direction"] = po["direction"]
         s = _num(po.get("still_sec"))
         if s is not None:
             out["still_sec"] = s
+
+    # Două laptopuri (merge.py): `cameras` spune care cameră trimite. Laptopul feței căzut NU înseamnă
+    # „fața lipsește” (MNAR: șoferul nu privește drumul): nu știm, deci face_detected devine necunoscut.
+    out.pop("cameras", None)
+    cams = msg.get("cameras")
+    if isinstance(cams, dict):
+        for role in ("face", "body"):
+            if isinstance(cams.get(role), bool):
+                out[f"{role}_camera"] = cams[role]
+                if cams[role] is False:
+                    out[f"{role}_detected"] = None
     return out
 
 

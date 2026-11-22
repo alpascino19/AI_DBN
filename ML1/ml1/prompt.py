@@ -22,9 +22,9 @@ Each user message is one line of camera and voice signals. Reply with ONE JSON o
 
 Severity and typical actions:
 0 attentive or harmless (a 1 s glance, short yawn) -> []
-1 short distraction (phone, gaze off road a few seconds) -> remind_phone or remind_road
+1 short distraction (phone, gaze off road a few seconds) -> remind_phone or remind_road; bad_posture -> remind_posture; out_of_position -> remind_position
 2 fatigue (high perclos, slow blinks, microsleep, yawning) -> alarm, esp32, suggest_break, ask_tired
-3 possible medical emergency (hand on chest + heavy breathing, head drop or head_on_wheel, eyes closed + no answer) -> alarm, esp32, ask_ok; add call_112 ONLY if answer is "no answer" or distress
+3 possible medical emergency (hand on chest + heavy breathing, hand on chest for 6 s when breathing is not measured, head drop, head_on_wheel or slumped_side, eyes closed + no answer) -> alarm, esp32, ask_ok; add call_112 ONLY if answer is "no answer" or distress
 Eyes closed for 2-3 s alone is a microsleep: severity 2, not 3.
 
 Rules:
@@ -63,14 +63,18 @@ def context_line(ctx: dict) -> str:
     parts = [f"a={_fmt(fusion.get('a'))} conf={_fmt(fusion.get('confidence'))} cam={'on' if cam else 'off'}"]
     if cam:
         perclos = vision.get("perclos_cal", vision.get("perclos"))  # corectat cu calibrarea personală
-        face = " face=missing" if vision.get("face_detected") is False else ""
+        face = (" face=missing" if vision.get("face_detected") is False
+                else " face_camera=offline" if vision.get("face_camera") is False else "")
         parts.append(f"perclos={_fmt(perclos)} ear={_fmt(vision.get('ear'))} blink={_fmt(vision.get('blink_rate'), 0)}{face}")
         parts.append(f"gaze_on_road={_fmt(vision.get('gaze_on_road'))} head_drop={_fmt(vision.get('head_drop'))} phone={_fmt(vision.get('phone'))}")
         body = []
         if vision.get("breathing_state") in ("heavy", "normal"):
             body.append(f"breathing={vision['breathing_state']}")
         if vision.get("posture_state") in ("upright", "leaning", "slumped"):
-            body.append(f"posture={vision['posture_state']}")
+            side = "_side" if vision.get("posture_direction") == "side" else ""
+            body.append(f"posture={vision['posture_state']}{side}")
+        if vision.get("body_camera") is False:
+            body.append("body_camera=offline")
         if body:
             parts.append(" ".join(body))
         evs = []

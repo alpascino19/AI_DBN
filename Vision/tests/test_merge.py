@@ -57,6 +57,14 @@ class TestMerge(unittest.TestCase):
         self.assertNotIn("ear", m)
         self.assertFalse(m["face_detected"])             # ML1: fața lipsă, nu valori inventate
         self.assertEqual(m["phone"], 0.8)
+        # laptopul feței tace: ML1 află din `cameras` că nu e „șoferul nu privește drumul”
+        self.assertEqual(m["cameras"], {"face": False, "body": True})
+
+    def test_cameras_field_tells_which_laptop_is_sending(self):
+        self.assertEqual(self.both()["cameras"], {"face": True, "body": True})
+        m = merge({"face": (10.0, FACE), "body": (10.0 - STALE_SEC - 1, BODY)}, 10.1)
+        self.assertEqual(m["cameras"], {"face": True, "body": False})
+        self.assertEqual(merge({}, 1.0)["cameras"], {"face": False, "body": False})
 
     def test_both_silent_or_missing(self):
         m = merge({"face": (0.0, FACE)}, 50.0)
