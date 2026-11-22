@@ -283,7 +283,7 @@ $env:OMNIROUTE_API_KEY  # trebuie setată (vezi mai jos)
 - **„Hei Virgil, <întrebare>”**, sau doar „Hei Virgil”, iar el răspunde „Da, vă ascult”.
 - **După fiecare răspuns** se aude un bip și Virgil ascultă încă o întrebare, fără „Hei Virgil”. Tăcerea sau „mulțumesc”/„gata” închid conversația. Terminalul arată la fiecare pas ce să faceți (`>>> GATA...`, `>>> VORBIȚI ACUM...`, `>>> Mai aveți o întrebare?...`).
 - **Date live, alese după cuvintele din întrebare:**
-  - vreme: Open-Meteo, fără cheie;
+  - vreme: Open-Meteo, fără cheie: pentru localitatea spusă („la Brașov”, „în Vatra Dornei”, și în străinătate), pentru o regiune („în Moldova”, „pe litoral”, „la munte”: orașul reprezentativ), pentru toată țara („în România”: 8 orașe mari, câte unul pe regiune, într-o cerere) sau, fără loc, pentru Cluj-Napoca;
   - știri: RSS HotNews / Digi24;
   - trafic: **alertele live Waze** pe o rază de 10 km (accidente, ambuteiaje, pericole, poliție), prin OpenWebNinja (`OPENWEBNINJA_API_KEY`; fiecare întrebare de trafic consumă o cerere din credit), plus căutarea Tavily „trafic Cluj-Napoca”;
   - durata până la o destinație („Cât fac până la gară?”, „Cât durează drumul spre aeroport?”): **TomTom** (`TOMTOM_API_KEY`, cont gratuit pe my.tomtom.com, fără card): Search găsește locul (merge și cu nume aproximative, de ex. „gară”, „Iulius Mall”), Routing dă durata cu traficul de acum și întârzierea; plecarea e „de la ...” din întrebare, altfel poziția curentă din serviciul de localizare Windows (după Wi-Fi, ~100 m; Setări → Confidențialitate → Locație trebuie să fie pornită), altfel centrul Clujului;

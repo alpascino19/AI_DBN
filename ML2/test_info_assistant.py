@@ -193,6 +193,41 @@ def test_weather_text():
     assert "9.7 grade" in text and "înnorat" in text and "20%" in text
 
 
+def test_weather_place():
+    assert ia.weather_place("Ce vreme e azi?") is None                      # Cluj, ca până acum
+    assert ia.weather_place("Ce vreme e la Brașov?") == "Brașov"
+    assert ia.weather_place("Plouă în Vatra Dornei?") == "Vatra Dornei"
+    assert ia.weather_place("Cum e vremea în România?") == "România"
+    assert ia.weather_place("E frig în Moldova?") == "Iași"
+    assert ia.weather_place("Ce vreme e pe litoral?") == "Constanța"
+
+
+FORECAST = {"current": {"temperature_2m": 5, "weather_code": 61, "wind_speed_10m": 8},
+            "daily": {"temperature_2m_max": [7], "temperature_2m_min": [1], "precipitation_probability_max": [80]}}
+
+
+def test_weather_city_and_romania():
+    urls = []
+
+    def fake(url, *a, **k):
+        urls.append(url)
+        if "geocoding" in url:
+            return {"results": [{"name": "Brașov", "latitude": 45.65, "longitude": 25.61}]}
+        return [FORECAST] * len(ia.ROMANIA) if "," in url.split("latitude=")[1].split("&")[0] else FORECAST
+
+    real = ia.http_json
+    ia.http_json = fake
+    try:
+        assert ia.weather("Ce vreme e la Brașov?").startswith("Vremea în Brașov acum: 5 grade, ploaie slabă")
+        assert "latitude=45.65" in urls[-1]
+        text = ia.weather("Ce vreme e în România?")
+        assert text.startswith("Vremea în România, pe regiuni:") and "Iași" in text and "Timișoara" in text
+        ia.http_json = lambda url, *a, **k: {"results": []} if "geocoding" in url else FORECAST
+        assert ia.weather("Ce vreme e la Xyzabc?").startswith("Nu am găsit localitatea „Xyzabc”. Vremea în Cluj")
+    finally:
+        ia.http_json = real
+
+
 def test_traffic_uses_waze_then_news():
     queries = []
     real = ia.search, ia.traffic_waze

@@ -120,16 +120,62 @@ def origin(question):
     return (m.group(1) or m.group(2)).strip() if m else None
 
 
-def weather():
-    d = http_json(f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}"
-                  "&current=temperature_2m,weather_code,wind_speed_10m"
-                  "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max"
-                  "&timezone=Europe%2FBucharest&forecast_days=1")
+# „vremea în România”: câte un oraș mare din fiecare regiune, într-o singură cerere
+ROMANIA = [("București", 44.43, 26.10), ("Cluj-Napoca", 46.77, 23.59), ("Iași", 47.16, 27.59),
+           ("Timișoara", 45.75, 21.23), ("Constanța", 44.18, 28.63), ("Brașov", 45.65, 25.61),
+           ("Craiova", 44.32, 23.80), ("Suceava", 47.65, 26.26)]
+# regiunile spuse în vorbire -> orașul care le reprezintă
+REGIONS = {"moldova": "Iași", "ardeal": "Cluj-Napoca", "transilvania": "Cluj-Napoca", "banat": "Timișoara",
+           "dobrogea": "Constanța", "litoral": "Constanța", "mare": "Constanța", "oltenia": "Craiova",
+           "muntenia": "București", "capitala": "București", "maramures": "Baia Mare", "bucovina": "Suceava",
+           "crisana": "Oradea", "munte": "Sinaia", "prahova": "Sinaia"}
+FORECAST = ("https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+            "&current=temperature_2m,weather_code,wind_speed_10m"
+            "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+            "&timezone=Europe%2FBucharest&forecast_days=1")
+
+
+def weather_place(question):
+    """Locul din întrebarea despre vreme: „România” (tot), o regiune, un oraș sau None (Cluj, ca până acum)."""
+    q = plain(question)
+    if re.search(r"\b(romania|tara|toata tara)\b", q):
+        return "România"
+    for word, city in REGIONS.items():
+        if re.search(rf"\b(in|la|din|pe|spre)\s+(zona\s+|regiunea\s+)?{word}\b", q):
+            return city
+    # „la Brașov”, „în Vatra Dornei”: Whisper scrie localitățile cu majusculă
+    m = re.search(r"\b(?:în|in|la|din|pentru|spre)\s+([A-ZĂÂÎȘȚ][\w-]+(?:\s+[A-ZĂÂÎȘȚ][\w-]+)?)", question)
+    return m.group(1) if m else None
+
+
+def geocode(name):
+    """Localitate -> (nume, lat, lon), întâi în România, apoi oriunde (Open-Meteo, fără cheie)."""
+    for country in ("&countryCode=RO", ""):
+        r = http_json("https://geocoding-api.open-meteo.com/v1/search?count=1&language=ro"
+                      f"&name={urllib.parse.quote(name)}{country}").get("results")
+        if r:
+            return r[0]["name"], r[0]["latitude"], r[0]["longitude"]
+    return None
+
+
+def describe(name, d):
     c, day = d["current"], d["daily"]
-    return (f"Vremea în {CITY} acum: {c['temperature_2m']} grade, {WMO.get(c['weather_code'], 'variabil')}, "
+    return (f"Vremea în {name} acum: {c['temperature_2m']} grade, {WMO.get(c['weather_code'], 'variabil')}, "
             f"vânt {c['wind_speed_10m']} km/h. Azi: maxima {day['temperature_2m_max'][0]} grade, "
             f"minima {day['temperature_2m_min'][0]} grade, șanse de precipitații "
             f"{day['precipitation_probability_max'][0]}%.")
+
+
+def weather(question=""):
+    place = weather_place(question)
+    if place == "România":
+        d = http_json(FORECAST.format(lat=",".join(str(c[1]) for c in ROMANIA),
+                                      lon=",".join(str(c[2]) for c in ROMANIA)))
+        return "Vremea în România, pe regiuni: " + " ".join(describe(c[0], x) for c, x in zip(ROMANIA, d))
+    found = geocode(place) if place else None
+    name, lat, lon = found or (CITY, LAT, LON)
+    text = describe(name, http_json(FORECAST.format(lat=lat, lon=lon)))
+    return text if found or not place else f"Nu am găsit localitatea „{place}”. {text}"
 
 
 def rss_items(url):
@@ -365,7 +411,7 @@ def gather(question):
     """Datele live pentru întrebare; o sursă căzută nu oprește răspunsul."""
     topics = route(question)
     sources = {
-        "weather": weather,
+        "weather": lambda: weather(question),
         "news": news,
         # Waze = starea live; știrile adaugă accidentele mari de pe drumurile din jur
         "traffic": lambda: "\n".join(filter(None, (safe(traffic_waze), safe(lambda: search(f"trafic {CITY}"))))),
