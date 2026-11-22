@@ -37,7 +37,8 @@
 // ---------- NETWORK CONFIG (only used when MOCK_MODE 0) ----------
 // Wi-Fi name + password live in wifi_secrets.h next to this file (NOT in git, the repo is public).
 // First time: copy wifi_secrets.h.example to wifi_secrets.h and fill it in.
-#include "wifi_secrets.h"                         // defines WIFI_SSID and WIFI_PASSWORD (2.4 GHz hotspot)
+#define WIFI_SSID "Al Pascino"
+#define WIFI_PASSWORD "alex12345"                        // defines WIFI_SSID and WIFI_PASSWORD (2.4 GHz hotspot)
 const char* MQTT_HOST     = "172.22.118.20";     // IP of the PC running Mosquitto
 const uint16_t MQTT_PORT  = 1883;
 const char* MQTT_USER     = "";
