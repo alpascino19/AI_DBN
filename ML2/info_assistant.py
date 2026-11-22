@@ -75,7 +75,7 @@ def route(question):
     """Ce surse live cer întrebarea: subset din {weather, news, traffic, eta, where, search}, sau {chat}."""
     q = plain(question)
     # conversație cu Virgil, nu o întrebare despre lume: fără căutare (pe web nu există „ce face Virgil”)
-    if re.search(r"^\W*(ce (mai )?faci|cum (te )?(simti|esti)|cine esti|cum te (cheama|numesti)|ce (poti|stii) (sa )?"
+    if re.search(r"^\W*(ce (mai )?fa[cts]i|cum (te )?(simti|esti)|cine esti|cum te (cheama|numesti)|ce (poti|stii) (sa )?"
                  r"(faci|face)|cu ce (ma )?poti ajuta|salut|buna( ziua| dimineata| seara)?|neata|multumesc|mersi"
                  r"|esti acolo|ma auzi)\b", q):
         return {"chat"}
@@ -87,7 +87,7 @@ def route(question):
     if re.search(r"trafic|aglomer|accident|coloan|coada|drum|blocat|ambuteiaj|lucrari", q):
         topics.add("traffic")
     if re.search(r"cat fac|cat (mai )?dureaza|cat mai am|in cat timp|cat de departe|cate minute|cati (km|kilometri)"
-                 r"|cat (imi )?ia|distanta|departe|pana la|pina la|pana in|ajung|merg la|drumul la", q) \
+                 r"|cat (imi )?ia|distanta|departe|pana la|pina la|pana in|ajun[gt]|merg la|drumul la", q) \
             and destination(question):
         topics.add("eta")
     if re.search(r"unde (sunt|ma aflu|ne aflam|suntem)|locati|pozitia|adresa (mea|curenta)|coordonat", q):
@@ -103,8 +103,8 @@ def destination(question):
     pair = PAIR.search(question)
     if pair:
         return pair.group(2).strip()
-    # Whisper scrie uneori „pînă” (ortografia veche); „ajung la” / „merg la” = aceeași întrebare
-    m = re.search(r"\b(?:p[âîai]n[ăa]\s+(?:la|în|in)|spre|c[ăa]tre|ajung(?:e|em)?\s+la|merg(?:em)?\s+la|drumul\s+la)\s+"
+    # Whisper scrie uneori „pînă” (ortografia veche) sau „ajunt”; „ajung la” / „merg la” = aceeași întrebare
+    m = re.search(r"\b(?:p[âîai]n[ăa]\s+(?:la|în|in)|spre|c[ăa]tre|ajun[gt](?:e|em|i)?\s+la|merg(?:em)?\s+la|drumul\s+la)\s+"
                   r"([^,?!]+?)\s*(?:[,?!]|\.?\s*$)", question, re.I)
     return m.group(1).strip() if m else None
 
@@ -441,9 +441,12 @@ def answer(question):
 
 
 def strip_wake(text):
-    """„Hei Virgil, ce vreme e?” -> „ce vreme e”"""
+    """„Hei Virgil, ce vreme e?” -> „ce vreme e”; tot ce e înainte de nume cade („Ca-i Virgil”, cum aude Whisper uneori)"""
     words = re.findall(r"\w+", text)
-    return " ".join(w for w in words if plain(w) not in ("hei", "hey", "ei") and not actions.heard_wake_word(w))
+    wake = next((i for i, w in enumerate(words) if actions.heard_wake_word(w)), None)
+    if wake is not None:
+        words = words[wake + 1:]
+    return " ".join(w for w in words if plain(w) not in ("hei", "hey", "ei"))
 
 
 class Safety:

@@ -64,7 +64,9 @@ BEAM_SIZE = 5
 # contextul ghidează Whisper spre română corectă. Fără răspunsuri-exemplu: pe audio scurt sau nesigur Whisper
 # copiază promptul, iar un „Da, sunt bine” inventat ar putea ascunde o urgență.
 # Numele e aici ca Whisper să scrie „Virgil”, nu „vidile”; pe liniște VAD-ul nu lasă nimic să ajungă la Whisper.
-PROMPT = "Conversație în limba română între șofer și Virgil, asistentul de bord al mașinii. Hei Virgil."
+# doar substantive: o propoziție întreagă în prompt („Da, sunt bine”) ajungea copiată în transcrieri
+PROMPT = ("Conversație în limba română între șofer și Virgil, asistentul de bord al mașinii. Hei Virgil. "
+          "Cluj-Napoca, Iulius Mall, Piața Unirii, gară, aeroport, trafic, vreme, distanța dintre.")
 # Silero VAD mai strict: ignoră murmurul și vorbirea scurtă din fundal
 VAD = {"threshold": 0.6, "min_speech_duration_ms": 300, "min_silence_duration_ms": 500}
 # vocea mai slabă de atât e considerată din fundal (alți oameni din sală).

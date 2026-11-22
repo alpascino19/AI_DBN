@@ -298,6 +298,7 @@ $env:OMNIROUTE_API_KEY  # trebuie setată (vezi mai jos)
   [Environment]::SetEnvironmentVariable('TOMTOM_API_KEY', 'CHEIA', 'User')         # opțional: my.tomtom.com/keys, durata până la destinație
   ```
 - **Test:** `..\.venv\Scripts\python test_info_assistant.py`.
+- **Test audio** (fără microfon; vocile edge-tts Emil/Alina, plus Piper doar informativ → Whisper → rutarea întrebării, ~2 min): `..\.venv\Scripts\python -m pytest -q test_virgil_audio.py`.
 
 ### 4.4c Butoanele asistentului din dashboard (`executor.py` + `info.py`)
 Cardul **Asistent Virgil** din dashboard publică pe `vigil/assistant`; răspunde executorul, deci nu trebuie

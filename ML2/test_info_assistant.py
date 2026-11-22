@@ -182,6 +182,7 @@ def test_chat_skips_search():
 def test_strip_wake():
     assert ia.strip_wake("Hei Virgil, ce vreme e?") == "ce vreme e"
     assert ia.strip_wake("Hei Vigil") == ""
+    assert ia.strip_wake("Ca-i Virgil, ce fați?") == "ce fați"
 
 
 def test_weather_text():
