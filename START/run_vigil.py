@@ -41,7 +41,7 @@ LOGS = ROOT / "logs"
 DASHBOARD = ROOT / "dashboard"
 ML1_MODEL = os.environ.get("VIGIL_MODEL", "qwen2.5:1.5b")
 DASH_URL = "http://localhost:5173"
-COLORS = {"ML2": "\033[35m", "ML1": "\033[36m", "CV": "\033[33m", "FACE": "\033[93m", "BODY": "\033[95m", "MERGE": "\033[90m", "NET": "\033[96m", "WEB": "\033[34m", "VIGIL": "\033[32m"}
+COLORS = {"ML2": "\033[35m", "ML1": "\033[36m", "CV": "\033[33m", "FACE": "\033[93m", "BODY": "\033[95m", "MERGE": "\033[90m", "NET": "\033[96m", "SOS": "\033[91m", "WEB": "\033[34m", "VIGIL": "\033[32m"}
 RESET = "\033[0m"
 
 
@@ -162,6 +162,28 @@ def probe_cameras(cams: list[tuple[str, int]]) -> bool:
 def voice_model(args) -> str:
     """Modelul conversației ML2: --voice-llm, altfel cel implicit al ML2 (VIGIL_MODEL / qwen2.5:1.5b)."""
     return args.voice_llm or ML1_MODEL
+
+
+PLACEHOLDERS = ("@username_coleg", "")
+
+
+def notify_contact() -> str | None:
+    """Persoana de contact din ML2/.env (emergency_notify.py), sau None dacă lipsește / e doar modelul."""
+    env = ROOT / "ML2" / ".env"
+    if not env.exists():
+        return None
+    vals = {}
+    for line in env.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            vals[key.strip()] = value.split(" #", 1)[0].strip().strip('"').strip("'")
+    who = []
+    if vals.get("VIGIL_NOTIFY_TELEGRAM", "") not in PLACEHOLDERS:
+        who.append(f"Telegram {vals['VIGIL_NOTIFY_TELEGRAM']}")
+    if vals.get("VIGIL_CALL_PHONE", "").replace(" ", ""):
+        who.append(f"apel {vals['VIGIL_CALL_PHONE']}")
+    return ", ".join(who) or None
 
 
 def preflight(args) -> bool:
@@ -332,6 +354,8 @@ def main() -> None:
                     help="indexul camerei corpului (implicit 1 cu --cameras two, 0 cu --local-camera body)")
     ap.add_argument("--no-llm", action="store_true", help="ML1 doar cu reguli fixe")
     ap.add_argument("--no-ml2", action="store_true", help="fără executorul ML2 (voce / alarmă)")
+    ap.add_argument("--no-notify", action="store_true",
+                    help="fără emergency_notify.py (mesajul pe telefon către persoana de contact la call_112)")
     ap.add_argument("--no-cv", action="store_true", help="fără Vision (ex. cadrele vin de la serverul Spring)")
     ap.add_argument("--no-dashboard", action="store_true", help="fără dashboard-ul React")
     ap.add_argument("--no-browser", action="store_true", help="nu deschide browserul automat")
@@ -385,6 +409,14 @@ def main() -> None:
         if not args.no_ml2:
             procs.append(Proc("ML2", [py, "executor.py"], ROOT / "ML2", env_ml2))
             time.sleep(1.0)
+        # la call_112 (și la butonul „112 simulat” din dashboard) anunță persoana de contact din ML2/.env, NU 112
+        contact = None if args.no_notify else notify_contact()
+        if contact:
+            procs.append(Proc("SOS", [py, "emergency_notify.py"], ROOT / "ML2", env))
+            say("VIGIL", f"notificarea de urgență pornită: la call_112 anunț {contact}")
+        elif not args.no_notify:
+            say("VIGIL", "mesajul pe telefon la call_112 e oprit: lipsește ML2/.env cu VIGIL_NOTIFY_TELEGRAM "
+                         "(copiază ML2/.env.example; vezi ML2/README.md, notificarea persoanei de contact)")
         if args.input == "http":
             cmd = [py, "-m", "ml1.http_api", "--host", "0.0.0.0", "--port", str(args.http_port),
                    "--mqtt-out", "--broker", args.broker]
